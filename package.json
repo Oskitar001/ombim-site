@@ -1,0 +1,30 @@
+{
+  "name": "ombim-site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check-format": "prettier --check .",
+    "clean": "rimraf .next && rimraf node_modules && npm install",
+    "analyze": "ANALYZE=true next build"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "autoprefixer": "latest",
+    "eslint": "latest",
+    "eslint-plugin-next": "latest",
+    "postcss": "latest",
+    "prettier": "latest",
+    "prettier-plugin-tailwindcss": "latest",
+    "rimraf": "latest",
+    "tailwindcss": "latest"
+  }
+}

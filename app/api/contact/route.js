@@ -10,8 +10,8 @@ export async function POST(req) {
     const { nombre, email, mensaje } = await req.json();
 
     await resend.emails.send({
-      from: "OMBIM <onboarding@resend.dev>",
-      to: "tucorreo@dominio.com",
+      from: "OMBIM <noreply@updates.ombim.com>",
+      to: "o.martinez@ombim.com",
       subject: "Nuevo mensaje desde el formulario",
       html: `
         <h2>Nuevo mensaje desde la web</h2>

@@ -30,7 +30,12 @@ export default function Contact() {
               <label className="block mb-1 font-medium">Mensaje</label>
               <textarea name="mensaje" required className="w-full p-3 border rounded-lg" rows="5" placeholder="Cuéntame qué necesitas"></textarea>
             </div>
-            <button disabled={loading} className="px-6 py-3 text-lg rounded-xl bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-60">{loading ? 'Enviando…' : 'Enviar mensaje'}</button>
+              <button
+                disabled={loading}
+                className="px-6 py-3 text-lg rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
+                >
+                {loading ? 'Enviando…' : 'Enviar mensaje'}
+              </button>
             {ok === true && <p className="text-green-600">¡Gracias! Te responderé pronto.</p>}
             {ok === false && <p className="text-red-600">Hubo un error. Inténtalo de nuevo.</p>}
           </form>

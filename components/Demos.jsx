@@ -1,5 +1,7 @@
 // components/Demos.jsx
 
+"use client";
+
 export default function Demos() {
   const demos = [
     { title: "Automatización #1", file: "/videos/demo1.mp4" },

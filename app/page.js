@@ -1,23 +1,9 @@
-import Navbar from '../components/Navbar'
-import Hero from '../components/Hero'
-import Services from '../components/Services'
-import Projects from '../components/Projects'
-import Demos from "../components/Demos";
-import Contact from '../components/Contact'
-import Footer from '../components/Footer'
-
-export default function Page() {
+export default function HomePage() {
   return (
-    <>
-      <Navbar />
-      <main>
-        <Hero />
-        <Services />
-        <Projects />
-      	<Demos /> 
-        <Contact />
-      </main>
-      <Footer />
-    </>
-  )
+    <main className="min-h-screen flex items-center justify-center bg-gray-100">
+      <h1 className="text-3xl font-bold">
+        Home temporal – la web principal está en /software
+      </h1>
+    </main>
+  );
 }

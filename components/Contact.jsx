@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function Contact() {
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState(null);

@@ -16,7 +16,8 @@
     "next": "latest",
     "nodemailer": "^8.0.2",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "resend": "^6.9.3"
   },
   "devDependencies": {
     "autoprefixer": "latest",

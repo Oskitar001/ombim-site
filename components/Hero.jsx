@@ -1,34 +1,32 @@
 export default function Hero() {
   return (
-    <section
-      role="banner"
-      className="reveal bg-gradient-to-br from-gray-900 to-gray-700 text-white py-16 md:py-20 shadow-soft"
-    >
-      <div className="container mx-auto text-center px-6">
-        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
-          OMBIM
-        </h1>
+    <section className="py-32 text-center max-w-4xl mx-auto">
+      <h1 className="text-4xl md:text-5xl font-bold mb-6">
+        Especialista en Tekla Structures con más de 23 años de experiencia real
+      </h1>
 
-        <p className="text-lg md:text-xl opacity-90 max-w-2xl mx-auto leading-relaxed">
-          Modelado BIM con <strong>Tekla Structures</strong> y desarrollo de APIs y automatizaciones
-          para optimizar tus proyectos.
-        </p>
+      <p className="text-gray-600 text-lg mb-8">
+        Ayudo a ingenierías, constructoras y oficinas técnicas a modelar, documentar y optimizar sus proyectos mediante automatizaciones y plugins personalizados.
+      </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="#contacto"
-            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-lg shadow-soft transition-all active:scale-95"
-          >
-            Solicitar presupuesto
-          </a>
+      <p className="text-xl font-semibold mb-10">
+        Experiencia real de obra + desarrollo avanzado para Tekla.
+      </p>
 
-          <a
-            href="/proyectos"
-            className="px-6 py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white text-lg shadow-soft transition-all active:scale-95"
-          >
-            Ver proyectos
-          </a>
-        </div>
+      <div className="flex justify-center gap-4">
+        <a
+          href="#contacto"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+        >
+          Contactar
+        </a>
+
+        <a
+          href="#servicios"
+          className="px-6 py-3 border border-gray-400 rounded-lg font-semibold hover:bg-gray-100 transition"
+        >
+          Ver servicios
+        </a>
       </div>
     </section>
   );

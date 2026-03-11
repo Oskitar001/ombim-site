@@ -8,7 +8,7 @@ import TestimonialsSection from "../components/TestimonialsSection";
 
 const apps = [
   {
-    title: "Automatización",
+    title: "Modelado 3D con automatización",
     description:
       "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
     video: "https://www.youtube.com/embed/gQp1t5xRz5Q"

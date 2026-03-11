@@ -90,20 +90,27 @@ export default function HomePage() {
       >
         <div className="container mx-auto">
 
-          {/* NUEVO BANNER — MODELADO 3D + SOFTWARE */}
-          <h1 className="reveal text-4xl font-bold text-center mb-6">
-            Modelado 3D & Software para Tekla Structures
-          </h1>
+          {/* HERO ULTRA-FINO */}
+          <section className="reveal text-center max-w-4xl mx-auto mt-36 mb-20 px-6">
 
-          <p className="reveal text-center text-gray-700 max-w-3xl mx-auto leading-relaxed text-lg">
-            Más de <strong>1000 proyectos de modelado 3D</strong> realizados con Tekla Structures, aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
-          </p>
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8">
+              Modelado 3D & Software para Tekla Structures
+            </h1>
 
-          <p className="reveal text-center text-gray-700 max-w-3xl mx-auto mt-4 leading-relaxed text-lg">
-            Además, más de <strong>100 proyectos</strong> han sido optimizados con <strong>software propio</strong>: plugins, automatizaciones, macros y herramientas avanzadas que aceleran el flujo BIM y reducen errores.
-          </p>
+            <p className="text-gray-700 text-xl md:text-2xl leading-relaxed mb-6">
+              Más de <strong>1000 proyectos de modelado 3D</strong> realizados con Tekla Structures,
+              aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
+            </p>
 
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent my-16"></div>
+            <p className="text-gray-700 text-lg md:text-xl leading-relaxed">
+              Además, más de <strong>100 proyectos</strong> han sido optimizados con
+              <strong> software propio</strong>: plugins, automatizaciones, macros y herramientas avanzadas
+              que aceleran el flujo BIM y reducen errores.
+            </p>
+
+          </section>
+
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent my-20"></div>
 
           {/* CARDS */}
           <div className="grid md:grid-cols-3 gap-10">

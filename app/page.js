@@ -134,10 +134,10 @@ export default function HomePage() {
                 role="article"
                 className="reveal bg-white rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100"
               >
-                {/* VIDEO OPTIMIZADO */}
+                {/* VIDEO SIEMPRE VISIBLE */}
                 <div className="rounded-xl overflow-hidden mb-4">
                   <iframe
-                    className="w-full aspect-video opacity-0 animate-fadeIn"
+                    className="w-full aspect-video"
                     src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1&playlist=${app.video.split("/").pop()}`}
                     title={app.title}
                     frameBorder="0"

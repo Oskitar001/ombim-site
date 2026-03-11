@@ -90,21 +90,17 @@ export default function HomePage() {
       >
         <div className="container mx-auto">
 
-          {/* PRUEBA SOCIAL */}
-          <p className="reveal text-center text-gray-500 text-sm mb-10">
-            Más de <strong>40 empresas</strong> ya utilizan nuestras automatizaciones para Tekla Structures.
-          </p>
-
-          <h1 className="reveal text-4xl font-bold text-center mb-4">
-            Software & Aplicaciones
+          {/* NUEVO BANNER — MODELADO 3D + SOFTWARE */}
+          <h1 className="reveal text-4xl font-bold text-center mb-6">
+            Modelado 3D & Software para Tekla Structures
           </h1>
 
-          {/* BLOQUE SEMÁNTICO SEO */}
-          <p className="reveal text-center text-gray-700 max-w-3xl mx-auto mt-6 leading-relaxed">
-            Desarrollamos <strong>software a medida para Tekla Structures</strong>, incluyendo plugins,
-            automatizaciones, macros y herramientas avanzadas que aceleran tu flujo BIM y reducen errores.
-            Soluciones diseñadas para ingenierías, constructoras y oficinas técnicas que buscan
-            <strong> más productividad y precisión</strong>.
+          <p className="reveal text-center text-gray-700 max-w-3xl mx-auto leading-relaxed text-lg">
+            Más de <strong>1000 proyectos de modelado 3D</strong> realizados con Tekla Structures, aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
+          </p>
+
+          <p className="reveal text-center text-gray-700 max-w-3xl mx-auto mt-4 leading-relaxed text-lg">
+            Además, más de <strong>100 proyectos</strong> han sido optimizados con <strong>software propio</strong>: plugins, automatizaciones, macros y herramientas avanzadas que aceleran el flujo BIM y reducen errores.
           </p>
 
           <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent my-16"></div>
@@ -168,7 +164,7 @@ export default function HomePage() {
 
           {/* SOFT CTA */}
           <p className="reveal text-gray-600 text-center mt-24 mb-4">
-            ¿No estás seguro todavía? Podemos mostrarte ejemplos reales de automatizaciones aplicadas a proyectos como el tuyo.
+            ¿Quieres ver ejemplos reales aplicados a proyectos como el tuyo?
           </p>
 
           {/* SECCIONES EXTERNAS */}

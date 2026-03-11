@@ -14,9 +14,9 @@ const apps = [
     video: "/videos/demo1.mp4"
   },
   {
-    title: "Generador de Perfiles",
+    title: "Aplicaciones Tekla Structures",
     description:
-      "Crea perfiles y elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
+      "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
     video: "/videos/demo2.mp4"
   },
   {

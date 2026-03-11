@@ -85,13 +85,13 @@ export default function HomePage() {
       </div>
 
       <main
-        className="py-24 min-h-screen border-t border-gray-200 bg-gradient-to-b from-gray-50 to-gray-100"
+        className="pt-12 pb-20 min-h-screen border-t border-gray-200 bg-gradient-to-b from-gray-50 to-gray-100"
         role="main"
       >
         <div className="container mx-auto">
 
           {/* HERO PREMIUM */}
-          <section className="reveal text-center max-w-4xl mx-auto mt-40 mb-24 px-6">
+          <section className="reveal text-center max-w-4xl mx-auto mt-32 mb-24 px-6">
 
             {/* Degradado suave detrás del título */}
             <div className="relative inline-block">

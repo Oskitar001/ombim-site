@@ -5,7 +5,7 @@ export const metadata = {
 
 export default function SobreMiPage() {
   return (
-    <section className="py-24 max-w-4xl mx-auto px-6">
+    <section className="py-23 max-w-4xl mx-auto px-6">
       <h1 className="text-4xl font-bold mb-10 text-center">Sobre mí</h1>
 
       <p className="text-gray-700 leading-relaxed mb-6">

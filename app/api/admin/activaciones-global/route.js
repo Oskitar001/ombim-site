@@ -14,7 +14,10 @@ export async function GET() {
 
   if (error) {
     console.error(error);
-    return NextResponse.json({ error: "Error cargando activaciones" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error cargando activaciones" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json(data);

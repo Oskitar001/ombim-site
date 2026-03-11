@@ -5,24 +5,39 @@ export const metadata = {
 
 export default function SobreMiPage() {
   return (
-    <section className="py-24 max-w-4xl mx-auto px-6">
-      <h1 className="text-4xl font-bold mb-10 text-center">Sobre mí</h1>
+    <section className="reveal max-w-4xl mx-auto mt-40 mb-32 px-6 text-center">
 
-      <p className="text-gray-700 leading-relaxed mb-6">
+      {/* TÍTULO PREMIUM */}
+      <div className="relative inline-block">
+        <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 blur-xl rounded-full"></span>
+
+        <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6">
+          Sobre mí
+        </h1>
+      </div>
+
+      {/* LÍNEA TÉCNICA */}
+      <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-12"></div>
+
+      {/* TEXTO ORIGINAL (sin cambios) */}
+      <p className="text-gray-700 leading-relaxed text-lg md:text-xl mb-8">
         Soy <strong>Óscar Martínez</strong>, técnico especialista en Tekla Structures. Durante <strong>23 años</strong> trabajé en <strong>PACADAR (Buñol, Valencia)</strong>, una empresa referente en prefabricado y estructuras. Allí participé en proyectos reales de fabricación, montaje y producción, lo que me dio una visión completa del proceso constructivo.
       </p>
 
-      <p className="text-gray-700 leading-relaxed mb-6">
+      <p className="text-gray-700 leading-relaxed text-lg md:text-xl mb-8">
         Esa experiencia me permite entender no solo el modelo, sino también las necesidades reales de taller y obra.
       </p>
 
-      <p className="text-gray-700 leading-relaxed mb-6">
+      <p className="text-gray-700 leading-relaxed text-lg md:text-xl mb-8">
         Desde hace un año trabajo como <strong>autónomo</strong>, colaborando con empresas que necesitan apoyo técnico fiable, rápido y con experiencia real. Además, me especialicé en <strong>programación para Tekla</strong>, creando plugins y automatizaciones que ahorran horas de trabajo y reducen errores.
       </p>
 
-      <p className="text-gray-700 leading-relaxed">
+      <p className="text-gray-700 leading-relaxed text-lg md:text-xl">
         Mi objetivo es sencillo: <strong>hacer el trabajo más fácil, más rápido y más preciso</strong>.
       </p>
+
+      {/* SEPARADOR PREMIUM */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent mt-20"></div>
     </section>
   );
 }

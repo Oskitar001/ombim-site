@@ -16,8 +16,8 @@ export default function ServiciosPage() {
             <ul className="text-gray-700 space-y-2">
               <li>• Modelado de estructuras metálicas y de hormigón</li>
               <li>• Detallado constructivo</li>
-              <li>• Gestión de revisiones</li>
-              <li>• Coordinación con ingeniería y obra</li>
+              <li>• Colaboracion con Trimble Connect y Tekla Model Sharing</li>
+              <li>• Exportacion planos y modelo a Pdf, Cad e IFC</li>
             </ul>
           </div>
 

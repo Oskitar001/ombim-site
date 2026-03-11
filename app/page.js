@@ -101,6 +101,7 @@ export default function HomePage() {
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
         <a
           href="/contacto"
+          data-scroll-contacto
           className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
         >
           Solicitar demo
@@ -188,8 +189,7 @@ export default function HomePage() {
 
                 <a
                   href="/contacto"
-                  rel="prefetch"
-                  aria-label={`Solicitar demo de ${app.title}`}
+                  data-scroll-contacto
                   className="group inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
                 >
                   Solicitar demo ahora
@@ -202,7 +202,7 @@ export default function HomePage() {
 
                 <a
                   href="/contacto"
-                  rel="prefetch"
+                  data-scroll-contacto
                   className="block mt-3 text-blue-600 text-sm font-medium underline hover:opacity-80"
                 >
                   Ver más detalles →
@@ -233,7 +233,7 @@ export default function HomePage() {
 
             <a
               href="/contacto"
-              rel="prefetch"
+              data-scroll-contacto
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
             >
               Solicitar demo personalizada

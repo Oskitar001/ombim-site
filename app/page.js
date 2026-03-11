@@ -93,7 +93,6 @@ export default function HomePage() {
           {/* HERO PREMIUM */}
           <section className="reveal text-center max-w-4xl mx-auto mt-32 mb-24 px-6">
 
-            {/* Degradado suave detrás del título */}
             <div className="relative inline-block">
               <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 blur-xl rounded-full"></span>
 
@@ -102,10 +101,8 @@ export default function HomePage() {
               </h1>
             </div>
 
-            {/* Línea técnica premium */}
             <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
 
-            {/* Subtítulo mejorado */}
             <p className="text-gray-700 text-xl md:text-2xl leading-relaxed mb-6">
               Más de <strong>20 años de experiencia</strong> en modelado 3D con Tekla Structures,
               aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
@@ -117,7 +114,6 @@ export default function HomePage() {
               que aceleran el flujo BIM y reducen errores.
             </p>
 
-            {/* CTA elegante */}
             <a
               href="/contacto"
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
@@ -138,9 +134,19 @@ export default function HomePage() {
                 role="article"
                 className="reveal bg-white rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100"
               >
-                <div className="overflow-hidden rounded-xl mb-4">
+                {/* VIDEO OPTIMIZADO */}
+                <div className="relative rounded-xl overflow-hidden group mb-4">
+
+                  {/* Poster */}
+                  <img
+                    src="/images/video-placeholder.jpg"
+                    alt={`Poster de ${app.title}`}
+                    className="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-700 group-hover:opacity-0"
+                  />
+
+                  {/* Iframe con fade-in */}
                   <iframe
-                    className="w-full h-[250px] md:h-[200px] lg:h-[180px] xl:h-[200px] rounded-xl"
+                    className="relative w-full aspect-video opacity-0 transition-opacity duration-700 group-hover:opacity-100"
                     src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1&playlist=${app.video.split("/").pop()}`}
                     title={app.title}
                     frameBorder="0"
@@ -177,17 +183,14 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* SOFT CTA */}
           <p className="reveal text-gray-600 text-center mt-24 mb-4">
             ¿Quieres ver ejemplos reales aplicados a proyectos como el tuyo?
           </p>
 
-          {/* SECCIONES EXTERNAS */}
           <AboutSection />
           <TrustSection />
           <TestimonialsSection />
 
-          {/* CTA FINAL */}
           <div className="reveal text-center mt-32">
             <h2 className="text-3xl font-bold mb-4">
               ¿Quieres ver cómo funciona en tu proyecto?

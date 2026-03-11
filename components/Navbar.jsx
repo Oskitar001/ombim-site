@@ -5,11 +5,11 @@ import Link from "next/link";
 export default function Navbar() {
   const [open, setOpen] = useState(false);
 
-  // Scroll suave para enlaces internos
+  // Scroll suave SOLO para el botón de contacto
   useEffect(() => {
     const handler = (e) => {
-      const link = e.target.closest("[data-scroll-contacto]");
-      if (!link) return;
+      const btn = e.target.closest("[data-scroll-contacto]");
+      if (!btn) return; // ← SOLO actuamos si es el botón de contacto
 
       // Si NO estamos en la home → navegación normal
       if (window.location.pathname !== "/") return;

@@ -135,18 +135,9 @@ export default function HomePage() {
                 className="reveal bg-white rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100"
               >
                 {/* VIDEO OPTIMIZADO */}
-                <div className="relative rounded-xl overflow-hidden group mb-4">
-
-                  {/* Poster */}
-                  <img
-                    src="/images/video-placeholder.jpg"
-                    alt={`Poster de ${app.title}`}
-                    className="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-700 group-hover:opacity-0"
-                  />
-
-                  {/* Iframe con fade-in */}
+                <div className="rounded-xl overflow-hidden mb-4">
                   <iframe
-                    className="relative w-full aspect-video opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+                    className="w-full aspect-video opacity-0 animate-fadeIn"
                     src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1&playlist=${app.video.split("/").pop()}`}
                     title={app.title}
                     frameBorder="0"

@@ -6,18 +6,18 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
 
         {/* LOGO + TEXTO (todo clicable) */}
-        <Link href="/" className="flex items-center gap-4">
+        <a href="/" className="flex items-center gap-4 shrink-0">
           <img
             src="/logo-ombim.png"
             alt="OMBIM Logo"
-            className="h-16 w-auto transition-transform duration-300 hover:scale-105 hover:opacity-90"
+            className="h-12 w-auto md:h-16 transition-transform duration-300 hover:scale-105 hover:opacity-90"
           />
-          <span className="text-3xl font-bold">OMBIM</span>
-        </Link>
+          <span className="text-2xl md:text-3xl font-bold">OMBIM</span>
+        </a>
 
         {/* MENÚ */}
         <div className="flex gap-6 text-lg">
-          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
+          <a href="/" className="hover:text-blue-600 transition">Inicio</a>
           <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
           <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>

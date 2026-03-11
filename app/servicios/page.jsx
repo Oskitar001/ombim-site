@@ -37,7 +37,7 @@ export default function ServiciosPage() {
               <li>• Desarrollo de plugins a medida</li>
               <li>• Automatización de tareas repetitivas</li>
               <li>• Generación automática de planos y listados</li>
-              <li>• Herramientas para empresas prefabricadoras ingenierías y constructoras</li>
+              <li>• Herramientas internas para empresas prefabricadoras, ingenierías y constructoras</li>
             </ul>
           </div>
 

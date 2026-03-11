@@ -17,9 +17,9 @@ export default function DemosPage() {
 
         {/* EJEMPLO 1 */}
         <div className="bg-white shadow rounded-xl p-6">
-          <h2 className="text-2xl font-semibold mb-4">Plugin: Generación automática de planos</h2>
+          <h2 className="text-2xl font-semibold mb-4">Plugin: Uniones automáticas de elementos</h2>
           <p className="text-gray-600 mb-4">
-            Herramienta que genera planos de fabricación de forma automática según criterios definidos por el cliente.
+            Herramientas que generan uniones de forma automática según criterios definidos por el cliente.
           </p>
 
           <div className="aspect-video bg-black rounded-lg overflow-hidden">

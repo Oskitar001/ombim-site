@@ -11,19 +11,19 @@ const apps = [
     title: "Automatización",
     description:
       "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
-    video: "/videos/demo1.mp4"
+    video: "https://www.youtube.com/embed/gQp1t5xRz5Q"
   },
   {
     title: "Aplicaciones Tekla Structures",
     description:
       "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
-    video: "/videos/demo2.mp4"
+    video: "https://www.youtube.com/embed/MBL7E9rF2HU"
   },
   {
     title: "Plugin Tekla Structures",
     description:
       "Mejora tu productividad con herramientas integradas directamente en Tekla. Flujo de trabajo más ágil y profesional.",
-    video: "/videos/demo3.mp4"
+    video: "https://www.youtube.com/embed/9HiQz_x9UCU"
   }
 ];
 
@@ -139,21 +139,14 @@ export default function HomePage() {
                 className="reveal bg-white rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100"
               >
                 <div className="overflow-hidden rounded-xl mb-4">
-                  <video
-                    aria-label={`Demostración del software ${app.title}`}
-                    className="w-full rounded-xl transform hover:scale-[1.02] transition-transform duration-500"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="none"
-                    loading="lazy"
-                    width="800"
-                    height="450"
-                    poster="/images/video-placeholder.jpg"
-                  >
-                    <source src={app.video} type="video/mp4" />
-                  </video>
+                  <iframe
+                    className="w-full h-[250px] md:h-[200px] lg:h-[180px] xl:h-[200px] rounded-xl"
+                    src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1&playlist=${app.video.split("/").pop()}`}
+                    title={app.title}
+                    frameBorder="0"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  ></iframe>
                 </div>
 
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">

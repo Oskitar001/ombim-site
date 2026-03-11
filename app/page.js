@@ -98,7 +98,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-gray-700 text-xl md:text-2xl leading-relaxed mb-6">
-              Más de <strong>1000 proyectos de modelado 3D</strong> realizados con Tekla Structures,
+              Más de <strong>20 años de experiencia</strong> en modelado 3D con Tekla Structures,
               aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
             </p>
 

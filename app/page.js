@@ -90,23 +90,41 @@ export default function HomePage() {
       >
         <div className="container mx-auto">
 
-          {/* HERO ULTRA-FINO */}
-          <section className="reveal text-center max-w-4xl mx-auto mt-36 mb-20 px-6">
+          {/* HERO PREMIUM */}
+          <section className="reveal text-center max-w-4xl mx-auto mt-40 mb-24 px-6">
 
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8">
-              Modelado 3D & Software para Tekla Structures
-            </h1>
+            {/* Degradado suave detrás del título */}
+            <div className="relative inline-block">
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 blur-xl rounded-full"></span>
 
+              <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6">
+                Modelado 3D & Software para Tekla Structures
+              </h1>
+            </div>
+
+            {/* Línea técnica premium */}
+            <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
+
+            {/* Subtítulo mejorado */}
             <p className="text-gray-700 text-xl md:text-2xl leading-relaxed mb-6">
               Más de <strong>20 años de experiencia</strong> en modelado 3D con Tekla Structures,
               aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
             </p>
 
-            <p className="text-gray-700 text-lg md:text-xl leading-relaxed">
+            <p className="text-gray-700 text-lg md:text-xl leading-relaxed mb-10">
               Además, más de <strong>100 proyectos</strong> han sido optimizados con
               <strong> software propio</strong>: plugins, automatizaciones, macros y herramientas avanzadas
               que aceleran el flujo BIM y reducen errores.
             </p>
+
+            {/* CTA elegante */}
+            <a
+              href="/#contacto"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
+            >
+              Solicitar demo personalizada
+              <span className="text-2xl">→</span>
+            </a>
 
           </section>
 

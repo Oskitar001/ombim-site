@@ -5,11 +5,9 @@ export const metadata = {
 
 export default function ServiciosPage() {
   return (
-    <section className="bg-gray-100 px-6 mt-40 mb-32">
+    <section className="bg-gray-100 px-6 mt-20 mb-32">
 
       <div className="max-w-5xl mx-auto text-center">
-
-        {/* TÍTULO PREMIUM */}
         <div className="relative inline-block">
           <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 blur-xl rounded-full"></span>
 
@@ -18,12 +16,9 @@ export default function ServiciosPage() {
           </h1>
         </div>
 
-        {/* LÍNEA TÉCNICA */}
         <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-16"></div>
-
       </div>
 
-      {/* GRID DE SERVICIOS */}
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
 
         <div className="p-8 bg-white rounded-2xl shadow-soft hover:shadow-xl transition-all duration-300 border border-gray-200">
@@ -76,9 +71,7 @@ export default function ServiciosPage() {
 
       </div>
 
-      {/* SEPARADOR PREMIUM */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent mt-24"></div>
-
     </section>
   );
 }

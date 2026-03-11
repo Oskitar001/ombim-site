@@ -5,9 +5,8 @@ export const metadata = {
 
 export default function ContactoPage() {
   return (
-    <section className="max-w-4xl mx-auto px-6 mt-40 mb-32">
+    <section className="max-w-4xl mx-auto px-6 mt-20 mb-32">
 
-      {/* TÍTULO PREMIUM */}
       <div className="text-center mb-16">
         <div className="relative inline-block">
           <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 blur-xl rounded-full"></span>
@@ -17,17 +16,14 @@ export default function ContactoPage() {
           </h1>
         </div>
 
-        {/* LÍNEA TÉCNICA */}
         <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
 
-        {/* TEXTO ORIGINAL */}
         <p className="text-center text-gray-700 text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
           ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
           Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
         </p>
       </div>
 
-      {/* FORMULARIO PREMIUM */}
       <form
         method="POST"
         action="/api/contact"
@@ -65,7 +61,6 @@ export default function ContactoPage() {
         </button>
       </form>
 
-      {/* SEPARADOR PREMIUM */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 to-transparent mt-20"></div>
     </section>
   );

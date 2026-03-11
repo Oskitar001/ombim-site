@@ -74,10 +74,33 @@ export default function HomePage() {
         `}
       </Script>
 
+      {/* Scroll suave para CTA */}
+      <Script id="smooth-cta" strategy="afterInteractive">
+        {`
+          document.addEventListener("click", function(e) {
+            const btn = e.target.closest("[data-scroll-contacto]");
+            if (!btn) return;
+
+            // Si NO estamos en la home → navegación normal
+            if (window.location.pathname !== "/") return;
+
+            e.preventDefault();
+            const target = document.querySelector("#contacto");
+
+            if (target) {
+              window.scrollTo({
+                top: target.offsetTop - 80,
+                behavior: "smooth"
+              });
+            }
+          });
+        `}
+      </Script>
+
       {/* Sticky CTA (mobile only) */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
         <a
-          href="/#contacto"
+          href="/contacto"
           className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
         >
           Solicitar demo
@@ -117,9 +140,10 @@ export default function HomePage() {
               que aceleran el flujo BIM y reducen errores.
             </p>
 
-            {/* CTA elegante */}
+            {/* CTA elegante — CORREGIDO + SCROLL SUAVE */}
             <a
-              href="/#contacto"
+              href="/contacto"
+              data-scroll-contacto
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
             >
               Solicitar demo personalizada
@@ -163,7 +187,7 @@ export default function HomePage() {
                 <p className="text-gray-600 mb-4">{app.description}</p>
 
                 <a
-                  href="/#contacto"
+                  href="/contacto"
                   rel="prefetch"
                   aria-label={`Solicitar demo de ${app.title}`}
                   className="group inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
@@ -177,7 +201,7 @@ export default function HomePage() {
                 <p className="text-xs text-gray-500 mt-1">Respuesta en menos de 24h</p>
 
                 <a
-                  href="/#contacto"
+                  href="/contacto"
                   rel="prefetch"
                   className="block mt-3 text-blue-600 text-sm font-medium underline hover:opacity-80"
                 >
@@ -208,7 +232,7 @@ export default function HomePage() {
             </p>
 
             <a
-              href="/#contacto"
+              href="/contacto"
               rel="prefetch"
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
             >

@@ -1,35 +1,47 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabase";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 export async function POST(req) {
-  const { email, password } = await req.json();
+  try {
+    const { email, password } = await req.json();
 
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("*")
-    .eq("email", email)
-    .limit(1);
+    // 1. Buscar admin en Supabase
+    const { data: user, error } = await supabase
+      .from("admins")
+      .select("*")
+      .eq("email", email)
+      .single();
 
-  if (!admin || admin.length === 0) {
-    return NextResponse.json({ ok: false });
+    if (error || !user) {
+      return NextResponse.json(
+        { error: "Credenciales incorrectas" },
+        { status: 401 }
+      );
+    }
+
+    // 2. Comparar contraseña con bcrypt
+    const valid = await bcrypt.compare(password, user.password);
+
+    if (!valid) {
+      return NextResponse.json(
+        { error: "Credenciales incorrectas" },
+        { status: 401 }
+      );
+    }
+
+    // 3. Login correcto
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Error en login:", err);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
   }
-
-  const valido = await bcrypt.compare(password, admin[0].password);
-
-  if (!valido) {
-    return NextResponse.json({ ok: false });
-  }
-
-  const res = NextResponse.json({ ok: true });
-
-  res.cookies.set("admin_session", "true", {
-    httpOnly: true,
-    path: "/",
-    maxAge: 60 * 60 * 24,
-  });
-
-  return res;
 }

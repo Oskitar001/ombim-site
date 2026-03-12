@@ -5,7 +5,6 @@ export async function GET() {
 
   res.cookies.set("admin_session", "", {
     httpOnly: true,
-    secure: true,
     path: "/",
     maxAge: 0,
   });

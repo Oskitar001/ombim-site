@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+export const dynamic = "force-dynamic";
 
+export default async function Page() {
+  const data = await fetch(`${process.env.NEXT_PUBLIC_DOMAIN}/api/admin/logs`)
+    .then(r => r.json());
 
-export async function GET() {
-  const { data, error } = await supabase
-    .from("logs")
-    .select("*")
-    .order("id", { ascending: false });
-
-  return NextResponse.json(data || []);
+  return (
+    <div>
+      <h1>Logs</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
 }

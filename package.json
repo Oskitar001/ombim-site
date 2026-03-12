@@ -20,7 +20,8 @@
     "nodemailer": "^8.0.2",
     "react": "latest",
     "react-dom": "latest",
-    "resend": "^6.9.3"
+    "resend": "^6.9.3",
+    "stripe": "^20.4.1"
   },
   "devDependencies": {
     "autoprefixer": "latest",

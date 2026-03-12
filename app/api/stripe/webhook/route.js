@@ -7,19 +7,19 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export async function POST() {
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price: process.env.STRIPE_PRICE_ID,
-        quantity: 1,
-      },
-    ],
-    success_url: `${process.env.NEXT_PUBLIC_DOMAIN}/success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_DOMAIN}/cancel`,
-  });
+export async function POST(req) {
+  try {
+    const body = await req.text();
+    const sig = req.headers.get("stripe-signature");
 
-  return NextResponse.json({ url: session.url });
+    const event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 }

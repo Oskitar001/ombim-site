@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="mt-32 bg-gray-900 text-gray-300 py-14">
@@ -16,11 +18,11 @@ export default function Footer() {
         <div>
           <h4 className="text-lg font-semibold text-black mb-4">Navegación</h4>
           <ul className="space-y-2">
-            <li><a href="/" className="hover:text-black transition">Inicio</a></li>
-            <li><a href="/sobre-mi" className="hover:text-black transition">Sobre mí</a></li>
-            <li><a href="/servicios" className="hover:text-black transition">Servicios</a></li>
-            <li><a href="/demos" className="hover:text-black transition">Demos</a></li>
-            <li><a href="/contacto" className="hover:text-black transition">Contacto</a></li>
+            <li><Link href="/" className="hover:text-black transition">Inicio</Link></li>
+            <li><Link href="/sobre-mi" className="hover:text-black transition">Sobre mí</Link></li>
+            <li><Link href="/servicios" className="hover:text-black transition">Servicios</Link></li>
+            <li><Link href="/demos" className="hover:text-black transition">Demos</Link></li>
+            <li><Link href="/contacto" className="hover:text-black transition">Contacto</Link></li>
           </ul>
         </div>
 
@@ -68,7 +70,7 @@ export default function Footer() {
               </svg>
             </a>
 
-            {/* WhatsApp con animación de latido */}
+            {/* WhatsApp */}
             <a
               href="https://wa.me/34682288465"
               target="_blank"

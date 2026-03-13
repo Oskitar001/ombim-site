@@ -1,18 +1,13 @@
-import "./globals.css";
-import { Toaster } from "react-hot-toast";
-
+// app/layout.js
 export const metadata = {
   title: "OMBIM",
-  description: "Modelado 3D, automatizaciones y software para Tekla Structures"
+  description: "Modelado 3D y software para Tekla Structures"
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body>
-        {children}
-        <Toaster position="top-right" />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

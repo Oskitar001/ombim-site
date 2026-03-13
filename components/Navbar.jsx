@@ -6,7 +6,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
 
-  // Detectar si hay usuario logueado (puedes adaptar esto a tu sistema real)
+  // Detectar si hay usuario logueado (cliente)
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -22,7 +22,7 @@ export default function Navbar() {
     <nav className="w-full py-4 bg-white shadow fixed top-0 left-0 z-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
 
-        {/* LOGO + TEXTO */}
+        {/* LOGO */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
           <img
             src="/logo-ombim.png"
@@ -52,7 +52,7 @@ export default function Navbar() {
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
           <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
 
-          {/* USUARIO LOGUEADO */}
+          {/* USUARIO LOGUEADO (CLIENTE) */}
           {user ? (
             <div className="relative group">
               <button className="flex items-center gap-2 hover:text-blue-600 transition">
@@ -64,7 +64,7 @@ export default function Navbar() {
 
               {/* DROPDOWN */}
               <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg p-3 w-40 hidden group-hover:block">
-                <Link href="/admin" className="block px-3 py-2 hover:bg-gray-100 rounded">
+                <Link href="/panel" className="block px-3 py-2 hover:bg-gray-100 rounded">
                   Panel
                 </Link>
                 <button
@@ -76,9 +76,9 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            /* BOTÓN ACCESO DESTACADO */
+            /* BOTÓN ACCESO (CLIENTE) */
             <Link
-              href="/admin/login"
+              href="/acceso"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
             >
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* MENÚ MÓVIL DESPLEGABLE */}
+      {/* MENÚ MÓVIL */}
       {open && (
         <div className="md:hidden bg-white shadow-lg px-6 py-4 flex flex-col gap-4 text-lg">
           <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
@@ -102,14 +102,14 @@ export default function Navbar() {
           {/* MÓVIL: USUARIO LOGUEADO */}
           {user ? (
             <>
-              <Link href="/admin" className="hover:text-blue-600 transition">Panel</Link>
+              <Link href="/panel" className="hover:text-blue-600 transition">Panel</Link>
               <button onClick={logout} className="text-left hover:text-blue-600 transition">
                 Cerrar sesión
               </button>
             </>
           ) : (
             <Link
-              href="/admin/login"
+              href="/acceso"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
             >
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">

@@ -3,36 +3,54 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AdminLoginPage() {
+export default function ClienteAccesoPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [nombre, setNombre] = useState("");
   const [error, setError] = useState("");
 
-  const onSubmit = async (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
     setError("");
 
-    // Aquí deberías llamar a tu API real de login admin.
-    // De momento, simulamos un login sencillo:
-    if (email === "admin@ombim.com" && password === "admin") {
-      // Cookie simple de ejemplo (idealmente: HttpOnly desde el servidor)
-      document.cookie = `admin_token=ok; path=/; max-age=86400`;
-
-      router.push("/admin");
-    } else {
-      setError("Credenciales incorrectas");
+    if (!email) {
+      setError("El email es obligatorio");
+      return;
     }
+
+    // Aquí podrías validar contra tu backend.
+    // De momento, guardamos un usuario simple en localStorage:
+    const user = {
+      email,
+      name: nombre || "Usuario"
+    };
+
+    localStorage.setItem("user", JSON.stringify(user));
+
+    router.push("/panel");
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100">
+    <main className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-8">
         <h1 className="text-2xl font-bold mb-6 text-center">
-          Acceso administración
+          Acceso clientes
         </h1>
 
         <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Nombre
+            </label>
+            <input
+              type="text"
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Tu nombre"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-1">
               Email
@@ -42,20 +60,7 @@ export default function AdminLoginPage() {
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@ombim.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="tu@correo.com"
             />
           </div>
 
@@ -67,7 +72,7 @@ export default function AdminLoginPage() {
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
           >
-            Entrar al panel
+            Entrar al panel de cliente
           </button>
         </form>
       </div>

@@ -1,12 +1,12 @@
+// app/api/admin/logout/route.js
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const res = NextResponse.redirect("/admin/login");
+  const res = NextResponse.json({ ok: true });
 
-  res.cookies.set("admin_session", "", {
-    httpOnly: true,
+  res.cookies.set("admin_token", "", {
     path: "/",
-    maxAge: 0,
+    expires: new Date(0)
   });
 
   return res;

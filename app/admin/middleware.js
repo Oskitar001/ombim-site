@@ -1,19 +1,18 @@
+// middleware.js
 import { NextResponse } from "next/server";
 
 export function middleware(req) {
-  const url = req.nextUrl.pathname;
+  const token = req.cookies.get("admin_token")?.value;
 
-  if (url.startsWith("/admin") && !url.startsWith("/admin/login")) {
-    const session = req.cookies.get("admin_session");
+  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
 
-    if (!session) {
-      return NextResponse.redirect(new URL("/admin/login", req.url));
-    }
+  if (isAdminRoute && !token && !req.nextUrl.pathname.includes("/admin/login")) {
+    return NextResponse.redirect(new URL("/admin/login", req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*"]
 };

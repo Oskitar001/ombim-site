@@ -3,7 +3,7 @@ import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "OMBIM",
-  description: "Página web de OMBIM"
+  description: "Modelado 3D, automatizaciones y software para Tekla Structures"
 };
 
 export default function RootLayout({ children }) {

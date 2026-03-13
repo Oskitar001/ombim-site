@@ -1,10 +1,10 @@
-// app/page.jsx
+"use client";
 import Script from "next/script";
 
 // Secciones externas
-import AboutSection from "../components/AboutSection";
-import TrustSection from "../components/TrustSection";
-import TestimonialsSection from "../components/TestimonialsSection";
+import AboutSection from "../../components/AboutSection";
+import TrustSection from "../../components/TrustSection";
+import TestimonialsSection from "../../components/TestimonialsSection";
 
 const apps = [
   {
@@ -134,7 +134,6 @@ export default function HomePage() {
                 role="article"
                 className="reveal bg-white rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100"
               >
-                {/* VIDEO SIEMPRE VISIBLE */}
                 <div className="rounded-xl overflow-hidden mb-4">
                   <iframe
                     className="w-full aspect-video"

@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     email: "",
     password: ""
@@ -33,7 +36,9 @@ export default function LoginPage() {
 
     if (!validate()) return;
 
-    const storedUser = localStorage.getItem("user");
+    const storedUser = typeof window !== "undefined"
+      ? localStorage.getItem("user")
+      : null;
 
     if (!storedUser) {
       setErrors({ general: "No existe ninguna cuenta con ese email." });
@@ -55,8 +60,8 @@ export default function LoginPage() {
     setSuccess("Acceso correcto. Redirigiendo...");
 
     setTimeout(() => {
-      window.location.href = "/";
-    }, 1500);
+      router.push("/");
+    }, 1000);
   };
 
   return (

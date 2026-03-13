@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -45,17 +48,19 @@ export default function RegisterPage() {
 
     if (!validate()) return;
 
-    const newUser = {
-      name: form.name,
-      email: form.email
-    };
+    if (typeof window !== "undefined") {
+      const newUser = {
+        name: form.name,
+        email: form.email
+      };
+      localStorage.setItem("user", JSON.stringify(newUser));
+    }
 
-    localStorage.setItem("user", JSON.stringify(newUser));
     setSuccess("Registro completado. Redirigiendo...");
 
     setTimeout(() => {
-      window.location.href = "/";
-    }, 1500);
+      router.push("/");
+    }, 1000);
   };
 
   return (

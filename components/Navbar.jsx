@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -14,7 +16,7 @@ export default function Navbar() {
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    window.location.href = "/";
+    router.push("/");   // ← SOLUCIÓN REAL
   };
 
   return (
@@ -74,7 +76,6 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            /* BOTÓN INICIA SESIÓN O REGÍSTRATE */
             <Link
               href="/acceso"
               className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2"

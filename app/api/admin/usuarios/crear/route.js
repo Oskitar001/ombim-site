@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabase } from "../../../../../lib/supabase";
-import bcrypt from "bcryptjs";
 
 export async function POST(req) {
   const { email, password, dias, maxDisp } = await req.json();
 
-  const hash = await bcrypt.hash(password, 10);
+  // Guardar contraseña en texto plano
+  const hash = password;
 
   const fecha = new Date();
   fecha.setDate(fecha.getDate() + Number(dias));

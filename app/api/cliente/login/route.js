@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export async function POST(req) {
@@ -19,8 +18,8 @@ export async function POST(req) {
     return NextResponse.json({ ok: false });
   }
 
-  // Verificar contraseña
-  const valid = await bcrypt.compare(password, user.password_hash);
+  // Verificar contraseña en texto plano
+  const valid = password === user.password_hash;
   if (!valid) {
     return NextResponse.json({ ok: false });
   }

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabase } from "../../../../../../lib/supabase";
-import bcrypt from "bcryptjs";
 
 export async function POST(req, { params }) {
   const { id } = params;
@@ -13,9 +12,9 @@ export async function POST(req, { params }) {
     max_dispositivos: Number(maxDisp),
   };
 
+  // Si el admin cambia la contraseña → guardar en texto plano
   if (password && password.trim() !== "") {
-    const hash = await bcrypt.hash(password, 10);
-    updateData.password = hash;
+    updateData.password = password;
   }
 
   await supabase.from("usuarios").update(updateData).eq("id", id);

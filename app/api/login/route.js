@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import bcrypt from "bcryptjs";
 
 export async function POST(req) {
   const { email, password, hardware_id } = await req.json();
@@ -25,8 +24,8 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: "Usuario suspendido" });
   }
 
-  // Validar contraseña
-  const valid = await bcrypt.compare(password, user.password_hash);
+  // Validar contraseña en texto plano
+  const valid = password === user.password_hash;
   if (!valid) {
     return NextResponse.json({ ok: false, error: "Contraseña incorrecta" });
   }
@@ -60,7 +59,7 @@ export async function POST(req) {
       .eq("id", existe.id);
   }
 
-  // Crear token simple (puedes mejorar esto)
+  // Crear token simple
   const token = Buffer.from(`${user.id}:${Date.now()}`).toString("base64");
 
   // Guardar log

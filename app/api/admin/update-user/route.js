@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 
@@ -26,9 +25,9 @@ export async function POST(req) {
       fecha_expiracion: expiracion,
     };
 
+    // Si el admin cambia la contraseña → guardar en texto plano
     if (password && password.trim() !== "") {
-      const password_hash = await bcrypt.hash(password, 10);
-      updateData.password_hash = password_hash;
+      updateData.password_hash = password;
     }
 
     const { error } = await supabase

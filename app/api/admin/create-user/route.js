@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 
@@ -17,7 +16,8 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: "El email ya existe" });
   }
 
-  const password_hash = await bcrypt.hash(password, 10);
+  // Guardar contraseña en texto plano
+  const password_hash = password;
 
   const { error } = await supabase.from("usuarios").insert({
     email,

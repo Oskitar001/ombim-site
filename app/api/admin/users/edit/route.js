@@ -1,7 +1,6 @@
 // app/api/admin/users/edit/route.js
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import bcrypt from "bcryptjs";
 
 export async function POST(req) {
   const { id, email, estado, max_dispositivos, nueva_password } =
@@ -18,8 +17,9 @@ export async function POST(req) {
     max_dispositivos
   };
 
+  // Si hay nueva contraseña, la guardamos tal cual (sin hash)
   if (nueva_password && nueva_password.trim() !== "") {
-    updateData.password = bcrypt.hashSync(nueva_password, 10);
+    updateData.password = nueva_password;
   }
 
   const { error } = await supabase

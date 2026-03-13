@@ -1,4 +1,3 @@
-// app/admin/dispositivos/page.jsx
 "use client";
 import { useEffect, useState } from "react";
 
@@ -6,10 +5,17 @@ export default function DispositivosPage() {
   const [dispositivos, setDispositivos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [usuarioId, setUsuarioId] = useState(null);
 
-  const usuarioId = new URLSearchParams(window.location.search).get("usuario");
+  // Obtener usuarioId desde la URL (solo en cliente)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("usuario");
+    setUsuarioId(id);
+  }, []);
 
   async function cargar() {
+    if (!usuarioId) return; // evitar cargar antes de tener el ID
+
     const res = await fetch(
       `/api/admin/devices?usuario=${usuarioId}&q=${busqueda}`
     );
@@ -32,7 +38,7 @@ export default function DispositivosPage() {
 
   useEffect(() => {
     cargar();
-  }, [busqueda]);
+  }, [busqueda, usuarioId]);
 
   return (
     <div>

@@ -1,15 +1,22 @@
-// app/admin/usuarios/editar/page.jsx
 "use client";
+
 import { useEffect, useState } from "react";
 
 export default function EditarUsuario() {
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mensaje, setMensaje] = useState("");
+  const [id, setId] = useState(null);
 
-  const id = new URLSearchParams(window.location.search).get("id");
+  // Obtener ID desde la URL (solo en cliente)
+  useEffect(() => {
+    const userId = new URLSearchParams(window.location.search).get("id");
+    setId(userId);
+  }, []);
 
   async function cargar() {
+    if (!id) return;
+
     const res = await fetch(`/api/admin/users/get?id=${id}`);
     const data = await res.json();
     setUsuario(data.usuario);
@@ -35,9 +42,10 @@ export default function EditarUsuario() {
     }
   }
 
+  // Cargar usuario cuando tengamos el ID
   useEffect(() => {
     cargar();
-  }, []);
+  }, [id]);
 
   if (loading || !usuario) {
     return <p className="text-neutral-400">Cargando usuario...</p>;

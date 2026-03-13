@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -25,10 +24,8 @@ export async function POST(req) {
       );
     }
 
-    // 2. Comparar contraseña con bcrypt
-    const valid = await bcrypt.compare(password, user.password);
-
-    if (!valid) {
+    // 2. Comparar contraseña en texto plano
+    if (password !== user.password) {
       return NextResponse.json(
         { error: "Credenciales incorrectas" },
         { status: 401 }

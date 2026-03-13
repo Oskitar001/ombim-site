@@ -9,14 +9,16 @@ export async function GET(req) {
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY,
     {
-      auth: {
-        persistSession: false
-      }
+      auth: { persistSession: false }
     }
   );
 
-  let query = supabase.from("usuarios").select("*");
+  // Seleccionamos solo los campos seguros
+  let query = supabase
+    .from("usuarios")
+    .select("id, email, estado, fecha_expiracion, role, max_dispositivos");
 
+  // Filtro por email
   if (q.trim() !== "") {
     query = query.ilike("email", `%${q}%`);
   }

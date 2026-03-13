@@ -11,13 +11,31 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_KEY
   );
 
-  let query = supabase.from("logs").select("*").eq("usuario_id", usuario);
+  let query = supabase
+    .from("logs")
+    .select(`
+      id,
+      usuario_id,
+      accion,
+      ip,
+      fecha,
+      usuarios (
+        email,
+        estado,
+        fecha_expiracion
+      )
+    `)
+    .eq("usuario_id", usuario);
 
   if (q.trim() !== "") {
     query = query.ilike("accion", `%${q}%`);
   }
 
-  const { data } = await query.order("id", { ascending: true });
+  const { data, error } = await query.order("fecha", { ascending: false });
 
-  return NextResponse.json({ logs: data });
+  if (error) {
+    return NextResponse.json({ ok: false, error: error.message });
+  }
+
+  return NextResponse.json({ ok: true, logs: data });
 }

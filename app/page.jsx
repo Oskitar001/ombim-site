@@ -1,4 +1,4 @@
-// app/page.js
+// app/page.jsx
 import Script from "next/script";
 
 // Secciones externas

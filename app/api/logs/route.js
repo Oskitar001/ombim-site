@@ -6,7 +6,7 @@ export async function POST(req) {
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   await supabase.from("logs").insert({

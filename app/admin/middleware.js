@@ -1,18 +1,31 @@
-// middleware.js
 import { NextResponse } from "next/server";
 
 export function middleware(req) {
-  const token = req.cookies.get("admin_token")?.value;
+  const { nextUrl, cookies } = req;
+  const { pathname, search } = nextUrl;
 
-  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
+  // Rutas protegidas
+  const isProtected = pathname.startsWith("/app/sfmn");
 
-  if (isAdminRoute && !token && !req.nextUrl.pathname.includes("/admin/login")) {
-    return NextResponse.redirect(new URL("/admin/login", req.url));
+  // Excepciones
+  const isLoginPage = pathname === "/app/sfmn/login";
+  const isPublicAsset =
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/static") ||
+    pathname.startsWith("/images") ||
+    pathname.endsWith(".ico") ||
+    pathname.endsWith(".png") ||
+    pathname.endsWith(".jpg") ||
+    pathname.endsWith(".svg");
+
+  if (!isProtected || isLoginPage || isPublicAsset) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ["/admin/:path*"]
-};
+  // Comprobar cookie
+  const token = cookies.get("admin_token")?.value;
+  if (!token) {
+    const loginUrl = nextUrl.clone();
+    loginUrl.pathname = "/app/sfmn/login";
+    const nextTarget = pathname + (search || "");
+    loginUrl.searchParams.set("next", nextTarget);

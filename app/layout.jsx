@@ -10,11 +10,13 @@ export default function EditarUsuario() {
   const [saving, setSaving] = useState(false);
   const [id, setId] = useState(null);
 
+  // Obtener ID desde la URL
   useEffect(() => {
     const userId = new URLSearchParams(window.location.search).get("id");
     setId(userId);
   }, []);
 
+  // Cargar datos del usuario
   async function cargar() {
     if (!id) return;
 
@@ -39,6 +41,7 @@ export default function EditarUsuario() {
     cargar();
   }, [id]);
 
+  // Guardar cambios
   async function guardar(e) {
     e.preventDefault();
     setSaving(true);
@@ -85,6 +88,7 @@ export default function EditarUsuario() {
         onSubmit={guardar}
         className="space-y-5 bg-white dark:bg-neutral-950 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-800"
       >
+        {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email
@@ -97,6 +101,7 @@ export default function EditarUsuario() {
           />
         </div>
 
+        {/* Máx dispositivos */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Máx. dispositivos
@@ -112,6 +117,7 @@ export default function EditarUsuario() {
           />
         </div>
 
+        {/* Estado */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Estado
@@ -126,6 +132,7 @@ export default function EditarUsuario() {
           </select>
         </div>
 
+        {/* Nueva contraseña */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Nueva contraseña (opcional)
@@ -140,6 +147,7 @@ export default function EditarUsuario() {
           />
         </div>
 
+        {/* Botón */}
         <button
           type="submit"
           disabled={saving}

@@ -78,7 +78,7 @@ export default function HomePage() {
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
         <a
           href="/contacto"
-          className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
+          className="bg-blue-600 text-black px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
         >
           Solicitar demo
         </a>
@@ -116,7 +116,7 @@ export default function HomePage() {
 
             <a
               href="/contacto"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
+              className="inline-flex items-center gap-2 bg-blue-600 text-black px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
             >
               Solicitar demo personalizada
               <span className="text-2xl">→</span>
@@ -154,7 +154,7 @@ export default function HomePage() {
 
                 <a
                   href="/contacto"
-                  className="group inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+                  className="group inline-flex items-center gap-2 bg-blue-600 text-black px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
                 >
                   Solicitar demo ahora
                   <span className="text-base transform transition-transform duration-300 group-hover:translate-x-1">
@@ -193,7 +193,7 @@ export default function HomePage() {
 
             <a
               href="/contacto"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+              className="inline-flex items-center gap-2 bg-blue-600 text-black px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
             >
               Solicitar demo personalizada
               <span className="text-xl">→</span>

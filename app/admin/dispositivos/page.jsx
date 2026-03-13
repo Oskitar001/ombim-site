@@ -47,7 +47,7 @@ export default function DispositivosPage() {
       <input
         type="text"
         placeholder="Buscar hardware ID..."
-        className="mb-6 w-full max-w-md p-3 rounded bg-neutral-800 text-white"
+        className="mb-6 w-full max-w-md p-3 rounded bg-white text-black"
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
       />

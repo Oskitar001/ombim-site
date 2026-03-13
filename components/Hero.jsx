@@ -16,7 +16,7 @@ export default function Hero() {
       <div className="flex justify-center gap-4">
         <a
           href="#contacto"
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+          className="px-6 py-3 bg-blue-600 text-black rounded-lg font-semibold hover:bg-blue-700 transition"
         >
           Contactar
         </a>

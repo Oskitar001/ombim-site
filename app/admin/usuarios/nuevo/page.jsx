@@ -42,7 +42,7 @@ export default function NuevoUsuario() {
         <input
           type="email"
           placeholder="Email"
-          className="w-full p-3 rounded bg-neutral-800 text-white"
+          className="w-full p-3 rounded bg-white text-black"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -51,7 +51,7 @@ export default function NuevoUsuario() {
         <input
           type="password"
           placeholder="Contraseña"
-          className="w-full p-3 rounded bg-neutral-800 text-white"
+          className="w-full p-3 rounded bg-white text-black"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -60,7 +60,7 @@ export default function NuevoUsuario() {
         <input
           type="number"
           placeholder="Máx. dispositivos"
-          className="w-full p-3 rounded bg-neutral-800 text-white"
+          className="w-full p-3 rounded bg-white text-black"
           value={maxDispositivos}
           onChange={(e) => setMaxDispositivos(e.target.value)}
           min="1"

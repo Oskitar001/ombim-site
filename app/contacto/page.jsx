@@ -55,7 +55,7 @@ export default function ContactoPage() {
 
         <button
           type="submit"
-          className="px-6 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95"
+          className="px-6 py-4 bg-blue-600 text-black rounded-xl font-semibold text-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95"
         >
           Enviar mensaje
         </button>

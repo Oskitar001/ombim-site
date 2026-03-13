@@ -37,7 +37,7 @@ export default function LogsPage() {
       <input
         type="text"
         placeholder="Buscar..."
-        className="mb-6 w-full max-w-md p-3 rounded bg-neutral-800 text-white"
+        className="mb-6 w-full max-w-md p-3 rounded bg-white text-black"
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
       />

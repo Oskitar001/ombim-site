@@ -16,7 +16,7 @@ export default function ComprarPage() {
 
       <button
         onClick={comprar}
-        className="px-6 py-3 bg-blue-600 text-white rounded text-lg"
+        className="px-6 py-3 bg-blue-600 text-black rounded text-lg"
       >
         Comprar ahora
       </button>

@@ -5,7 +5,7 @@ export default function Footer() {
 
         {/* LOGO + DESCRIPCIÓN */}
         <div>
-          <h3 className="text-2xl font-bold text-white mb-3">OMBIM</h3>
+          <h3 className="text-2xl font-bold text-black mb-3">OMBIM</h3>
           <p className="text-gray-400 leading-relaxed">
             Modelado 3D, automatizaciones, plugins y software a medida para Tekla Structures.
             Aceleramos tu flujo BIM con soluciones profesionales.
@@ -14,24 +14,24 @@ export default function Footer() {
 
         {/* ENLACES RÁPIDOS */}
         <div>
-          <h4 className="text-lg font-semibold text-white mb-4">Navegación</h4>
+          <h4 className="text-lg font-semibold text-black mb-4">Navegación</h4>
           <ul className="space-y-2">
-            <li><a href="/" className="hover:text-white transition">Inicio</a></li>
-            <li><a href="/sobre-mi" className="hover:text-white transition">Sobre mí</a></li>
-            <li><a href="/servicios" className="hover:text-white transition">Servicios</a></li>
-            <li><a href="/demos" className="hover:text-white transition">Demos</a></li>
-            <li><a href="/contacto" className="hover:text-white transition">Contacto</a></li>
+            <li><a href="/" className="hover:text-black transition">Inicio</a></li>
+            <li><a href="/sobre-mi" className="hover:text-black transition">Sobre mí</a></li>
+            <li><a href="/servicios" className="hover:text-black transition">Servicios</a></li>
+            <li><a href="/demos" className="hover:text-black transition">Demos</a></li>
+            <li><a href="/contacto" className="hover:text-black transition">Contacto</a></li>
           </ul>
         </div>
 
         {/* CONTACTO */}
         <div>
-          <h4 className="text-lg font-semibold text-white mb-4">Contacto</h4>
+          <h4 className="text-lg font-semibold text-black mb-4">Contacto</h4>
           <ul className="space-y-2">
             <li>
               <a
                 href="mailto:o.martinez@ombim.com"
-                className="text-gray-400 hover:text-white transition"
+                className="text-gray-400 hover:text-black transition"
               >
                 📧 o.martinez@ombim.com
               </a>
@@ -61,7 +61,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub"
-              className="transition text-gray-400 hover:text-white"
+              className="transition text-gray-400 hover:text-black"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.1 3.29 9.43 7.86 10.96.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.55-3.87-1.55-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.1-.75.4-1.27.72-1.56-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.3 1.2-3.11-.12-.3-.52-1.52.11-3.17 0 0 .97-.31 3.18 1.19a11.1 11.1 0 0 1 5.8 0c2.2-1.5 3.17-1.19 3.17-1.19.63 1.65.23 2.87.11 3.17.75.81 1.2 1.85 1.2 3.11 0 4.43-2.69 5.4-5.25 5.68.41.36.77 1.08.77 2.18v3.23c0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/>

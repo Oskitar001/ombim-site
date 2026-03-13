@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         />
 
         <button
-          className="w-full bg-blue-600 text-white py-2 rounded"
+          className="w-full bg-blue-600 text-black py-2 rounded"
           onClick={login}
         >
           Entrar

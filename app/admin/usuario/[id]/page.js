@@ -34,7 +34,7 @@ export default function UsuarioDetalle({ params }) {
       <div className="mb-4">
         <a
           href={`/admin/usuario/${id}/editar`}
-          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          className="bg-purple-600 text-black px-4 py-2 rounded hover:bg-purple-700"
         >
           Editar usuario
         </a>
@@ -50,28 +50,28 @@ export default function UsuarioDetalle({ params }) {
 
         <button
           onClick={() => accion("suspender")}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          className="bg-red-600 text-black px-4 py-2 rounded hover:bg-red-700"
         >
           Suspender usuario
         </button>
 
         <button
           onClick={() => accion("activar")}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          className="bg-green-600 text-black px-4 py-2 rounded hover:bg-green-700"
         >
           Activar usuario
         </button>
 
         <button
           onClick={() => accion("extender")}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-black px-4 py-2 rounded hover:bg-blue-700"
         >
           Extender licencia +30 días
         </button>
 
         <button
           onClick={() => accion("reset-hwid")}
-          className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+          className="bg-yellow-600 text-black px-4 py-2 rounded hover:bg-yellow-700"
         >
           Resetear HWID
         </button>

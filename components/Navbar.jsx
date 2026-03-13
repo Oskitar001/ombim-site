@@ -6,7 +6,6 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
 
-  // Detectar si hay usuario logueado (cliente)
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -34,7 +33,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* BOTÓN HAMBURGUESA (solo móvil) */}
+        {/* HAMBURGUESA */}
         <button
           className="md:hidden flex flex-col gap-1"
           onClick={() => setOpen(!open)}
@@ -52,7 +51,7 @@ export default function Navbar() {
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
           <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
 
-          {/* USUARIO LOGUEADO (CLIENTE) */}
+          {/* USUARIO LOGUEADO */}
           {user ? (
             <div className="relative group">
               <button className="flex items-center gap-2 hover:text-blue-600 transition">
@@ -62,7 +61,6 @@ export default function Navbar() {
                 {user.name || "Usuario"}
               </button>
 
-              {/* DROPDOWN */}
               <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg p-3 w-40 hidden group-hover:block">
                 <Link href="/panel" className="block px-3 py-2 hover:bg-gray-100 rounded">
                   Panel
@@ -76,15 +74,15 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            /* BOTÓN ACCESO (CLIENTE) */
+            /* BOTÓN INICIA SESIÓN O REGÍSTRATE */
             <Link
               href="/acceso"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
+              className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2"
             >
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
               </svg>
-              Acceso
+              Inicia sesión o regístrate
             </Link>
           )}
         </div>
@@ -99,7 +97,6 @@ export default function Navbar() {
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
           <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
 
-          {/* MÓVIL: USUARIO LOGUEADO */}
           {user ? (
             <>
               <Link href="/panel" className="hover:text-blue-600 transition">Panel</Link>
@@ -110,12 +107,12 @@ export default function Navbar() {
           ) : (
             <Link
               href="/acceso"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
+              className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2"
             >
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
               </svg>
-              Acceso
+              Inicia sesión o regístrate
             </Link>
           )}
         </div>

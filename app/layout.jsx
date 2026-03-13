@@ -1,4 +1,6 @@
 // app/layout.js
+import "./globals.css";
+
 export const metadata = {
   title: "OMBIM",
   description: "Modelado 3D y software para Tekla Structures"

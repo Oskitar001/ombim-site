@@ -10,12 +10,35 @@ export default function Navbar() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) setUser(JSON.parse(storedUser));
+    } catch (err) {
+      console.error("Error leyendo localStorage:", err);
+    }
     setReady(true);
   }, []);
 
-  if (!ready) return null;
+  // 🔥 PARCHE IMPORTANTE:
+  // Si aún no está listo, renderizamos un navbar mínimo
+  if (!ready) {
+    return (
+      <nav className="w-full py-4 bg-white shadow fixed top-0 left-0 z-50">
+        <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
+          <Link href="/" className="flex items-center gap-3 shrink-0">
+            <img
+              src="/logo-ombim.png"
+              alt="OMBIM Logo"
+              className="h-10 w-auto md:h-16"
+            />
+            <span className="text-xl md:text-3xl font-bold whitespace-nowrap">
+              OMBIM
+            </span>
+          </Link>
+        </div>
+      </nav>
+    );
+  }
 
   const logout = () => {
     localStorage.removeItem("user");

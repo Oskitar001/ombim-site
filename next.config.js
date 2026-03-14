@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Elimina el warning de "Cross origin request detected"
-  allowedDevOrigins: ["http://192.168.1.54:3000"],
+  experimental: {
+    // Permite acceder desde tu IP local
+    allowedDevOrigins: ["http://192.168.1.54:3000"],
+  },
 
   // Optimización de imágenes
   images: {

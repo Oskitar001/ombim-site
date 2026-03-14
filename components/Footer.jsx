@@ -43,7 +43,6 @@ export default function Footer() {
 
           {/* REDES SOCIALES */}
           <div className="flex gap-5 mt-5">
-
             {/* LinkedIn */}
             <a
               href="https://www.linkedin.com/search/results/all/?keywords=o.martinez%40ombim.com"
@@ -76,10 +75,7 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
-              className="transition text-gray-400 hover:text-[#25D366] md:hover:text-[#25D366] md:hover:scale-110
-                         md:transition-transform md:duration-300
-                         md:text-gray-400
-                         animate-[pulse_1.8s_ease-in-out_infinite] md:animate-none"
+              className="transition text-gray-400 hover:text-[#25D366]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20.52 3.48A11.86 11.86 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.17 1.6 5.98L0 24l6.2-1.63A12 12 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.48-8.52zM12 22c-1.8 0-3.55-.48-5.08-1.38l-.36-.21-3.68.97.98-3.59-.24-.37A9.94 9.94 0 0 1 2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm5.2-7.3c-.28-.14-1.65-.82-1.9-.91-.25-.1-.43-.14-.62.14-.18.28-.71.91-.87 1.1-.16.18-.32.2-.6.07-.28-.14-1.18-.43-2.25-1.38-.83-.74-1.38-1.65-1.54-1.93-.16-.28-.02-.43.12-.57.12-.12.28-.32.42-.48.14-.16.18-.28.28-.46.1-.18.05-.34-.02-.48-.07-.14-.62-1.5-.85-2.06-.22-.53-.45-.46-.62-.46h-.53c-.18 0-.48.07-.73.34-.25.28-.96.94-.96 2.28 0 1.34.98 2.63 1.12 2.81.14.18 1.93 2.95 4.68 4.14 2.75 1.18 2.75.79 3.25.74.5-.05 1.65-.67 1.88-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/>
@@ -90,7 +86,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* COPYRIGHT */}
       <div className="text-center text-gray-500 text-sm mt-10 border-t border-gray-700 pt-6">
         © {new Date().getFullYear()} OMBIM — Todos los derechos reservados.
       </div>

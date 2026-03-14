@@ -7,16 +7,20 @@ export default function Navbar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
+    setReady(true);
   }, []);
+
+  if (!ready) return null;
 
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    router.push("/");   // ← SOLUCIÓN REAL
+    router.push("/");
   };
 
   return (

@@ -1,9 +1,10 @@
+// Secciones externas
 "use client";
 
-// Secciones externas
 import AboutSection from "../components/AboutSection";
 import TrustSection from "../components/TrustSection";
 import TestimonialsSection from "../components/TestimonialsSection";
+
 
 const apps = [
   {

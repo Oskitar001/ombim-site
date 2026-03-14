@@ -1,5 +1,4 @@
 "use client";
-import Script from "next/script";
 
 // Secciones externas
 import AboutSection from "../../components/AboutSection";
@@ -30,50 +29,6 @@ const apps = [
 export default function HomePage() {
   return (
     <>
-      {/* Scroll Depth Tracking */}
-      <Script id="scroll-depth" strategy="afterInteractive">
-        {`
-          let maxScroll = 0;
-          window.addEventListener('scroll', () => {
-            const scrolled = window.scrollY + window.innerHeight;
-            const total = document.body.scrollHeight;
-            const percent = Math.round((scrolled / total) * 100);
-
-            if (percent > maxScroll) {
-              maxScroll = percent;
-              console.log("Scroll depth:", percent + "%");
-            }
-          });
-        `}
-      </Script>
-
-      {/* Exit Intent Detection */}
-      <Script id="exit-intent" strategy="afterInteractive">
-        {`
-          document.addEventListener("mouseout", function(e) {
-            if (e.clientY < 0) {
-              console.log("Exit intent detected");
-            }
-          });
-        `}
-      </Script>
-
-      {/* Scroll Reveal */}
-      <Script id="scroll-reveal" strategy="afterInteractive">
-        {`
-          const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-              if (entry.isIntersecting) {
-                entry.target.classList.add('reveal-visible');
-                observer.unobserve(entry.target);
-              }
-            });
-          }, { threshold: 0.15 });
-
-          document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-        `}
-      </Script>
-
       {/* Sticky CTA (mobile only) */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
         <a

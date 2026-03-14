@@ -18,7 +18,7 @@ export default function Footer() {
         <div>
           <h4 className="text-lg font-semibold text-white mb-4">Navegación</h4>
           <ul className="space-y-2">
-            <li><Link href="/" className="hover:text-white transition">Inicio</Link></li>
+            <li><Link href="/" prefetch={false} className="hover:text-white transition">Inicio</Link></li>
             <li><Link href="/sobre-mi" className="hover:text-white transition">Sobre mí</Link></li>
             <li><Link href="/servicios" className="hover:text-white transition">Servicios</Link></li>
             <li><Link href="/demos" className="hover:text-white transition">Demos</Link></li>

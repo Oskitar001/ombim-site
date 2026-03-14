@@ -28,7 +28,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
 
         {/* LOGO */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
+        <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
           <img
             src="/logo-ombim.png"
             alt="OMBIM Logo"
@@ -51,7 +51,7 @@ export default function Navbar() {
 
         {/* MENÚ ESCRITORIO */}
         <div className="hidden md:flex gap-6 text-lg items-center">
-          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
+          <Link href="/" prefetch={false} className="hover:text-blue-600 transition">Inicio</Link>
           <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
           <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
@@ -96,7 +96,7 @@ export default function Navbar() {
       {/* MENÚ MÓVIL */}
       {open && (
         <div className="md:hidden bg-white shadow-lg px-6 py-4 flex flex-col gap-4 text-lg">
-          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
+          <Link href="/" prefetch={false} className="hover:text-blue-600 transition">Inicio</Link>
           <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
           <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>

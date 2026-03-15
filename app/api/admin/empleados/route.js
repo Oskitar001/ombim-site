@@ -7,14 +7,14 @@ const supabase = createClient(
 );
 
 export async function GET() {
-  const { data } = await supabase.from("dispositivos").select("*");
+  const { data } = await supabase.from("empleados").select("*");
   return NextResponse.json(data);
 }
 
 export async function POST(req) {
   const body = await req.json();
 
-  const { error } = await supabase.from("dispositivos").insert(body);
+  const { error } = await supabase.from("empleados").insert(body);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

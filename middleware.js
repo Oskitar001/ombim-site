@@ -1,40 +1,43 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export function middleware(req) {
-  const url = req.nextUrl;
+  const token = req.cookies.get("session")?.value;
 
-  const adminToken = req.cookies.get("admin_token")?.value;
-  const clientToken = req.cookies.get("client_token")?.value;
+  const url = req.nextUrl.pathname;
 
-  const path = url.pathname;
+  // Rutas públicas
+  if (
+    url.startsWith("/empresa/login") ||
+    url.startsWith("/admin/login") ||
+    url.startsWith("/success") ||
+    url.startsWith("/cancel") ||
+    url.startsWith("/comprar") ||
+    url.startsWith("/api")
+  ) {
+    return NextResponse.next();
+  }
 
-  // Rutas reales
-  const isAdminRoute = path.startsWith("/admin");
-  const isClientRoute = path.startsWith("/cliente");
-
-  const isAdminLogin = path === "/admin/login";
-  const isClientLogin = path === "/login";
-
-  // ADMIN
-  if (isAdminRoute && !isAdminLogin) {
-    if (!adminToken) {
+  if (!token) {
+    if (url.startsWith("/admin")) {
       return NextResponse.redirect(new URL("/admin/login", req.url));
     }
-  }
-
-  // CLIENTE
-  if (isClientRoute && !isClientLogin) {
-    if (!clientToken) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    if (url.startsWith("/empresa")) {
+      return NextResponse.redirect(new URL("/empresa/login", req.url));
     }
   }
 
-  return NextResponse.next();
+  try {
+    jwt.verify(token, process.env.JWT_SECRET);
+    return NextResponse.next();
+  } catch {
+    return NextResponse.redirect(new URL("/empresa/login", req.url));
+  }
 }
 
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/cliente/:path*"
-  ]
+    "/empresa/:path*",
+  ],
 };

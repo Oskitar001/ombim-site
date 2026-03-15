@@ -7,14 +7,26 @@ const supabase = createClient(
 );
 
 export async function GET() {
-  const { data } = await supabase.from("dispositivos").select("*");
+  const { data } = await supabase.from("empresas").select("*");
   return NextResponse.json(data);
 }
 
 export async function POST(req) {
-  const body = await req.json();
+  const { nombre, email, password, estado } = await req.json();
 
-  const { error } = await supabase.from("dispositivos").insert(body);
+  if (!nombre || !email || !password) {
+    return NextResponse.json(
+      { error: "Faltan datos" },
+      { status: 400 }
+    );
+  }
+
+  const { error } = await supabase.from("empresas").insert({
+    nombre,
+    email,
+    password_hash: password,
+    estado,
+  });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

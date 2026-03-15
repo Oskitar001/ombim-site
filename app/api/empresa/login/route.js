@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE
+);
 
 export async function POST(req) {
   try {
@@ -12,25 +18,40 @@ export async function POST(req) {
       );
     }
 
-    if (
-      email !== process.env.ADMIN_EMAIL ||
-      password !== process.env.ADMIN_PASSWORD
-    ) {
+    // Buscar empresa por email
+    const { data: empresa } = await supabase
+      .from("empresas")
+      .select("*")
+      .eq("email", email)
+      .single();
+
+    if (!empresa) {
       return NextResponse.json(
-        { error: "Credenciales incorrectas" },
+        { error: "Empresa no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Comparación SIN HASH
+    if (empresa.password_hash !== password) {
+      return NextResponse.json(
+        { error: "Contraseña incorrecta" },
         { status: 401 }
       );
     }
 
+    // Crear token
     const token = jwt.sign(
       {
-        rol: "admin",
-        email,
+        empresa_id: empresa.id,
+        email: empresa.email,
+        rol: "empresa",
       },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
+    // Guardar cookie
     const response = NextResponse.json({ ok: true });
 
     response.cookies.set("session", token, {

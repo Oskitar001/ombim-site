@@ -6,6 +6,9 @@ import jwt from "jsonwebtoken";
 export async function POST(req) {
   const { email, password, hwid } = await req.json();
 
+  // Si no viene HWID desde navegador, asignamos uno fijo
+  const finalHWID = hwid || "web-browser";
+
   // 1. Buscar usuario
   const { data: users } = await supabase
     .from("usuarios")
@@ -43,23 +46,20 @@ export async function POST(req) {
     .select("*")
     .eq("usuario_id", user.id);
 
-  const existeHWID = dispositivos?.find(d => d.hwid === hwid);
+  const existeHWID = dispositivos?.find(d => d.hwid === finalHWID);
 
   if (!existeHWID) {
-    // Si no existe, verificar límite
     if (dispositivos.length >= user.max_dispositivos) {
       return NextResponse.json({ ok: false, error: "Límite de dispositivos alcanzado" });
     }
 
-    // Registrar nuevo dispositivo
     await supabase.from("dispositivos").insert({
       usuario_id: user.id,
-      hwid,
+      hwid: finalHWID,
       fecha_registro: new Date().toISOString(),
       ultima_conexion: new Date().toISOString()
     });
   } else {
-    // Actualizar última conexión
     await supabase
       .from("dispositivos")
       .update({ ultima_conexion: new Date().toISOString() })
@@ -71,7 +71,7 @@ export async function POST(req) {
     usuario_id: user.id,
     email: user.email,
     accion: "login",
-    hardwareId: hwid,
+    hardwareId: finalHWID,
     fecha: new Date().toISOString()
   });
 
@@ -89,10 +89,10 @@ export async function POST(req) {
     expiracion: user.fecha_expiracion
   });
 
-  // 8. Cookie segura
+  // 8. Cookie segura SOLO en producción
   res.cookies.set("client_token", token, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 7
   });

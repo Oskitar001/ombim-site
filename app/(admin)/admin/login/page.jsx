@@ -13,15 +13,23 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError("");
 
-    // Aquí deberías llamar a tu API real de login admin.
-    // De momento, simulamos un login sencillo:
-    if (email === "admin@ombim.com" && password === "admin") {
-      // Cookie simple de ejemplo (idealmente: HttpOnly desde el servidor)
-      document.cookie = `admin_token=ok; path=/; max-age=86400`;
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setError(data.message || "Credenciales incorrectas");
+        return;
+      }
 
       router.push("/admin");
-    } else {
-      setError("Credenciales incorrectas");
+    } catch (err) {
+      setError("Error de conexión con el servidor");
     }
   };
 
@@ -42,7 +50,7 @@ export default function AdminLoginPage() {
               className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@ombim.com"
+              placeholder="admin@admin.com"
             />
           </div>
 

@@ -8,17 +8,13 @@ export async function GET(req) {
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY,
-    {
-      auth: { persistSession: false }
-    }
+    { auth: { persistSession: false } }
   );
 
-  // Seleccionamos solo los campos seguros
   let query = supabase
     .from("usuarios")
     .select("id, email, estado, fecha_expiracion, role, max_dispositivos");
 
-  // Filtro por email
   if (q.trim() !== "") {
     query = query.ilike("email", `%${q}%`);
   }
@@ -26,8 +22,8 @@ export async function GET(req) {
   const { data, error } = await query.order("id", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ usuarios: [], error: error.message });
+    return NextResponse.json({ users: [], error: error.message });
   }
 
-  return NextResponse.json({ usuarios: data });
+  return NextResponse.json({ users: data });
 }

@@ -21,18 +21,38 @@ export default async function EmpresaDashboard() {
   // Decodificar token
   const decoded = jwt.decode(token);
 
+  if (!decoded?.empresa_id) {
+    return (
+      <div className="p-10">
+        <p>Error: token inválido.</p>
+        <a href="/empresa/login" className="text-blue-600 underline">
+          Ir al login
+        </a>
+      </div>
+    );
+  }
+
   // Conectar a Supabase
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   // Obtener datos de la empresa
-  const { data: empresa } = await supabase
+  const { data: empresa, error } = await supabase
     .from("empresas")
     .select("*")
     .eq("id", decoded.empresa_id)
     .single();
+
+  if (error) {
+    return (
+      <div className="p-10">
+        <h1 className="text-3xl font-bold mb-4">Error</h1>
+        <p>No se pudo cargar la empresa: {error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-10">

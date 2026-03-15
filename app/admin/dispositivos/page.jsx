@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export default async function DispositivosPage() {
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   const { data: dispositivos } = await supabase

@@ -1,17 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 export async function GET(req, { params }) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("empresas")
     .select("*")
     .eq("id", params.id)
     .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 
   return NextResponse.json(data);
 }
@@ -42,6 +49,14 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  await supabase.from("empresas").delete().eq("id", params.id);
+  const { error } = await supabase
+    .from("empresas")
+    .delete()
+    .eq("id", params.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
   return NextResponse.json({ ok: true });
 }

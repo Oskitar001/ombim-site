@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // necesario para rutas de pago
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(req) {
@@ -23,7 +26,7 @@ export async function POST(req) {
           price_data: {
             currency: "eur",
             product_data: { name: `Licencia ${plugin}` },
-            unit_amount: 1000, // 10€ por licencia
+            unit_amount: 1000, // 10€
           },
           quantity: cantidad,
         },
@@ -36,7 +39,7 @@ export async function POST(req) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Error en checkout:", error);
+    console.error("❌ Error en checkout:", error);
     return NextResponse.json(
       { error: "Error al crear sesión de pago" },
       { status: 500 }

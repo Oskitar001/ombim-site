@@ -3,11 +3,9 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Next.js 16 — reemplaza config
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // necesario para webhooks
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -23,6 +21,9 @@ export async function POST(req) {
 
   let event;
 
+  // -----------------------------
+  // VALIDAR FIRMA DEL WEBHOOK
+  // -----------------------------
   try {
     event = stripe.webhooks.constructEvent(
       body,
@@ -30,10 +31,13 @@ export async function POST(req) {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error("Error verificando webhook:", err.message);
+    console.error("❌ Error verificando webhook:", err.message);
     return NextResponse.json({ error: "Webhook inválido" }, { status: 400 });
   }
 
+  // -----------------------------
+  // PROCESAR EVENTO
+  // -----------------------------
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
@@ -43,28 +47,32 @@ export async function POST(req) {
       const email = session.customer_details?.email;
 
       if (!plugin || !email) {
-        console.error("Faltan datos en metadata o email");
+        console.error("⚠ Faltan datos en metadata o email");
         return NextResponse.json({ received: true });
       }
 
-      // 1. Crear empresa
+      // -----------------------------
+      // 1. CREAR EMPRESA
+      // -----------------------------
       const { data: empresa, error: empresaError } = await supabase
         .from("empresas")
         .insert({
           nombre: "Nueva Empresa",
           email,
-          password_hash: "", // luego la cambiarás desde el panel
+          password_hash: "",
           estado: "activa",
         })
         .select()
         .single();
 
       if (empresaError) {
-        console.error("Error creando empresa:", empresaError);
+        console.error("❌ Error creando empresa:", empresaError);
         return NextResponse.json({ received: true });
       }
 
-      // 2. Crear licencia
+      // -----------------------------
+      // 2. CREAR LICENCIA
+      // -----------------------------
       const fechaExpiracion = new Date();
       fechaExpiracion.setFullYear(fechaExpiracion.getFullYear() + 1);
 
@@ -78,11 +86,13 @@ export async function POST(req) {
       });
 
       if (licenciaError) {
-        console.error("Error creando licencia:", licenciaError);
+        console.error("❌ Error creando licencia:", licenciaError);
         return NextResponse.json({ received: true });
       }
 
-      // 3. Enviar email al cliente
+      // -----------------------------
+      // 3. ENVIAR EMAIL AL CLIENTE
+      // -----------------------------
       try {
         await resend.emails.send({
           from: "Licencias OMBIM <noreply@tudominio.com>",
@@ -91,18 +101,18 @@ export async function POST(req) {
           html: `
             <h1>Gracias por tu compra</h1>
             <p>Tu licencia del plugin <strong>${plugin}</strong> ha sido activada.</p>
-            <p>Entra en tu panel para gestionar empleados y descargar el plugin:</p>
+            <p>Puedes acceder a tu panel aquí:</p>
             <p><a href="${process.env.NEXT_PUBLIC_DOMAIN}/empresa/login">Acceder al panel</a></p>
           `,
         });
       } catch (emailError) {
-        console.error("Error enviando email:", emailError);
+        console.error("⚠ Error enviando email:", emailError);
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Error procesando webhook:", error);
+    console.error("❌ Error procesando webhook:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

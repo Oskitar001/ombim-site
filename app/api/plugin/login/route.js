@@ -30,10 +30,11 @@ export async function POST(req) {
         { status: 404 }
       );
     }
+if (password !== empresa.password_hash) {
+  return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
+}
 
-    // 2. Validar contraseña
-    const bcrypt = require("bcryptjs");
-    const passwordOK = await bcrypt.compare(password, empresa.password_hash);
+    
 
     if (!passwordOK) {
       return NextResponse.json(

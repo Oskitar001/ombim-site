@@ -1,78 +1,85 @@
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
 
 export default async function LicenciasEmpresa() {
-  // Leer cookies desde el servidor
-  const cookieStore = cookies();
-  const token = cookieStore.get("session")?.value;
-
-  if (!token) {
-    return (
-      <div>
-        <h1 className="text-3xl font-bold mb-6">Tus licencias</h1>
-        <p>No hay sesión activa.</p>
-      </div>
-    );
-  }
-
-  const decoded = jwt.decode(token);
-
-  if (!decoded?.empresa_id) {
-    return (
-      <div>
-        <h1 className="text-3xl font-bold mb-6">Tus licencias</h1>
-        <p>Error: token inválido.</p>
-      </div>
-    );
-  }
-
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
   );
 
-  const { data: licencias, error } = await supabase
-    .from("licencias")
-    .select("*")
-    .eq("empresa_id", decoded.empresa_id);
+  // Obtener empresa logueada (en tu caso, la primera)
+  const { data: empresa } = await supabase
+    .from("empresas")
+    .select("id, nombre")
+    .limit(1)
+    .single();
 
-  if (error) {
+  if (!empresa) {
     return (
-      <div>
-        <h1 className="text-3xl font-bold mb-6">Tus licencias</h1>
-        <p>Error al cargar licencias: {error.message}</p>
+      <div className="p-10">
+        <h1 className="text-2xl font-bold">No se encontró la empresa</h1>
       </div>
     );
   }
 
+  // Obtener licencias + plugin asociado
+  const { data: licencias } = await supabase
+    .from("licencias")
+    .select("*, plugins(nombre, imagen_url)")
+    .eq("empresa_id", empresa.id);
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Tus licencias</h1>
+    <div className="p-10 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">
+        Licencias de {empresa.nombre}
+      </h1>
 
-      <table className="w-full bg-white shadow rounded">
-        <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="p-3">Plugin</th>
-            <th className="p-3">Cantidad</th>
-            <th className="p-3">Expira</th>
-            <th className="p-3">Estado</th>
-          </tr>
-        </thead>
+      {licencias?.length === 0 && (
+        <p className="text-gray-600">No tienes licencias activas.</p>
+      )}
 
-        <tbody>
-          {licencias?.map((l) => (
-            <tr key={l.id} className="border-t">
-              <td className="p-3">{l.plugin}</td>
-              <td className="p-3">{l.cantidad}</td>
-              <td className="p-3">
-                {new Date(l.fecha_expiracion).toLocaleDateString()}
-              </td>
-              <td className="p-3">{l.estado}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="grid grid-cols-1 gap-6">
+        {licencias?.map((lic) => (
+          <div
+            key={lic.id}
+            className="bg-white shadow p-4 rounded flex items-center gap-4"
+          >
+            {lic.plugins?.imagen_url && (
+              <img
+                src={lic.plugins.imagen_url}
+                className="w-24 h-24 object-cover rounded"
+              />
+            )}
+
+            <div className="flex-1">
+              <h2 className="text-xl font-bold">{lic.plugins?.nombre}</h2>
+
+              <p className="text-gray-600">
+                Inicio: {new Date(lic.fecha_inicio).toLocaleDateString()}
+              </p>
+
+              <p className="text-gray-600">
+                Expira: {new Date(lic.fecha_expiracion).toLocaleDateString()}
+              </p>
+
+              <p
+                className={`mt-2 font-semibold ${
+                  lic.activa ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {lic.activa ? "Activa" : "Inactiva"}
+              </p>
+            </div>
+
+            {/* DESCARGA SEGURA */}
+            <a
+              href={`/api/plugins/download?plugin_id=${lic.plugin_id}&empresa_id=${empresa.id}`}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Descargar
+            </a>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

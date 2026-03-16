@@ -19,8 +19,6 @@ export default function Navbar() {
     setReady(true);
   }, []);
 
-  // 🔥 PARCHE IMPORTANTE:
-  // Si aún no está listo, renderizamos un navbar mínimo
   if (!ready) {
     return (
       <nav className="w-full py-4 bg-white shadow fixed top-0 left-0 z-50">
@@ -44,6 +42,7 @@ export default function Navbar() {
     localStorage.removeItem("user");
     setUser(null);
     router.push("/");
+    setOpen(false);
   };
 
   return (
@@ -77,10 +76,10 @@ export default function Navbar() {
           <Link href="/" prefetch={false} className="hover:text-blue-600 transition">Inicio</Link>
           <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
           <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
+          <Link href="/plugins" className="hover:text-blue-600 transition">Plugins</Link>
           <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
           <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
 
-          {/* USUARIO LOGUEADO */}
           {user ? (
             <div className="relative group">
               <button className="flex items-center gap-2 hover:text-blue-600 transition">
@@ -119,15 +118,16 @@ export default function Navbar() {
       {/* MENÚ MÓVIL */}
       {open && (
         <div className="md:hidden bg-white shadow-lg px-6 py-4 flex flex-col gap-4 text-lg">
-          <Link href="/" prefetch={false} className="hover:text-blue-600 transition">Inicio</Link>
-          <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
-          <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
-          <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
-          <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
+          <Link href="/" prefetch={false} onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Inicio</Link>
+          <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Sobre mí</Link>
+          <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Servicios</Link>
+          <Link href="/plugins" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Plugins</Link>
+          <Link href="/demos" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Demos</Link>
+          <Link href="/contacto" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Contacto</Link>
 
           {user ? (
             <>
-              <Link href="/panel" className="hover:text-blue-600 transition">Panel</Link>
+              <Link href="/panel" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Panel</Link>
               <button onClick={logout} className="text-left hover:text-blue-600 transition">
                 Cerrar sesión
               </button>
@@ -135,6 +135,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/acceso"
+              onClick={() => setOpen(false)}
               className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2"
             >
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">

@@ -21,6 +21,7 @@ export default function Footer() {
             <li><Link href="/" prefetch={false} className="hover:text-white transition">Inicio</Link></li>
             <li><Link href="/sobre-mi" className="hover:text-white transition">Sobre mí</Link></li>
             <li><Link href="/servicios" className="hover:text-white transition">Servicios</Link></li>
+            <li><Link href="/plugins" className="hover:text-white transition">Plugins</Link></li>
             <li><Link href="/demos" className="hover:text-white transition">Demos</Link></li>
             <li><Link href="/contacto" className="hover:text-white transition">Contacto</Link></li>
           </ul>

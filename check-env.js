@@ -1,36 +1,42 @@
+// check-env.js
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-dotenv.config();
 
 console.log("🔍 Validando variables de entorno...\n");
 
-const REQUIRED_ENV = [
+// 1. Cargar .env.local si existe
+const envLocalPath = path.resolve(".env.local");
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath });
+}
+
+// 2. Cargar .env (fallback)
+dotenv.config();
+
+// 3. Variables obligatorias
+const REQUIRED = [
   "SUPABASE_URL",
   "SUPABASE_SERVICE_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "RESEND_API_KEY",
-  "NEXT_PUBLIC_DOMAIN"
+  "NEXT_PUBLIC_DOMAIN",
 ];
 
-let missing = [];
+// 4. Detectar faltantes
+const missing = REQUIRED.filter((key) => !process.env[key]);
 
-for (const key of REQUIRED_ENV) {
-  if (!process.env[key] || process.env[key].trim() === "") {
-    missing.push(key);
-  }
+if (missing.length > 0) {
+  console.log("❌ Faltan variables de entorno:\n");
+  missing.forEach((key) => console.log(" - " + key));
+
+  console.log(`
+💡 Solución:
+Añade las claves faltantes en tu archivo .env o .env.local
+`);
+
+  process.exit(1); // ❗ Bloquea el build si faltan
 }
 
-if (missing.length === 0) {
-  console.log("✅ Todas las variables de entorno están correctamente definidas.\n");
-  process.exit(0);
-}
-
-console.log("❌ Faltan variables de entorno:\n");
-missing.forEach((key) => console.log(" - " + key));
-
-console.log("\n💡 Solución:");
-console.log("Añade las claves faltantes en tu archivo .env (NO solo .env.local)\n");
-
-process.exit(1);
+console.log("✅ Todas las variables de entorno están presentes.\n");

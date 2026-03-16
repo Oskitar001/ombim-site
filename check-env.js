@@ -1,7 +1,7 @@
-// check-env.js
-import fs from "fs";
-import path from "path";
-import dotenv from "dotenv";
+// check-env.js (CommonJS, compatible con Vercel)
+const fs = require("fs");
+const path = require("path");
+const dotenv = require("dotenv");
 
 console.log("🔍 Validando variables de entorno...\n");
 
@@ -33,10 +33,10 @@ if (missing.length > 0) {
 
   console.log(`
 💡 Solución:
-Añade las claves faltantes en tu archivo .env o .env.local
+Añade las claves faltantes en .env o .env.local
 `);
 
-  process.exit(1); // ❗ Bloquea el build si faltan
+  process.exit(1);
 }
 
 console.log("✅ Todas las variables de entorno están presentes.\n");

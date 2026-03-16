@@ -1,43 +1,34 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 export function proxy(req) {
-  const token = req.cookies.get("session")?.value;
-
   const url = req.nextUrl.pathname;
 
   // Rutas públicas
   if (
-    url.startsWith("/empresa/login") ||
-    url.startsWith("/admin/login") ||
-    url.startsWith("/success") ||
-    url.startsWith("/cancel") ||
-    url.startsWith("/comprar") ||
-    url.startsWith("/api")
+    url.startsWith("/api/auth/login") ||
+    url.startsWith("/api/auth/register") ||
+    url.startsWith("/api/auth/me") ||
+    url.startsWith("/api/plugin") ||
+    url.startsWith("/plugins") ||
+    url === "/"
   ) {
     return NextResponse.next();
   }
 
-  if (!token) {
-    if (url.startsWith("/admin")) {
-      return NextResponse.redirect(new URL("/admin/login", req.url));
+  // Proteger descargas
+  if (url.startsWith("/api/download")) {
+    const session = req.cookies.get("session")?.value;
+
+    if (!session) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    if (url.startsWith("/empresa")) {
-      return NextResponse.redirect(new URL("/empresa/login", req.url));
-    }
+
+    return NextResponse.next();
   }
 
-  try {
-    jwt.verify(token, process.env.JWT_SECRET);
-    return NextResponse.next();
-  } catch {
-    return NextResponse.redirect(new URL("/empresa/login", req.url));
-  }
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/empresa/:path*",
-  ],
+  matcher: ["/api/:path*", "/plugins/:path*"],
 };

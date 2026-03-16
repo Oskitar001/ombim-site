@@ -1,49 +1,54 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
 
+  const menuRef = useRef(null);
+
+  // Cargar usuario desde la cookie (vía API)
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch (err) {
-      console.error("Error leyendo localStorage:", err);
-    }
-    setReady(true);
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        setUser(data.user);
+        setReady(true);
+      })
+      .catch(() => setReady(true));
   }, []);
 
-  if (!ready) {
-    return (
-      <nav className="w-full py-4 bg-white shadow fixed top-0 left-0 z-50">
-        <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
-          <Link href="/" className="flex items-center gap-3 shrink-0">
-            <img
-              src="/logo-ombim.png"
-              alt="OMBIM Logo"
-              className="h-10 w-auto md:h-16"
-            />
-            <span className="text-xl md:text-3xl font-bold whitespace-nowrap">
-              OMBIM
-            </span>
-          </Link>
-        </div>
-      </nav>
-    );
-  }
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
 
-  const logout = () => {
-    localStorage.removeItem("user");
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Logout
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
+    setMenuOpen(false);
     router.push("/");
-    setOpen(false);
   };
+
+  if (!ready) return null;
+
+  // Avatar redondo con inicial
+  const avatar = user?.nombre
+    ? user.nombre.charAt(0).toUpperCase()
+    : "U";
 
   return (
     <nav className="w-full py-4 bg-white shadow fixed top-0 left-0 z-50">
@@ -51,21 +56,12 @@ export default function Navbar() {
 
         {/* LOGO */}
         <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
-          <img
-            src="/logo-ombim.png"
-            alt="OMBIM Logo"
-            className="h-10 w-auto md:h-16 transition-transform duration-300 hover:scale-105 hover:opacity-90"
-          />
-          <span className="text-xl md:text-3xl font-bold whitespace-nowrap">
-            OMBIM
-          </span>
+          <img src="/logo-ombim.png" alt="OMBIM Logo" className="h-10 w-auto md:h-16" />
+          <span className="text-xl md:text-3xl font-bold whitespace-nowrap">OMBIM</span>
         </Link>
 
         {/* HAMBURGUESA */}
-        <button
-          className="md:hidden flex flex-col gap-1"
-          onClick={() => setOpen(!open)}
-        >
+        <button className="md:hidden flex flex-col gap-1" onClick={() => setOpen(!open)}>
           <span className="w-6 h-0.5 bg-gray-800"></span>
           <span className="w-6 h-0.5 bg-gray-800"></span>
           <span className="w-6 h-0.5 bg-gray-800"></span>
@@ -73,7 +69,7 @@ export default function Navbar() {
 
         {/* MENÚ ESCRITORIO */}
         <div className="hidden md:flex gap-6 text-lg items-center">
-          <Link href="/" prefetch={false} className="hover:text-blue-600 transition">Inicio</Link>
+          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
           <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
           <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
           <Link href="/plugins" className="hover:text-blue-600 transition">Plugins</Link>
@@ -81,18 +77,33 @@ export default function Navbar() {
           <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
 
           {user ? (
-            <div className="relative group">
-              <button className="flex items-center gap-2 hover:text-blue-600 transition">
-                <svg width="26" height="26" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
-                </svg>
-                {user.name || "Usuario"}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2 hover:text-blue-600 transition"
+              >
+                <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                  {avatar}
+                </div>
+                {user.nombre}
               </button>
 
-              <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg p-3 w-40 hidden group-hover:block">
-                <Link href="/panel" className="block px-3 py-2 hover:bg-gray-100 rounded">
+              {/* MENÚ ANIMADO */}
+              <div
+                className={`
+                  absolute right-0 mt-2 bg-white shadow-lg rounded-lg p-3 w-40 z-50
+                  transition-all duration-200 origin-top-right
+                  ${menuOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
+                `}
+              >
+                <Link
+                  href="/panel"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 hover:bg-gray-100 rounded"
+                >
                   Panel
                 </Link>
+
                 <button
                   onClick={logout}
                   className="block w-full text-left px-3 py-2 hover:bg-gray-100 rounded"
@@ -103,12 +114,9 @@ export default function Navbar() {
             </div>
           ) : (
             <Link
-              href="/acceso"
+              href="/login"
               className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2"
             >
-              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
-              </svg>
               Inicia sesión o regístrate
             </Link>
           )}
@@ -118,7 +126,7 @@ export default function Navbar() {
       {/* MENÚ MÓVIL */}
       {open && (
         <div className="md:hidden bg-white shadow-lg px-6 py-4 flex flex-col gap-4 text-lg">
-          <Link href="/" prefetch={false} onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Inicio</Link>
+          <Link href="/" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Inicio</Link>
           <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Sobre mí</Link>
           <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Servicios</Link>
           <Link href="/plugins" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Plugins</Link>
@@ -134,13 +142,10 @@ export default function Navbar() {
             </>
           ) : (
             <Link
-              href="/acceso"
+              href="/login"
               onClick={() => setOpen(false)}
               className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition flex items-center gap-2"
             >
-              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
-              </svg>
               Inicia sesión o regístrate
             </Link>
           )}

@@ -40,30 +40,9 @@ body {
 }
 
 /* ========================= */
-/*      MODO CLARO / OSCURO  */
-/* ========================= */
-
-:root {
-  --bg: #ffffff;
-  --text: #000000;
-}
-
-.dark {
-  --bg: #0f0f0f;
-  --text: #ffffff;
-}
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
-/* ========================= */
 /*      LOGO SEGÚN TEMA      */
 /* ========================= */
 
-/* Logo por defecto (tema claro) */
 .logo-light {
   display: block;
 }
@@ -72,7 +51,6 @@ body {
   display: none;
 }
 
-/* Cuando el tema es oscuro, intercambiamos */
 .dark .logo-light {
   display: none;
 }

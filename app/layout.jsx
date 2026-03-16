@@ -9,8 +9,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
-      <body className="pt-20">
+    <html lang="es" suppressHydrationWarning>
+      <head />
+      <body className="pt-20 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 transition-colors">
         <Navbar />
         {children}
         <Footer />

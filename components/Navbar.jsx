@@ -7,16 +7,16 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [open, setOpen] = useState(false);       // menú hamburguesa
-  const [menuOpen, setMenuOpen] = useState(false); // menú avatar
+  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
 
-  const [theme, setTheme] = useState("light"); // ⭐ tema
+  const [theme, setTheme] = useState("light");
 
   const menuRef = useRef(null);
 
-  // Cargar usuario desde la cookie (vía API)
+  // Cargar usuario
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then(res => res.json())
@@ -27,14 +27,14 @@ export default function Navbar() {
       .catch(() => setReady(true));
   }, []);
 
-  // ⭐ Cargar tema desde localStorage
+  // Cargar tema
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
     setTheme(saved);
     document.documentElement.classList.toggle("dark", saved === "dark");
   }, []);
 
-  // ⭐ Cambiar tema
+  // Cambiar tema
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
@@ -54,7 +54,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ⭐ Cerrar hamburguesa y menú avatar al cambiar de ruta
+  // Cerrar menús al navegar
   useEffect(() => {
     setOpen(false);
     setMenuOpen(false);
@@ -71,19 +71,34 @@ export default function Navbar() {
 
   if (!ready) return null;
 
-  // Avatar redondo con inicial
   const avatar = user?.nombre
     ? user.nombre.charAt(0).toUpperCase()
     : "U";
 
   return (
-    <nav className="w-full py-4 bg-white dark:bg-[#111] shadow fixed top-0 left-0 z-50">
+    <nav className="w-full py-4 bg-white dark:bg-[#181818] shadow fixed top-0 left-0 z-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
 
         {/* LOGO */}
         <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
-          <img src="/logo-ombim.png" alt="OMBIM Logo" className="h-10 w-auto md:h-16" />
-          <span className="text-xl md:text-3xl font-bold whitespace-nowrap dark:text-white">OMBIM</span>
+
+          {/* Logo claro */}
+          <img
+            src="/logo-ombim.png"
+            alt="OMBIM Logo"
+            className="h-10 w-auto md:h-16 block dark:hidden"
+          />
+
+          {/* Logo oscuro */}
+          <img
+            src="/logo-ombim-dark.png"
+            alt="OMBIM Logo Dark"
+            className="h-10 w-auto md:h-16 hidden dark:block"
+          />
+
+          <span className="text-xl md:text-3xl font-bold whitespace-nowrap text-gray-900 dark:text-white">
+            OMBIM
+          </span>
         </Link>
 
         {/* HAMBURGUESA */}
@@ -94,15 +109,15 @@ export default function Navbar() {
         </button>
 
         {/* MENÚ ESCRITORIO */}
-        <div className="hidden md:flex gap-6 text-lg items-center dark:text-white">
-          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
-          <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
-          <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
-          <Link href="/plugins" className="hover:text-blue-600 transition">Plugins</Link>
-          <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
-          <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
+        <div className="hidden md:flex gap-6 text-lg items-center text-gray-800 dark:text-gray-200">
+          <Link href="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Inicio</Link>
+          <Link href="/sobre-mi" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Sobre mí</Link>
+          <Link href="/servicios" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Servicios</Link>
+          <Link href="/plugins" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Plugins</Link>
+          <Link href="/demos" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Demos</Link>
+          <Link href="/contacto" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Contacto</Link>
 
-          {/* ⭐ SWITCH TEMA ESCRITORIO */}
+          {/* SWITCH TEMA */}
           <button
             onClick={toggleTheme}
             className="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition"
@@ -114,7 +129,7 @@ export default function Navbar() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 hover:text-blue-600 transition"
+                className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition"
               >
                 <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                   {avatar}
@@ -122,7 +137,6 @@ export default function Navbar() {
                 {user.nombre}
               </button>
 
-              {/* MENÚ ANIMADO */}
               <div
                 className={`
                   absolute right-0 mt-2 bg-white dark:bg-[#222] shadow-lg rounded-lg p-3 w-40 z-50
@@ -159,26 +173,26 @@ export default function Navbar() {
 
       {/* MENÚ MÓVIL */}
       {open && (
-        <div className="md:hidden bg-white dark:bg-[#111] shadow-lg px-6 py-4 flex flex-col gap-4 text-lg dark:text-white">
-          <Link href="/" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Inicio</Link>
-          <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Sobre mí</Link>
-          <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Servicios</Link>
-          <Link href="/plugins" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Plugins</Link>
-          <Link href="/demos" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Demos</Link>
-          <Link href="/contacto" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Contacto</Link>
+        <div className="md:hidden bg-white dark:bg-[#181818] shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-gray-800 dark:text-gray-200">
+          <Link href="/" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Inicio</Link>
+          <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Sobre mí</Link>
+          <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Servicios</Link>
+          <Link href="/plugins" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Plugins</Link>
+          <Link href="/demos" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Demos</Link>
+          <Link href="/contacto" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Contacto</Link>
 
-          {/* ⭐ SWITCH TEMA MÓVIL */}
+          {/* SWITCH TEMA MÓVIL */}
           <button
             onClick={() => { toggleTheme(); setOpen(false); }}
-            className="hover:text-blue-600 transition"
+            className="hover:text-blue-600 dark:hover:text-blue-400 transition"
           >
             {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
           </button>
 
           {user ? (
             <>
-              <Link href="/panel" onClick={() => setOpen(false)} className="hover:text-blue-600 transition">Panel</Link>
-              <button onClick={logout} className="text-left hover:text-blue-600 transition">
+              <Link href="/panel" onClick={() => setOpen(false)} className="hover:text-blue-600 dark:hover:text-blue-400 transition">Panel</Link>
+              <button onClick={logout} className="text-left hover:text-blue-600 dark:hover:text-blue-400 transition">
                 Cerrar sesión
               </button>
             </>

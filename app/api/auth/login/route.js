@@ -46,18 +46,21 @@ export async function POST(req) {
       }
     });
 
-    // Guardar usuario en cookie (incluyendo NOMBRE)
+    // Guardar usuario en cookie (compatible con HTTPS y móvil)
     response.cookies.set(
       "session",
       JSON.stringify({
         id: user.id,
         email: user.email,
-        nombre: user.nombre,   // 🔥 ESTO ES LO QUE FALTABA
+        nombre: user.nombre,
         role: user.role
       }),
       {
         httpOnly: true,
-        path: "/"
+        secure: true,        // 🔥 obligatorio en HTTPS (ombim.com)
+        sameSite: "lax",     // 🔥 necesario para móvil
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7 // 7 días
       }
     );
 

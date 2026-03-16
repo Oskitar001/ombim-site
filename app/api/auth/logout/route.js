@@ -5,8 +5,10 @@ export async function POST() {
 
   res.cookies.set("session", "", {
     httpOnly: true,
+    secure: true,        // 🔥 obligatorio en HTTPS
+    sameSite: "lax",     // 🔥 necesario para móvil
     path: "/",
-    expires: new Date(0)
+    maxAge: 0            // 🔥 borra la cookie correctamente
   });
 
   return res;

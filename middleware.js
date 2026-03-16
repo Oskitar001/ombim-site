@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 
-export function proxy(req) {
+export function middleware(req) {
   const url = req.nextUrl.pathname;
 
   // Rutas públicas
-  if (
-    url.startsWith("/api/auth/login") ||
-    url.startsWith("/api/auth/register") ||
-    url.startsWith("/api/auth/me") ||
-    url.startsWith("/api/plugin") ||
-    url.startsWith("/plugins") ||
-    url === "/"
-  ) {
+  const publicRoutes = [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/me",
+    "/api/auth/logout",
+    "/api/plugin",
+    "/plugins",
+    "/"
+  ];
+
+  // Permitir rutas públicas
+  if (publicRoutes.some(route => url.startsWith(route))) {
     return NextResponse.next();
   }
 
@@ -26,6 +30,7 @@ export function proxy(req) {
     return NextResponse.next();
   }
 
+  // Por defecto permitir
   return NextResponse.next();
 }
 

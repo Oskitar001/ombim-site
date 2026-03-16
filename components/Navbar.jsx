@@ -60,6 +60,15 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [pathname]);
 
+  // ⭐ BLOQUEAR SCROLL CUANDO LA HAMBURGUESA ESTÁ ABIERTA
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+  }, [open]);
+
   // Logout
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

@@ -38,3 +38,45 @@ body {
   outline: 2px solid #2563eb;
   outline-offset: 3px;
 }
+
+/* ========================= */
+/*      MODO CLARO / OSCURO  */
+/* ========================= */
+
+:root {
+  --bg: #ffffff;
+  --text: #000000;
+}
+
+.dark {
+  --bg: #0f0f0f;
+  --text: #ffffff;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ========================= */
+/*      LOGO SEGÚN TEMA      */
+/* ========================= */
+
+/* Logo por defecto (tema claro) */
+.logo-light {
+  display: block;
+}
+
+.logo-dark {
+  display: none;
+}
+
+/* Cuando el tema es oscuro, intercambiamos */
+.dark .logo-light {
+  display: none;
+}
+
+.dark .logo-dark {
+  display: block;
+}

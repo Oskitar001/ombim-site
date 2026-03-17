@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export function middleware(req) {
+export default function proxy(req) {
   const url = req.nextUrl.pathname;
 
   // Cookies disponibles en Edge Runtime

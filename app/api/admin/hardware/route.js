@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
-  // Leer cookie de sesión
   const sessionCookie = cookies().get("session")?.value;
 
   if (!sessionCookie) {
@@ -16,14 +15,13 @@ export async function GET() {
     return NextResponse.json({ error: "Solo admin" }, { status: 403 });
   }
 
-  // Conectar a Supabase
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE
   );
 
   const { data, error } = await supabase
-    .from("licencias")
+    .from("hardware")
     .select("*");
 
   if (error) {

@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-export default function AdminHardwareList() {
+export default function PanelHardware() {
   const [user, setUser] = useState(null);
   const [hardware, setHardware] = useState([]);
 
   useEffect(() => {
-    // Leer cookie session
     const cookie = document.cookie
       .split("; ")
       .find((row) => row.startsWith("session="));
@@ -18,17 +17,9 @@ export default function AdminHardwareList() {
     }
 
     const session = JSON.parse(decodeURIComponent(cookie.split("=")[1]));
-
-    // Si no es admin → fuera
-    if (session.role !== "admin") {
-      window.location.href = "/dashboard";
-      return;
-    }
-
     setUser(session);
 
-    // Cargar hardware desde API admin
-    fetch("/api/admin/hardware")
+    fetch(`/api/hardware/user/${session.id}`)
       .then((res) => res.json())
       .then((data) => setHardware(data));
   }, []);
@@ -37,13 +28,12 @@ export default function AdminHardwareList() {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1>Hardware Registrado</h1>
+      <h1>Mi Hardware</h1>
 
       <table style={{ width: "100%", marginTop: "1rem" }}>
         <thead>
           <tr>
             <th>ID</th>
-            <th>Usuario</th>
             <th>CPU</th>
             <th>GPU</th>
             <th>RAM</th>
@@ -55,7 +45,6 @@ export default function AdminHardwareList() {
           {hardware.map((h) => (
             <tr key={h.id}>
               <td>{h.id}</td>
-              <td>{h.usuario_id}</td>
               <td>{h.cpu}</td>
               <td>{h.gpu}</td>
               <td>{h.ram}</td>

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-export default function AdminHardwareList() {
+export default function AdminLicenciasList() {
   const [user, setUser] = useState(null);
-  const [hardware, setHardware] = useState([]);
+  const [licencias, setLicencias] = useState([]);
 
   useEffect(() => {
     // Leer cookie session
@@ -27,39 +27,35 @@ export default function AdminHardwareList() {
 
     setUser(session);
 
-    // Cargar hardware desde API admin
-    fetch("/api/admin/hardware")
+    // Cargar licencias desde API admin
+    fetch("/api/admin/licencias")
       .then((res) => res.json())
-      .then((data) => setHardware(data));
+      .then((data) => setLicencias(data));
   }, []);
 
   if (!user) return <p>Cargando...</p>;
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1>Hardware Registrado</h1>
+      <h1>Licencias</h1>
 
       <table style={{ width: "100%", marginTop: "1rem" }}>
         <thead>
           <tr>
             <th>ID</th>
+            <th>Código</th>
+            <th>Estado</th>
             <th>Usuario</th>
-            <th>CPU</th>
-            <th>GPU</th>
-            <th>RAM</th>
-            <th>Fecha</th>
           </tr>
         </thead>
 
         <tbody>
-          {hardware.map((h) => (
-            <tr key={h.id}>
-              <td>{h.id}</td>
-              <td>{h.usuario_id}</td>
-              <td>{h.cpu}</td>
-              <td>{h.gpu}</td>
-              <td>{h.ram}</td>
-              <td>{h.fecha}</td>
+          {licencias.map((l) => (
+            <tr key={l.id}>
+              <td>{l.id}</td>
+              <td>{l.codigo}</td>
+              <td>{l.estado}</td>
+              <td>{l.usuario_id}</td>
             </tr>
           ))}
         </tbody>

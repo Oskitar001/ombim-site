@@ -35,7 +35,7 @@ export async function POST(req) {
 
     const user = users[0];
 
-    // Respuesta JSON
+    // Crear respuesta JSON
     const response = NextResponse.json({
       message: "Login correcto",
       user: {
@@ -46,7 +46,7 @@ export async function POST(req) {
       }
     });
 
-    // Guardar usuario en cookie (compatible con HTTPS y móvil)
+    // Guardar cookie de sesión (HTTPS + móvil compatible)
     response.cookies.set(
       "session",
       JSON.stringify({
@@ -57,8 +57,8 @@ export async function POST(req) {
       }),
       {
         httpOnly: true,
-        secure: true,        // 🔥 obligatorio en HTTPS (ombim.com)
-        sameSite: "lax",     // 🔥 necesario para móvil
+        secure: true,        // obligatorio en producción (Vercel)
+        sameSite: "lax",     // necesario para móvil
         path: "/",
         maxAge: 60 * 60 * 24 * 7 // 7 días
       }

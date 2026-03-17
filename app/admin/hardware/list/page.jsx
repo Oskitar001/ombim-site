@@ -1,67 +1,59 @@
-"use client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { useEffect, useState } from "react";
+export default async function AdminHardwareList() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session");
 
-export default function AdminHardwareList() {
-  const [user, setUser] = useState(null);
-  const [hardware, setHardware] = useState([]);
+  if (!sessionCookie) redirect("/login");
 
-  useEffect(() => {
-    // Leer cookie session
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("session="));
+  const user = JSON.parse(sessionCookie.value);
+  if (user.role !== "admin") redirect("/");
 
-    if (!cookie) {
-      window.location.href = "/login";
-      return;
+  const origin = process.env.NEXT_PUBLIC_DOMAIN;
+
+  const res = await fetch(`${origin}/api/admin/hardware`, {
+    cache: "no-store",
+    headers: {
+      Cookie: `session=${sessionCookie.value}`
     }
+  });
 
-    const session = JSON.parse(decodeURIComponent(cookie.split("=")[1]));
-
-    // Si no es admin → fuera
-    if (session.role !== "admin") {
-      window.location.href = "/dashboard";
-      return;
-    }
-
-    setUser(session);
-
-    // Cargar hardware desde API admin
-    fetch("/api/admin/hardware")
-      .then((res) => res.json())
-      .then((data) => setHardware(data));
-  }, []);
-
-  if (!user) return <p>Cargando...</p>;
+  const hardware = await res.json();
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1>Hardware Registrado</h1>
+      <h1>Activaciones de Licencias (Hardware)</h1>
 
       <table style={{ width: "100%", marginTop: "1rem" }}>
         <thead>
           <tr>
             <th>ID</th>
+            <th>Licencia</th>
             <th>Usuario</th>
-            <th>CPU</th>
-            <th>GPU</th>
-            <th>RAM</th>
-            <th>Fecha</th>
+            <th>Hardware ID</th>
+            <th>Fecha Activación</th>
           </tr>
         </thead>
 
         <tbody>
-          {hardware.map((h) => (
-            <tr key={h.id}>
-              <td>{h.id}</td>
-              <td>{h.usuario_id}</td>
-              <td>{h.cpu}</td>
-              <td>{h.gpu}</td>
-              <td>{h.ram}</td>
-              <td>{h.fecha}</td>
+          {Array.isArray(hardware) && hardware.length > 0 ? (
+            hardware.map((h) => (
+              <tr key={h.id}>
+                <td>{h.id}</td>
+                <td>{h.licencias?.codigo || "—"}</td>
+                <td>{h.licencias?.user_id || "—"}</td>
+                <td>{h.hardware_id}</td>
+                <td>{h.fecha_activacion}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" style={{ textAlign: "center", padding: "1rem" }}>
+                No hay activaciones registradas
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

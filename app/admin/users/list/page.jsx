@@ -1,39 +1,25 @@
-"use client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { useEffect, useState } from "react";
+export default async function AdminUsersList() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session");
 
-export default function AdminUsersList() {
-  const [user, setUser] = useState(null);
-  const [users, setUsers] = useState([]);
+  if (!sessionCookie) redirect("/login");
 
-  useEffect(() => {
-    // Leer cookie session
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("session="));
+  const user = JSON.parse(sessionCookie.value);
+  if (user.role !== "admin") redirect("/");
 
-    if (!cookie) {
-      window.location.href = "/login";
-      return;
+  const origin = process.env.NEXT_PUBLIC_DOMAIN;
+
+  const res = await fetch(`${origin}/api/admin/users`, {
+    cache: "no-store",
+    headers: {
+      Cookie: `session=${sessionCookie.value}`
     }
+  });
 
-    const session = JSON.parse(decodeURIComponent(cookie.split("=")[1]));
-
-    // Si no es admin → fuera
-    if (session.role !== "admin") {
-      window.location.href = "/dashboard";
-      return;
-    }
-
-    setUser(session);
-
-    // Cargar usuarios desde API admin
-    fetch("/api/admin/users")
-      .then((res) => res.json())
-      .then((data) => setUsers(data));
-  }, []);
-
-  if (!user) return <p>Cargando...</p>;
+  const users = await res.json();
 
   return (
     <div style={{ padding: "2rem" }}>

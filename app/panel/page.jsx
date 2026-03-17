@@ -50,6 +50,8 @@ export default function PanelPage() {
           </h2>
 
           <ul className="space-y-3">
+
+            {/* Plugins (ya estaban) */}
             <li>
               <Link href="/panel/plugins" className="text-blue-600 dark:text-blue-400 hover:underline">
                 ➤ Gestionar Plugins
@@ -60,6 +62,29 @@ export default function PanelPage() {
                 ➤ Subir nuevo plugin
               </Link>
             </li>
+
+            {/* Rutas ADMIN reales */}
+            <li>
+              <Link href="/admin/licencias/list" className="text-blue-600 dark:text-blue-400 hover:underline">
+                ➤ Gestionar Licencias
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/users/list" className="text-blue-600 dark:text-blue-400 hover:underline">
+                ➤ Gestionar Usuarios
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/hardware/list" className="text-blue-600 dark:text-blue-400 hover:underline">
+                ➤ Gestionar Hardware
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/logs/list" className="text-blue-600 dark:text-blue-400 hover:underline">
+                ➤ Ver Logs del Sistema
+              </Link>
+            </li>
+
           </ul>
         </div>
       ) : (

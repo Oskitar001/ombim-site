@@ -1,10 +1,13 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
-  // Leer cookie de sesión
-  const sessionCookie = cookies().get("session")?.value;
+  // Leer cookies correctamente (async)
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session")?.value;
 
   if (!sessionCookie) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
@@ -19,7 +22,7 @@ export async function GET() {
   // Conectar a Supabase
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE
+    process.env.SUPABASE_SERVICE_KEY
   );
 
   const { data, error } = await supabase

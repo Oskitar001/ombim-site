@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-export async function GET(req) {
+export async function GET() {
   try {
-    const cookie = req.cookies.get("session");
+    // cookies() ahora es ASÍNCRONO en Next.js 14
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get("session");
 
     if (!cookie || !cookie.value) {
       return NextResponse.json({ user: null });
     }
 
-    const session = cookie.value;
-
     try {
-      const user = JSON.parse(session);
+      const user = JSON.parse(cookie.value);
       return NextResponse.json({ user });
     } catch (err) {
       console.error("Error al parsear cookie:", err);

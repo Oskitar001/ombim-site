@@ -4,25 +4,24 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkAdmin } from "@/lib/checkAdmin";
 
-export async function GET(req) {
+export async function GET(req, { params }) {
   const admin = await checkAdmin();
   if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
-  const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q") || "";
+  const { id } = params;
 
-  let query = supabaseAdmin
-    .from("pagos")
+  const { data: licencia, error } = await supabaseAdmin
+    .from("licencias")
     .select("*")
-    .order("fecha", { ascending: false });
-
-  if (q) {
-    query = query.or(`email_tekla.ilike.%${q}%,plugin_id.ilike.%${q}%`);
-  }
-
-  const { data, error } = await query;
+    .eq("id", id)
+    .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ pagos: data });
+  const { data: activaciones } = await supabaseAdmin
+    .from("licencia_activaciones")
+    .select("*")
+    .eq("licencia_id", id);
+
+  return NextResponse.json({ licencia, activaciones });
 }

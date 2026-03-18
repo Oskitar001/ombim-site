@@ -1,57 +1,64 @@
 "use client";
+
 import { useEffect, useState } from "react";
 
-export default function AdminPagos() {
+export default function PagosPage() {
   const [pagos, setPagos] = useState([]);
+  const [q, setQ] = useState("");
+
+  async function cargar() {
+    const res = await fetch(`/api/admin/pagos?q=${q}`);
+    const data = await res.json();
+    setPagos(data.pagos || []);
+  }
 
   useEffect(() => {
-    fetch("/api/admin/pagos")
-      .then(res => res.json())
-      .then(data => setPagos(data));
-  }, []);
-
-  const confirmarPago = async (id) => {
-    await fetch("/api/admin/confirmar-pago", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id })
-    });
-
-    setPagos(prev =>
-      prev.map(p => p.id === id ? { ...p, estado: "confirmado" } : p)
-    );
-  };
+    cargar();
+  }, [q]);
 
   return (
-    <div className="max-w-3xl mx-auto pt-32 px-6">
-      <h1 className="text-3xl font-bold mb-6">Gestión de Pagos</h1>
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Pagos</h2>
 
-      {pagos.map(p => (
-        <div
-          key={p.id}
-          className="p-4 mb-4 rounded-lg border bg-white dark:bg-[#1a1a1a]"
-        >
-          <p><strong>Usuario:</strong> {p.user_email}</p>
-          <p><strong>Plugin:</strong> {p.plugin_nombre}</p>
-          <p><strong>Estado:</strong> {p.estado}</p>
-          <p><strong>Fecha:</strong> {new Date(p.fecha).toLocaleString()}</p>
+      <input
+        className="border p-2 mb-4"
+        placeholder="Buscar por email o plugin..."
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
 
-          {p.estado === "pendiente" && (
-            <button
-              onClick={() => confirmarPago(p.id)}
-              className="mt-3 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              Confirmar pago
-            </button>
-          )}
+      <table className="w-full bg-white shadow rounded">
+        <thead>
+          <tr className="bg-gray-200 text-left">
+            <th className="p-2">Email Tekla</th>
+            <th className="p-2">Plugin</th>
+            <th className="p-2">Estado</th>
+            <th className="p-2">Cantidad</th>
+            <th className="p-2">Fecha</th>
+            <th className="p-2">Acciones</th>
+          </tr>
+        </thead>
 
-          {p.estado === "confirmado" && (
-            <p className="mt-3 text-green-600 font-semibold">
-              Pago confirmado ✔
-            </p>
-          )}
-        </div>
-      ))}
+        <tbody>
+          {pagos.map((p) => (
+            <tr key={p.id} className="border-t">
+              <td className="p-2">{p.email_tekla}</td>
+              <td className="p-2">{p.plugin_id}</td>
+              <td className="p-2">{p.estado}</td>
+              <td className="p-2">{p.cantidad || "—"}</td>
+              <td className="p-2">{new Date(p.fecha).toLocaleString()}</td>
+              <td className="p-2">
+                <a
+                  href={`/admin/pagos/${p.id}`}
+                  className="text-blue-600 underline"
+                >
+                  Ver
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

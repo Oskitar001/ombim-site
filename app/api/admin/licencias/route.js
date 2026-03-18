@@ -1,37 +1,33 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { checkAdmin } from "@/lib/checkAdmin";
 
-export async function GET() {
-  // Leer cookies correctamente (async)
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("session")?.value;
+export async function GET(req) {
+  const admin = await checkAdmin();
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
-  if (!sessionCookie) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get("q") || "";
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const perPage = 20;
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
 
-  const session = JSON.parse(sessionCookie);
-
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Solo admin" }, { status: 403 });
-  }
-
-  // Conectar a Supabase
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  );
-
-  const { data, error } = await supabase
+  let query = supabaseAdmin
     .from("licencias")
-    .select("*");
+    .select("*", { count: "exact" })
+    .order("fecha_creacion", { ascending: false })
+    .range(from, to);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (q) {
+    query = query.or(`email_tekla.ilike.%${q}%,plugin_id.ilike.%${q}%`);
   }
 
-  return NextResponse.json(data);
+  const { data, error, count } = await query;
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ licencias: data, total: count, page, perPage });
 }

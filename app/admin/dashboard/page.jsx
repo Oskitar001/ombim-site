@@ -1,41 +1,53 @@
-export default async function AdminDashboardPage() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/admin/datos`, {
-    cache: "no-store"
-  });
+"use client";
 
-  const stats = await res.json();
+import { useEffect, useState } from "react";
+import StatsCard from "@/components/admin/StatsCard";
 
-  const cards = [
-    { title: "Usuarios", value: stats.usuarios },
-    { title: "Licencias", value: stats.licencias },
-    { title: "Activaciones", value: stats.activaciones },
-    { title: "Hardware", value: stats.hardware },
-    { title: "Logs", value: stats.logs },
-    { title: "Versiones", value: stats.versiones }
-  ];
+export default function DashboardPage() {
+  const [stats, setStats] = useState(null);
+
+  async function cargar() {
+    const res = await fetch("/api/admin/dashboard");
+    const data = await res.json();
+    setStats(data);
+  }
+
+  useEffect(() => {
+    cargar();
+  }, []);
+
+  if (!stats) return <p>Cargando...</p>;
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Dashboard</h1>
+    <div>
+      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-        gap: "1rem",
-        marginTop: "2rem"
-      }}>
-        {cards.map((c) => (
-          <div key={c.title} style={{
-            padding: "1.5rem",
-            borderRadius: "8px",
-            background: "#f5f5f5",
-            textAlign: "center"
-          }}>
-            <h2>{c.title}</h2>
-            <p style={{ fontSize: "2rem", fontWeight: "bold" }}>{c.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <StatsCard title="Licencias totales" value={stats.totalLicencias} />
+        <StatsCard title="Licencias activas" value={stats.licenciasActivas} />
+        <StatsCard title="Licencias bloqueadas" value={stats.licenciasBloqueadas} />
+        <StatsCard title="Activaciones totales" value={stats.activacionesTotales} />
+        <StatsCard title="Pagos totales" value={stats.totalPagos} />
+        <StatsCard title="Ingresos totales (€)" value={stats.ingresosTotales} />
       </div>
+
+      <h3 className="text-xl font-bold mb-2">Últimos pagos</h3>
+      <ul className="mb-6">
+        {stats.ultimosPagos.map((p) => (
+          <li key={p.id}>
+            {p.email_tekla} — {p.cantidad}€ — {new Date(p.fecha).toLocaleString()}
+          </li>
+        ))}
+      </ul>
+
+      <h3 className="text-xl font-bold mb-2">Últimas licencias creadas</h3>
+      <ul>
+        {stats.ultimasLicencias.map((l) => (
+          <li key={l.id}>
+            {l.email_tekla} — {l.plugin_id} — {new Date(l.fecha_creacion).toLocaleString()}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -2,129 +2,61 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req) {
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  );
+  try {
+    const { email_tekla, plugin_id, hardware_id } = await req.json();
 
-  const body = await req.json();
-  const { email, password, plugin_id, hardware_id } = body;
-
-  if (!email || !password || !hardware_id) {
-    return NextResponse.json({
-      ok: false,
-      error: "Datos incompletos",
-      token: null,
-      usuario_id: null,
-      dias_restantes: 0,
-      estado: "error"
-    });
-  }
-
-  // 1. Buscar usuario
-  const { data: userData } = await supabase
-    .from("usuarios")
-    .select("*")
-    .eq("email", email)
-    .single();
-
-  if (!userData) {
-    return NextResponse.json({
-      ok: false,
-      error: "Usuario no encontrado",
-      token: null,
-      usuario_id: null,
-      dias_restantes: 0,
-      estado: "error"
-    });
-  }
-
-  // 2. Validar contraseña (texto plano)
-  if (password !== userData.password) {
-    return NextResponse.json({
-      ok: false,
-      error: "Contraseña incorrecta",
-      token: null,
-      usuario_id: null,
-      dias_restantes: 0,
-      estado: "error"
-    });
-  }
-
-  // 3. Buscar licencia válida
-  const { data: licencia } = await supabase
-    .from("licencias")
-    .select("*, licencia_tipos(nombre)")
-    .eq("user_id", userData.id)
-    .eq("estado", "activa")
-    .or(`plugin_id.eq.${plugin_id},plugin_id.is.null`)
-    .single();
-
-  if (!licencia) {
-    return NextResponse.json({
-      ok: false,
-      error: "No tienes licencia para este plugin",
-      token: null,
-      usuario_id: userData.id,
-      dias_restantes: 0,
-      estado: "sin_licencia"
-    });
-  }
-
-  // 4. Comprobar expiración
-  let dias_restantes = 9999;
-  if (licencia.fecha_expiracion) {
-    const hoy = new Date();
-    const exp = new Date(licencia.fecha_expiracion);
-    dias_restantes = Math.ceil((exp - hoy) / (1000 * 60 * 60 * 24));
-
-    if (dias_restantes <= 0) {
-      return NextResponse.json({
-        ok: false,
-        error: "Licencia expirada",
-        token: null,
-        usuario_id: userData.id,
-        dias_restantes: 0,
-        estado: "expirada"
-      });
+    if (!email_tekla || !plugin_id || !hardware_id) {
+      return NextResponse.json({ ok: false, error: "Datos incompletos" });
     }
-  }
 
-  // 5. Comprobar activaciones
-  const { data: activaciones } = await supabase
-    .from("licencia_activaciones")
-    .select("*")
-    .eq("licencia_id", licencia.id);
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
 
-  const yaActivado = activaciones.some(a => a.hardware_id === hardware_id);
+    // Buscar licencia activa
+    const { data: licencia } = await supabase
+      .from("licencias")
+      .select("*")
+      .eq("email_tekla", email_tekla)
+      .eq("plugin_id", plugin_id)
+      .eq("estado", "activa")
+      .single();
 
-  if (!yaActivado) {
+    if (!licencia) {
+      return NextResponse.json({ ok: false, error: "Licencia no encontrada" });
+    }
+
+    // Comprobar expiración
+    if (licencia.fecha_expiracion && new Date(licencia.fecha_expiracion) < new Date()) {
+      return NextResponse.json({ ok: false, error: "Licencia expirada" });
+    }
+
+    // Comprobar activaciones existentes
+    const { data: activaciones } = await supabase
+      .from("licencia_activaciones")
+      .select("*")
+      .eq("licencia_id", licencia.id);
+
+    // Si ya está activado en este hardware → OK
+    if (activaciones.some(a => a.hardware_id === hardware_id)) {
+      return NextResponse.json({ ok: true, licencia });
+    }
+
+    // Si supera el límite → error
     if (activaciones.length >= licencia.max_activaciones) {
-      return NextResponse.json({
-        ok: false,
-        error: "Has alcanzado el máximo de equipos permitidos",
-        token: null,
-        usuario_id: userData.id,
-        dias_restantes,
-        estado: "limite_equipos"
-      });
+      return NextResponse.json({ ok: false, error: "Límite de activaciones alcanzado" });
     }
 
+    // Registrar nueva activación
     await supabase.from("licencia_activaciones").insert({
       licencia_id: licencia.id,
       hardware_id
     });
+
+    return NextResponse.json({ ok: true, licencia });
+
+  } catch (err) {
+    return NextResponse.json({ ok: false, error: err.message });
   }
-
-  // 6. Generar token simple
-  const token = crypto.randomUUID();
-
-  return NextResponse.json({
-    ok: true,
-    error: null,
-    token,
-    usuario_id: userData.id,
-    dias_restantes,
-    estado: licencia.estado
-  });
 }

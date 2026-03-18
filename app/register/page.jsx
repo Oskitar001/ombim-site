@@ -28,6 +28,10 @@ export default function RegisterPage() {
     }
 
     setOk("Registro completado. Ahora puedes iniciar sesión.");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1200);
+
   }
 
   return (

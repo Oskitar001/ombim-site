@@ -23,14 +23,12 @@ export default function LoginPage() {
       return;
     }
 
-    // --- Protección contra JSON vacío ---
     let data = {};
     try {
       data = await res.json();
     } catch {
       data = {};
     }
-    // -------------------------------------
 
     if (!res.ok) {
       setError(data.error || "Error al iniciar sesión");
@@ -84,7 +82,7 @@ export default function LoginPage() {
 
       <p className="mt-4 text-gray-700 dark:text-gray-300">
         ¿No tienes cuenta?{" "}
-        <a href="/login/register" className="text-blue-600 dark:text-blue-400 hover:underline">
+        <a href="/register" className="text-blue-600 dark:text-blue-400 hover:underline">
           Regístrate aquí
         </a>
       </p>

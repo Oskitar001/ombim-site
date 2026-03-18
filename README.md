@@ -1,7 +1,7 @@
 # OMBIM – Landing (Next.js 14 + Tailwind) [FINAL]
 
 Este proyecto incluye:
-- Next.js App Router
+- Next.js app Router
 - Tailwind + PostCSS configurados
 - Componentes: Navbar, Hero, Services, Projects, Contact, Footer
 - API `/api/contact` con Nodemailer (SMTP)

@@ -1,21 +1,28 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import RecibirClaves from "./RecibirClaves";
 
-export default async function PluginPage({ params }) {
-  const { id } = params;
+export default async function PluginPage(props) {
+  // params es una PROMESA en Next 16
+  const { id } = await props.params;
+
+  // headers() también es una PROMESA en Next 16
+  const hdr = await headers();
+  const host = hdr.get("host");
+  const protocol = host.includes("localhost") ? "http" : "https";
+
+  const pluginURL = `${protocol}://${host}/api/plugin/${id}`;
+  const pagoURL = `${protocol}://${host}/api/pagos/estado?plugin_id=${id}`;
 
   // Obtener datos del plugin
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/plugin/${id}`, {
-    cache: "no-store"
-  });
-
+  const res = await fetch(pluginURL, { cache: "no-store" });
   if (!res.ok) return notFound();
 
   const plugin = await res.json();
   const esDePago = plugin.precio && plugin.precio > 0;
 
   // Obtener estado del pago del usuario
-  const pagoRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/pagos/estado?plugin_id=${id}`, {
+  const pagoRes = await fetch(pagoURL, {
     cache: "no-store",
     credentials: "include"
   });
@@ -28,7 +35,6 @@ export default async function PluginPage({ params }) {
         {plugin.nombre}
       </h1>
 
-      {/* Precio */}
       <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-4">
         {esDePago ? `${plugin.precio} €` : "Gratis"}
       </p>
@@ -45,11 +51,8 @@ export default async function PluginPage({ params }) {
         ></iframe>
       )}
 
-      {/* LÓGICA DE COMPRA / PAGO / CLAVES */}
       {esDePago ? (
         <div className="mt-6">
-
-          {/* 1. Si NO hay pago → botón ir a pagar */}
           {!pago && (
             <a
               href={`/pago/${id}`}
@@ -59,20 +62,16 @@ export default async function PluginPage({ params }) {
             </a>
           )}
 
-          {/* 2. Si el pago está pendiente */}
           {pago?.estado === "pendiente" && (
             <p className="text-yellow-600 font-semibold">
-              Pago pendiente de confirmación.  
-              Óscar lo revisará pronto.
+              Pago pendiente de confirmación. Óscar lo revisará pronto.
             </p>
           )}
 
-          {/* 3. Si el pago está confirmado → botón recibir claves */}
           {pago?.estado === "confirmado" && !pago?.clave && (
             <RecibirClaves pluginId={id} />
           )}
 
-          {/* 4. Si ya tiene clave entregada */}
           {pago?.clave && (
             <div className="bg-green-100 dark:bg-green-900 p-4 rounded mt-4">
               <p className="font-semibold text-green-700 dark:text-green-300">

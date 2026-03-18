@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export function middleware(request) {
+export default function proxy(request) {
   const { nextUrl, cookies } = request;
   const pathname = nextUrl.pathname;
 
@@ -13,7 +13,7 @@ export function middleware(request) {
 
   response.headers.set("x-origin", nextUrl.origin);
 
-  // Leer cookie de sesión (como string, sin JSON.parse)
+  // Leer cookie de sesión (como string)
   const sessionCookie = cookies.get("session")?.value || "";
 
   // Rutas que requieren admin
@@ -22,7 +22,6 @@ export function middleware(request) {
     pathname.startsWith("/api/admin");
 
   if (isAdminRoute) {
-    // Si no hay cookie → fuera
     if (!sessionCookie) {
       return NextResponse.redirect(new URL("/login", request.url));
     }

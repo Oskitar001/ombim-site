@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: "class", // ← ESTA LÍNEA ES OBLIGATORIA
+  darkMode: "class",
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
@@ -12,6 +12,18 @@ module.exports = {
         brand: {
           DEFAULT: "#2563eb",
           dark: "#1e40af"
+        },
+        dark: {
+          bg: "#1a1a1a",
+          bgSoft: "#222222",
+          border: "#333333",
+          text: "#e5e5e5"
+        },
+        light: {
+          bg: "#f8f9fa",
+          bgSoft: "#ffffff",
+          border: "#e5e7eb",
+          text: "#1f2937"
         }
       },
       boxShadow: {

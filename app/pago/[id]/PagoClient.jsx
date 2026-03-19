@@ -1,14 +1,13 @@
 "use client";
+
 import { useState } from "react";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 
 export default function PagoClient({ plugin, tiposLicencia }) {
-  // Tipo de licencia global
   const [tipoLicencia, setTipoLicencia] = useState("");
-
-  // Lista de licencias (cada una con email Tekla)
-  const [licencias, setLicencias] = useState([
-    { email_tekla: "" }
-  ]);
+  const [licencias, setLicencias] = useState([{ email_tekla: "" }]);
 
   const addRow = () => {
     setLicencias([...licencias, { email_tekla: "" }]);
@@ -40,47 +39,91 @@ export default function PagoClient({ plugin, tiposLicencia }) {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Comprar {plugin.nombre}</h1>
-      <p>Precio por licencia: {plugin.precio} €</p>
+    <div
+      className="
+        max-w-2xl mx-auto p-6 rounded-2xl
+        bg-light-bgSoft dark:bg-dark-bg
+        border border-light-border dark:border-dark-border
+        shadow-soft dark:shadow-none
+      "
+    >
+      {/* Título */}
+      <h1 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">
+        Comprar {plugin.nombre}
+      </h1>
 
-      <h3>Tipo de licencia</h3>
-      <select
+      <p className="text-gray-700 dark:text-gray-300 mb-6">
+        Precio por licencia: <strong>{plugin.precio} €</strong>
+      </p>
+
+      {/* Tipo de licencia */}
+      <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-2">
+        Tipo de licencia
+      </h3>
+
+      <Select
         value={tipoLicencia}
         onChange={(e) => setTipoLicencia(e.target.value)}
+        className="mb-6"
       >
         <option value="">Seleccionar...</option>
-
         {tiposLicencia.map((tipo) => (
           <option key={tipo.id} value={tipo.id}>
             {tipo.nombre}
           </option>
         ))}
-      </select>
+      </Select>
 
-      <h3 style={{ marginTop: 20 }}>Licencias</h3>
+      {/* Licencias */}
+      <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4">
+        Licencias
+      </h3>
 
       {licencias.map((lic, index) => (
-        <div key={index} style={{ border: "1px solid #ccc", padding: 10, marginBottom: 10 }}>
-          
-          <label>Email Tekla:</label>
-          <input
+        <div
+          key={index}
+          className="
+            mb-4 p-4 rounded-xl
+            bg-light-bg dark:bg-dark-bgSoft
+            border border-light-border dark:border-dark-border
+          "
+        >
+          <label className="block text-light-text dark:text-dark-text mb-1">
+            Email Tekla:
+          </label>
+
+          <Input
             type="email"
             value={lic.email_tekla}
             onChange={(e) => updateEmail(index, e.target.value)}
           />
 
           {licencias.length > 1 && (
-            <button onClick={() => removeRow(index)}>Eliminar</button>
+            <button
+              onClick={() => removeRow(index)}
+              className="
+                mt-3 text-sm text-red-500 hover:text-red-600
+                transition
+              "
+            >
+              Eliminar
+            </button>
           )}
         </div>
       ))}
 
-      <button onClick={addRow}>Añadir otra licencia</button>
+      <Button
+        onClick={addRow}
+        className="mb-6 bg-gray-200 dark:bg-dark-bgSoft text-gray-900 dark:text-dark-text hover:bg-gray-300 dark:hover:bg-dark-border"
+      >
+        Añadir otra licencia
+      </Button>
 
-      <hr />
+      <hr className="border-light-border dark:border-dark-border mb-6" />
 
-      <button onClick={comprar}>Comprar por transferencia</button>
+      <Button onClick={comprar} className="w-full">
+        Comprar por transferencia
+      </Button>
     </div>
   );
 }

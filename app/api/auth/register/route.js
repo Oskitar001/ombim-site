@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import crypto from "crypto";
 
 function generarToken() {
-  return (
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15)
-  );
+  return crypto.randomBytes(20).toString("hex");
 }
 
 export async function POST(req) {
@@ -18,7 +16,6 @@ export async function POST(req) {
 
     const { nombre, email, password } = await req.json();
 
-    // Comprobar si ya existe
     const { data: existing } = await supabase
       .from("users")
       .select("*")
@@ -32,17 +29,15 @@ export async function POST(req) {
       );
     }
 
-    // Crear token de verificación
     const token = generarToken();
 
-    // Insertar usuario
     const { data, error } = await supabase
       .from("users")
       .insert([
         {
           nombre,
           email,
-          password, // sin hashing
+          password,
           role: "user",
           verificado: false,
           token_verificacion: token
@@ -58,10 +53,9 @@ export async function POST(req) {
       );
     }
 
-    // Enviar email de verificación
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const url = `${process.env.NEXT_PUBLIC_DOMAIN}/verify?token=${token}`;
+    const url = `${process.env.NEXT_PUBLIC_DOMAIN}/verify?token=${encodeURIComponent(token)}`;
 
     await resend.emails.send({
       from: `"OMBIM" <noreply@updates.ombim.com>`,

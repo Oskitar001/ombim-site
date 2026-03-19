@@ -1,28 +1,37 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { checkAdmin } from "@/lib/checkAdmin";
+import { createClient } from "@supabase/supabase-js";
 
-export async function GET(req) {
-  const admin = await checkAdmin();
-  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+export async function GET() {
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
 
-  const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q") || "";
-
-  let query = supabaseAdmin
+  const { data, error } = await supabase
     .from("pagos")
-    .select("*")
-    .order("fecha", { ascending: false });
+    .select(`
+      id,
+      user_id,
+      plugin_id,
+      estado,
+      cantidad,
+      fecha,
+      auth_users:auth.users!inner(email),
+      plugin:plugins!inner(nombre)
+    `);
 
-  if (q) {
-    query = query.or(`email_tekla.ilike.%${q}%,plugin_id.ilike.%${q}%`);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const { data, error } = await query;
+  const mapped = data.map((p) => ({
+    id: p.id,
+    estado: p.estado,
+    cantidad: p.cantidad,
+    fecha: p.fecha,
+    user_email: p.auth_users.email,
+    plugin_nombre: p.plugin.nombre,
+  }));
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ pagos: data });
+  return NextResponse.json(mapped);
 }

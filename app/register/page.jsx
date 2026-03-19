@@ -27,10 +27,8 @@ export default function RegisterPage() {
       return;
     }
 
-    setOk("Registro completado. Ahora puedes iniciar sesión.");
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 1200);
+    setOk("Registro completado. Revisa tu email para confirmar tu cuenta.");
+    
 
   }
 

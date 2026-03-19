@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const params = useSearchParams();
+  const verified = params.get("verified");
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -43,6 +47,16 @@ export default function LoginPage() {
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
         Iniciar sesión
       </h1>
+
+      {verified && (
+  <div className="w-full max-w-sm mb-4 p-4 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-600 flex items-center gap-3 shadow">
+    <span className="text-green-700 dark:text-green-300 text-xl">✔</span>
+    <p className="text-green-700 dark:text-green-300">
+      <strong>Email verificado.</strong> Ya puedes iniciar sesión.
+    </p>
+  </div>
+)}
+
 
       <form
         onSubmit={handleLogin}
@@ -89,3 +103,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

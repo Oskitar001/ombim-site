@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+
+function generarToken() {
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
+}
 
 export async function POST(req) {
   try {
@@ -11,19 +19,11 @@ export async function POST(req) {
     const { nombre, email, password } = await req.json();
 
     // Comprobar si ya existe
-    const { data: existing, error: checkError } = await supabase
+    const { data: existing } = await supabase
       .from("users")
       .select("*")
       .eq("email", email)
       .limit(1);
-
-    if (checkError) {
-      console.error("DB CHECK ERROR:", checkError);
-      return NextResponse.json(
-        { error: "Error en la base de datos" },
-        { status: 500 }
-      );
-    }
 
     if (existing && existing.length > 0) {
       return NextResponse.json(
@@ -32,58 +32,53 @@ export async function POST(req) {
       );
     }
 
-    // Insertar usuario SIN bcrypt (como pediste)
+    // Crear token de verificación
+    const token = generarToken();
+
+    // Insertar usuario
     const { data, error } = await supabase
       .from("users")
       .insert([
         {
           nombre,
           email,
-          password, // 🔥 sin hashing, como tú quieres
-          role: "user"
+          password, // sin hashing
+          role: "user",
+          verificado: false,
+          token_verificacion: token
         }
       ])
       .select()
       .single();
 
     if (error) {
-      console.error("DB INSERT ERROR:", error);
       return NextResponse.json(
         { error: "Error al registrar usuario" },
         { status: 500 }
       );
     }
 
-    // Crear respuesta
-    const response = NextResponse.json({
-      message: "Usuario registrado correctamente",
-      user: {
-        id: data.id,
-        email: data.email,
-        nombre: data.nombre,
-        role: data.role
-      }
+    // Enviar email de verificación
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const url = `${process.env.NEXT_PUBLIC_SITE_URL}/verify?token=${token}`;
+
+    await resend.emails.send({
+      from: `"OMBIM" <notificaciones@updates.ombim.com>`,
+      to: email,
+      subject: "Confirma tu cuenta",
+      html: `
+        <h2>Bienvenido a OMBIM</h2>
+        <p>Haz clic en el siguiente enlace para confirmar tu cuenta:</p>
+        <p><a href="${url}">${url}</a></p>
+        <p>Si no creaste esta cuenta, ignora este mensaje.</p>
+      `
     });
 
-    // 🔥 Crear cookie de sesión (igual que login)
-    response.cookies.set(
-      "session",
-      JSON.stringify({
-        id: data.id,
-        email: data.email,
-        nombre: data.nombre,
-        role: data.role
-      }),
-      {
-        httpOnly: true,
-        secure: true,        // obligatorio en HTTPS
-        sameSite: "lax",     // necesario para móvil
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7 // 7 días
-      }
-    );
-
-    return response;
+    return NextResponse.json({
+      ok: true,
+      message: "Registro completado. Revisa tu email para confirmar tu cuenta."
+    });
 
   } catch (err) {
     console.error("REGISTER ERROR:", err);

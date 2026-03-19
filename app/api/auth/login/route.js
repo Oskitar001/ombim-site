@@ -10,21 +10,13 @@ export async function POST(req) {
 
     const { email, password } = await req.json();
 
-    // Buscar usuario en tu tabla
-    const { data: users, error } = await supabase
+    // Buscar usuario
+    const { data: users } = await supabase
       .from("users")
       .select("*")
       .eq("email", email)
       .eq("password", password)
       .limit(1);
-
-    if (error) {
-      console.error("DB ERROR:", error);
-      return NextResponse.json(
-        { error: "Error en la base de datos" },
-        { status: 500 }
-      );
-    }
 
     if (!users || users.length === 0) {
       return NextResponse.json(
@@ -35,7 +27,14 @@ export async function POST(req) {
 
     const user = users[0];
 
-    // Crear respuesta JSON
+    if (!user.verificado) {
+      return NextResponse.json(
+        { error: "Debes confirmar tu email antes de iniciar sesión." },
+        { status: 403 }
+      );
+    }
+
+    // Crear cookie de sesión
     const response = NextResponse.json({
       message: "Login correcto",
       user: {
@@ -46,7 +45,6 @@ export async function POST(req) {
       }
     });
 
-    // Guardar cookie de sesión (HTTPS + móvil compatible)
     response.cookies.set(
       "session",
       JSON.stringify({
@@ -57,10 +55,10 @@ export async function POST(req) {
       }),
       {
         httpOnly: true,
-        secure: true,        // obligatorio en producción (Vercel)
-        sameSite: "lax",     // necesario para móvil
+        secure: true,
+        sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7 // 7 días
+        maxAge: 60 * 60 * 24 * 7
       }
     );
 

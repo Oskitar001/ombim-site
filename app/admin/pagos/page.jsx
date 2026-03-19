@@ -1,64 +1,57 @@
 "use client";
-
 import { useEffect, useState } from "react";
 
-export default function PagosPage() {
+export default function PagosAdminPage() {
   const [pagos, setPagos] = useState([]);
-  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  async function cargar() {
-    const res = await fetch(`/api/admin/pagos?q=${q}`);
+  const cargarPagos = async () => {
+    setLoading(true);
+    const res = await fetch("/api/admin/pagos");
     const data = await res.json();
-    setPagos(data.pagos || []);
-  }
+    setPagos(data || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    cargar();
-  }, [q]);
+    cargarPagos();
+  }, []);
+
+  const aprobarPago = async (pagoId) => {
+    const res = await fetch(`/api/admin/pagos/${pagoId}/aprobar`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    console.log("Aprobar pago:", data);
+    await cargarPagos();
+  };
+
+  if (loading) return <p>Cargando pagos...</p>;
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Pagos</h2>
+    <div style={{ padding: 20 }}>
+      <h1>Pagos pendientes</h1>
 
-      <input
-        className="border p-2 mb-4"
-        placeholder="Buscar por email o plugin..."
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
+      {pagos.length === 0 && <p>No hay pagos.</p>}
 
-      <table className="w-full bg-white shadow rounded">
-        <thead>
-          <tr className="bg-gray-200 text-left">
-            <th className="p-2">Email Tekla</th>
-            <th className="p-2">Plugin</th>
-            <th className="p-2">Estado</th>
-            <th className="p-2">Cantidad</th>
-            <th className="p-2">Fecha</th>
-            <th className="p-2">Acciones</th>
-          </tr>
-        </thead>
+      {pagos.map((pago) => (
+        <div
+          key={pago.id}
+          style={{ border: "1px solid #ccc", padding: 10, marginBottom: 10 }}
+        >
+          <p><strong>ID:</strong> {pago.id}</p>
+          <p><strong>Usuario:</strong> {pago.user_email}</p>
+          <p><strong>Plugin:</strong> {pago.plugin_nombre}</p>
+          <p><strong>Estado:</strong> {pago.estado}</p>
+          <p><strong>Cantidad:</strong> {pago.cantidad} €</p>
 
-        <tbody>
-          {pagos.map((p) => (
-            <tr key={p.id} className="border-t">
-              <td className="p-2">{p.email_tekla}</td>
-              <td className="p-2">{p.plugin_id}</td>
-              <td className="p-2">{p.estado}</td>
-              <td className="p-2">{p.cantidad || "—"}</td>
-              <td className="p-2">{new Date(p.fecha).toLocaleString()}</td>
-              <td className="p-2">
-                <a
-                  href={`/admin/pagos/${p.id}`}
-                  className="text-blue-600 underline"
-                >
-                  Ver
-                </a>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          {pago.estado === "pendiente" && (
+            <button onClick={() => aprobarPago(pago.id)}>
+              Aprobar pago y activar licencias
+            </button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

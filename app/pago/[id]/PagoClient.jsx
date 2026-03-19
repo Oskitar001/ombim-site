@@ -1,54 +1,86 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-export default function PagoClient({ id }) {
-  const [plugin, setPlugin] = useState(null);
-  const [enviado, setEnviado] = useState(false);
+export default function PagoClient({ plugin, tiposLicencia }) {
+  // Tipo de licencia global
+  const [tipoLicencia, setTipoLicencia] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/plugin/${id}`)
-      .then(res => res.json())
-      .then(data => setPlugin(data));
-  }, [id]);
+  // Lista de licencias (cada una con email Tekla)
+  const [licencias, setLicencias] = useState([
+    { email_tekla: "" }
+  ]);
 
-  if (!plugin) return <div className="pt-32 text-center">Cargando...</div>;
+  const addRow = () => {
+    setLicencias([...licencias, { email_tekla: "" }]);
+  };
 
-  const enviarConfirmacion = async () => {
+  const removeRow = (index) => {
+    setLicencias(licencias.filter((_, i) => i !== index));
+  };
+
+  const updateEmail = (index, value) => {
+    const updated = [...licencias];
+    updated[index].email_tekla = value;
+    setLicencias(updated);
+  };
+
+  const comprar = async () => {
     const res = await fetch("/api/transferencia", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plugin_id: id })
+      body: JSON.stringify({
+        plugin_id: plugin.id,
+        tipo_id: tipoLicencia,
+        licencias
+      })
     });
 
-    if (res.ok) setEnviado(true);
+    const data = await res.json();
+    console.log("Respuesta:", data);
   };
 
   return (
-    <div className="max-w-2xl mx-auto pt-32 px-6">
-      <h1 className="text-3xl font-bold mb-4">
-        Pago por transferencia — {plugin.nombre}
-      </h1>
+    <div style={{ padding: 20 }}>
+      <h1>Comprar {plugin.nombre}</h1>
+      <p>Precio por licencia: {plugin.precio} €</p>
 
-      <div className="bg-gray-100 dark:bg-[#222] p-4 rounded-lg mb-6">
-        <p><strong>Precio:</strong> {plugin.precio} €</p>
-        <p><strong>IBAN:</strong> ES60 0049 2851 4027 1413 5754</p>
-        <p><strong>Titular:</strong> Oscar Martínez</p>
-        <p><strong>Concepto:</strong> Plugin {plugin.nombre} — ID {id}</p>
-      </div>
+      <h3>Tipo de licencia</h3>
+      <select
+        value={tipoLicencia}
+        onChange={(e) => setTipoLicencia(e.target.value)}
+      >
+        <option value="">Seleccionar...</option>
 
-      {!enviado ? (
-        <button
-          onClick={enviarConfirmacion}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-        >
-          He realizado la transferencia
-        </button>
-      ) : (
-        <p className="text-green-600 font-semibold">
-          ¡Perfecto! Hemos recibido tu aviso.  
-          Óscar verificará el pago y te enviará las claves de activación.
-        </p>
-      )}
+        {tiposLicencia.map((tipo) => (
+          <option key={tipo.id} value={tipo.id}>
+            {tipo.nombre}
+          </option>
+        ))}
+      </select>
+
+      <h3 style={{ marginTop: 20 }}>Licencias</h3>
+
+      {licencias.map((lic, index) => (
+        <div key={index} style={{ border: "1px solid #ccc", padding: 10, marginBottom: 10 }}>
+          
+          <label>Email Tekla:</label>
+          <input
+            type="email"
+            value={lic.email_tekla}
+            onChange={(e) => updateEmail(index, e.target.value)}
+          />
+
+          {licencias.length > 1 && (
+            <button onClick={() => removeRow(index)}>Eliminar</button>
+          )}
+        </div>
+      ))}
+
+      <button onClick={addRow}>Añadir otra licencia</button>
+
+      <hr />
+
+      <button onClick={comprar}>Comprar por transferencia</button>
     </div>
   );
 }

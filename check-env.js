@@ -21,8 +21,9 @@ const REQUIRED = [
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "RESEND_API_KEY",
-  "NEXT_PUBLIC_DOMAIN",
+  "NEXT_PUBLIC_SITE_URL", // ← ESTA ES LA IMPORTANTE
 ];
+
 
 // 4. Detectar faltantes
 const missing = REQUIRED.filter((key) => !process.env[key]);

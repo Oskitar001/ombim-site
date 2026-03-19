@@ -61,7 +61,7 @@ export async function POST(req) {
     // Enviar email de verificación
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const url = `${process.env.NEXT_PUBLIC_SITE_URL}/verify?token=${token}`;
+    const url = `${process.env.NEXT_PUBLIC_DOMAIN}/verify?token=${token}`;
 
     await resend.emails.send({
       from: `"OMBIM" <notificaciones@updates.ombim.com>`,

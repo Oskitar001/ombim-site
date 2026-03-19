@@ -42,7 +42,7 @@ export async function POST(req) {
 
     // Enviar email
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const url = `${process.env.NEXT_PUBLIC_SITE_URL}/reset?token=${token}`;
+    const url = `${process.env.NEXT_PUBLIC_DOMAIN}/reset?token=${token}`;
 
     await resend.emails.send({
       from: `"OMBIM" <notificaciones@updates.ombim.com>`,

@@ -83,7 +83,7 @@ export async function POST(req) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
-      from: "OMBIM <notificaciones@ombim.com>",
+      from: "OMBIM <noreply@ombim.com>",
       to: pago.email_tekla,
       subject: "Tu licencia está lista",
       text: `

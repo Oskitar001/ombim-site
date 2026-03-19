@@ -45,7 +45,7 @@ export async function POST(req) {
     const url = `${process.env.NEXT_PUBLIC_DOMAIN}/reset?token=${token}`;
 
     await resend.emails.send({
-      from: `"OMBIM" <notificaciones@updates.ombim.com>`,
+      from: `"OMBIM" <noreply@updates.ombim.com>`,
       to: email,
       subject: "Restablecer contraseña",
       html: `

@@ -92,7 +92,7 @@ export async function POST(req) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
-      from: `"OMBIM" <notificaciones@updates.ombim.com>`,
+      from: `"OMBIM" <noreply@updates.ombim.com>`,
       to: "o.martinez@ombim.com",
       subject: `Nuevo pedido — ${plugin.nombre}`,
       html: `

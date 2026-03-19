@@ -77,7 +77,7 @@ export async function POST(_req, { params }) {
 
   // Email al cliente con claves
   await resend.emails.send({
-    from: `"OMBIM" <notificaciones@updates.ombim.com>`,
+    from: `"OMBIM" <noreply@updates.ombim.com>`,
     to: user.email,
     subject: `Tus licencias de ${plugin.nombre} han sido activadas`,
     html: `
@@ -105,7 +105,7 @@ export async function POST(_req, { params }) {
 
   // Email al admin
   await resend.emails.send({
-    from: `"OMBIM" <notificaciones@updates.ombim.com>`,
+    from: `"OMBIM" <noreply@updates.ombim.com>`,
     to: "o.martinez@ombim.com",
     subject: `Pago aprobado — ${plugin.nombre}`,
     html: `

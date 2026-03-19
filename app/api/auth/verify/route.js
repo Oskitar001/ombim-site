@@ -35,5 +35,5 @@ export async function GET(req) {
     })
     .eq("id", user.id);
 
-  return NextResponse.redirect(`${process.env.NEXT_PUBLIC_DOMAIN}/login?verified=1`);
+return NextResponse.redirect(new URL("/login?verified=1", process.env.NEXT_PUBLIC_DOMAIN));
 }

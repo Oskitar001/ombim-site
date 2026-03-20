@@ -100,11 +100,35 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* HAMBURGUESA */}
-        <button className="md:hidden flex flex-col gap-1" onClick={() => setOpen(!open)}>
-          <span className="w-6 h-0.5 bg-light-text dark:bg-dark-text"></span>
-          <span className="w-6 h-0.5 bg-light-text dark:bg-dark-text"></span>
-          <span className="w-6 h-0.5 bg-light-text dark:bg-dark-text"></span>
+        {/* HAMBURGUESA ESTILO iOS */}
+        <button
+          className="md:hidden relative w-8 h-8 flex items-center justify-center"
+          onClick={() => setOpen(!open)}
+          aria-label="Abrir menú"
+        >
+          {/* Línea 1 */}
+          <span
+            className={`
+              absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300
+              ${open ? "w-6 rotate-45 translate-y-0" : "w-7 -translate-y-2"}
+            `}
+          ></span>
+
+          {/* Línea 2 */}
+          <span
+            className={`
+              absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300
+              ${open ? "w-0 opacity-0" : "w-7 opacity-100"}
+            `}
+          ></span>
+
+          {/* Línea 3 */}
+          <span
+            className={`
+              absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300
+              ${open ? "w-6 -rotate-45 translate-y-0" : "w-7 translate-y-2"}
+            `}
+          ></span>
         </button>
 
         {/* MENÚ ESCRITORIO */}
@@ -121,9 +145,9 @@ export default function Navbar() {
             onClick={toggleTheme}
             className="
               px-3 py-2 rounded-lg
-              bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+              bg-[#ffffff] dark:bg-[#2e2e2e]
               border border-[#d1d5db] dark:border-[#3a3a3a]
-              hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border
+              hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a]
               transition
             "
           >
@@ -145,7 +169,7 @@ export default function Navbar() {
 
               <div
                 className={`
-                  absolute right-0 mt-2 bg-[#f3f4f6] dark:bg-[#242424]Soft
+                  absolute right-0 mt-2 bg-[#ffffff] dark:bg-[#2e2e2e]
                   border border-[#d1d5db] dark:border-[#3a3a3a]
                   shadow-soft rounded-lg p-3 w-40 z-50
                   transition-all duration-200 origin-top-right
@@ -155,14 +179,14 @@ export default function Navbar() {
                 <Link
                   href="/panel"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border rounded"
+                  className="block px-3 py-2 hover:bg-[#f3f4f6] dark:hover:bg-[#3a3a3a] rounded"
                 >
                   Panel
                 </Link>
 
                 <button
                   onClick={logout}
-                  className="block w-full text-left px-3 py-2 hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border rounded"
+                  className="block w-full text-left px-3 py-2 hover:bg-[#f3f4f6] dark:hover:bg-[#3a3a3a] rounded"
                 >
                   Cerrar sesión
                 </button>
@@ -172,10 +196,10 @@ export default function Navbar() {
             <Link
               href="/login"
               className="
-                bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+                bg-[#ffffff] dark:bg-[#2e2e2e]
                 border border-[#d1d5db] dark:border-[#3a3a3a]
                 px-4 py-2 rounded-lg font-medium
-                hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border
+                hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a]
                 transition
               "
             >
@@ -187,7 +211,7 @@ export default function Navbar() {
 
       {/* MENÚ MÓVIL */}
       {open && (
-        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#242424]Soft shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6] border-t border-[#d1d5db] dark:border-[#3a3a3a]">
+        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#2e2e2e] shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6] border-t border-[#d1d5db] dark:border-[#3a3a3a]">
           <Link href="/" onClick={() => setOpen(false)} className="hover:text-brand transition">Inicio</Link>
           <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-brand transition">Sobre mí</Link>
           <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-brand transition">Servicios</Link>
@@ -215,10 +239,10 @@ export default function Navbar() {
               href="/login"
               onClick={() => setOpen(false)}
               className="
-                bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+                bg-[#ffffff] dark:bg-[#2e2e2e]
                 border border-[#d1d5db] dark:border-[#3a3a3a]
                 px-4 py-2 rounded-lg font-medium
-                hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border
+                hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a]
                 transition
               "
             >

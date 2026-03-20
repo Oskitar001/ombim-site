@@ -42,22 +42,22 @@ export default function PagoClient({ plugin, tiposLicencia }) {
     <div
       className="
         max-w-2xl mx-auto p-6 rounded-2xl
-        bg-light-bgSoft dark:bg-dark-bg
-        border border-light-border dark:border-dark-border
+        bg-[#f3f4f6]Soft dark:bg-[#242424]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
         shadow-soft dark:shadow-none
       "
     >
       {/* Título */}
-      <h1 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">
+      <h1 className="text-2xl font-bold text-[#1f2937] dark:text-[#e6e6e6] mb-2">
         Comprar {plugin.nombre}
       </h1>
 
-      <p className="text-gray-700 dark:text-gray-300 mb-6">
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-6">
         Precio por licencia: <strong>{plugin.precio} €</strong>
       </p>
 
       {/* Tipo de licencia */}
-      <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-2">
+      <h3 className="text-lg font-semibold text-[#1f2937] dark:text-[#e6e6e6] mb-2">
         Tipo de licencia
       </h3>
 
@@ -75,7 +75,7 @@ export default function PagoClient({ plugin, tiposLicencia }) {
       </Select>
 
       {/* Licencias */}
-      <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4">
+      <h3 className="text-lg font-semibold text-[#1f2937] dark:text-[#e6e6e6] mb-4">
         Licencias
       </h3>
 
@@ -84,11 +84,11 @@ export default function PagoClient({ plugin, tiposLicencia }) {
           key={index}
           className="
             mb-4 p-4 rounded-xl
-            bg-light-bg dark:bg-dark-bgSoft
-            border border-light-border dark:border-dark-border
+            bg-[#f3f4f6] dark:bg-[#242424]Soft
+            border border-[#d1d5db] dark:border-[#3a3a3a]
           "
         >
-          <label className="block text-light-text dark:text-dark-text mb-1">
+          <label className="block text-[#1f2937] dark:text-[#e6e6e6] mb-1">
             Email Tekla:
           </label>
 
@@ -114,12 +114,12 @@ export default function PagoClient({ plugin, tiposLicencia }) {
 
       <Button
         onClick={addRow}
-        className="mb-6 bg-gray-200 dark:bg-dark-bgSoft text-gray-900 dark:text-dark-text hover:bg-gray-300 dark:hover:bg-dark-border"
+        className="mb-6 bg-[#f3f4f6]Soft dark:bg-[#242424]Soft text-[#1f2937] dark:text-[#e6e6e6] hover:bg-gray-300 dark:hover:bg-dark-border"
       >
         Añadir otra licencia
       </Button>
 
-      <hr className="border-light-border dark:border-dark-border mb-6" />
+      <hr className="border-[#d1d5db] dark:border-[#3a3a3a] mb-6" />
 
       <Button onClick={comprar} className="w-full">
         Comprar por transferencia

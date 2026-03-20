@@ -13,19 +13,24 @@ module.exports = {
           DEFAULT: "#2563eb",
           dark: "#1e40af"
         },
+
+        // 🌑 Modo oscuro premium (más claro, visible)
         dark: {
-          bg: "#1a1a1a",
-          bgSoft: "#222222",
-          border: "#333333",
-          text: "#e5e5e5"
+          bg: "#242424",
+          bgSoft: "#2e2e2e",
+          border: "#3a3a3a",
+          text: "#e6e6e6"
         },
+
+        // ☀️ Modo claro premium (más suave)
         light: {
-          bg: "#f8f9fa",
+          bg: "#f3f4f6",
           bgSoft: "#ffffff",
-          border: "#e5e7eb",
+          border: "#d1d5db",
           text: "#1f2937"
         }
       },
+
       boxShadow: {
         soft: "0 4px 20px rgba(0,0,0,0.08)",
         "soft-hover": "0 6px 28px rgba(0,0,0,0.12)"
@@ -33,4 +38,4 @@ module.exports = {
     }
   },
   plugins: []
-}
+};

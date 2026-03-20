@@ -5,7 +5,7 @@ export default function SuccessPage() {
         ¡Pago completado!
       </h1>
 
-      <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 text-center max-w-xl">
+      <p className="text-lg text-[#1f2937] dark:text-[#e6e6e6] mb-6 text-center max-w-xl">
         Tu compra se ha procesado correctamente. En unos minutos recibirás un email con tus datos de acceso.
       </p>
 

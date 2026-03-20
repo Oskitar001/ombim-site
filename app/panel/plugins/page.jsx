@@ -22,21 +22,21 @@ export default function AdminPlugins() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto pt-32 px-6 bg-white dark:bg-[#111] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+    <div className="max-w-4xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
         Gestión de Plugins
       </h1>
 
       {plugins.map(p => (
         <div
           key={p.id}
-          className="bg-white dark:bg-[#1a1a1a] shadow p-4 rounded mb-6 border border-gray-200 dark:border-gray-700"
+          className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow p-4 rounded mb-6 border border-[#d1d5db] dark:border-[#3a3a3a]"
         >
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-semibold text-[#1f2937] dark:text-[#e6e6e6]">
             {p.nombre}
           </h2>
 
-          <p className="mb-3 text-gray-700 dark:text-gray-300">
+          <p className="mb-3 text-[#1f2937] dark:text-[#e6e6e6]">
             {p.descripcion}
           </p>
 

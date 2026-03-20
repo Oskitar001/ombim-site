@@ -21,13 +21,13 @@ export default function MisDescargas() {
   }, []);
 
   return (
-    <div className="max-w-3xl mx-auto pt-32 px-6 bg-white dark:bg-[#111] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+    <div className="max-w-3xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
         Mis Descargas
       </h1>
 
       {descargas.length === 0 && (
-        <p className="text-gray-700 dark:text-gray-300">
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
           No has descargado nada todavía.
         </p>
       )}
@@ -35,14 +35,14 @@ export default function MisDescargas() {
       {descargas.map(d => (
         <div
           key={d.id}
-          className="bg-white dark:bg-[#1a1a1a] shadow p-4 rounded mb-4 border border-gray-200 dark:border-gray-700"
+          className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow p-4 rounded mb-4 border border-[#d1d5db] dark:border-[#3a3a3a]"
         >
-          <p className="text-gray-700 dark:text-gray-300">
-            <strong className="text-gray-900 dark:text-gray-100">Plugin:</strong> {d.plugin_nombre}
+          <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+            <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Plugin:</strong> {d.plugin_nombre}
           </p>
 
-          <p className="text-gray-700 dark:text-gray-300">
-            <strong className="text-gray-900 dark:text-gray-100">Fecha:</strong> {d.fecha}
+          <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+            <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Fecha:</strong> {d.fecha}
           </p>
         </div>
       ))}

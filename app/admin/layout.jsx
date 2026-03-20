@@ -1,6 +1,6 @@
 export default function AdminLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[#f3f4f6]">
       <header className="bg-black text-white p-4">
         <h1 className="text-xl font-bold">Panel de Administración</h1>
       </header>

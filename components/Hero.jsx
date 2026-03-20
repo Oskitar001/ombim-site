@@ -5,7 +5,7 @@ export default function Hero() {
         Especialista en Tekla Structures con más de 23 años de experiencia real
       </h1>
 
-      <p className="text-gray-600 text-lg mb-8">
+      <p className="text-[#1f2937] text-lg mb-8">
         Ayudo a ingenierías, constructoras y oficinas técnicas a modelar, documentar y optimizar sus proyectos mediante automatizaciones y plugins personalizados.
       </p>
 
@@ -23,7 +23,7 @@ export default function Hero() {
 
         <a
           href="#servicios"
-          className="px-6 py-3 border border-gray-400 rounded-lg font-semibold hover:bg-gray-100 transition"
+          className="px-6 py-3 border border-gray-400 rounded-lg font-semibold hover:bg-[#f3f4f6] transition"
         >
           Ver servicios
         </a>

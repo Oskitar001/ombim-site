@@ -3,7 +3,7 @@ export default function Contact() {
     <section id="contacto" className="py-24 max-w-4xl mx-auto">
       <h2 className="text-4xl font-bold text-center mb-10">Contacto</h2>
 
-      <p className="text-center text-gray-600 mb-10">
+      <p className="text-center text-[#1f2937] mb-10">
         ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?  
         Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
       </p>

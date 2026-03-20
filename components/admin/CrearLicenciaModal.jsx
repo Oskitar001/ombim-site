@@ -35,7 +35,7 @@ export default function CrearLicenciaModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded shadow w-96">
+      <div className="bg-[#f3f4f6]Soft p-6 rounded shadow w-96">
         <h2 className="text-xl font-bold mb-4">Crear licencia</h2>
 
         <input

@@ -5,7 +5,7 @@ export default function CancelPage() {
         Pago cancelado
       </h1>
 
-      <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 text-center max-w-xl">
+      <p className="text-lg text-[#1f2937] dark:text-[#e6e6e6] mb-6 text-center max-w-xl">
         Parece que cancelaste el proceso de pago. Puedes intentarlo de nuevo cuando quieras.
       </p>
 

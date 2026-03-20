@@ -31,7 +31,7 @@ export default async function PluginPage(props) {
 
   return (
     <div className="max-w-4xl mx-auto pt-32 px-6">
-      <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+      <h1 className="text-3xl font-bold mb-2 text-[#1f2937] dark:text-[#e6e6e6]">
         {plugin.nombre}
       </h1>
 
@@ -39,7 +39,7 @@ export default async function PluginPage(props) {
         {esDePago ? `${plugin.precio} €` : "Gratis"}
       </p>
 
-      <p className="text-gray-700 dark:text-gray-300 mb-6">
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-6">
         {plugin.descripcion}
       </p>
 

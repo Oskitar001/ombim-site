@@ -1,0 +1,45 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true,
+      "source.organizeImports": true
+    },
+
+    // 🔥 REEMPLAZOS AUTOMÁTICOS DEL TEMA OSCURO
+    "search.replace.dark-bg": {
+      "dark:bg-[#111]": "dark:bg-dark-bg",
+      "dark:bg-[#181818]": "dark:bg-dark-bg",
+      "dark:bg-gray-900": "dark:bg-dark-bg",
+      "dark:bg-gray-800": "dark:bg-dark-bgSoft",
+      "dark:bg-gray-950": "dark:bg-dark-bg",
+      "dark:from-[#111]": "dark:from-dark-bg",
+      "dark:to-[#111]": "dark:to-dark-bg",
+      "dark:border-gray-700": "dark:border-dark-border",
+      "dark:border-gray-800": "dark:border-dark-border",
+      "dark:text-gray-100": "dark:text-dark-text",
+      "dark:text-gray-200": "dark:text-dark-text",
+      "dark:text-gray-300": "dark:text-dark-text"
+    },
+
+    // ☀️ REEMPLAZOS AUTOMÁTICOS DEL TEMA CLARO
+    "search.replace.light-bg": {
+      "bg-white": "bg-light-bgSoft",
+      "bg-gray-50": "bg-light-bgSoft",
+      "bg-gray-100": "bg-light-bg",
+      "bg-gray-200": "bg-light-bgSoft",
+      "from-gray-50": "from-light-bgSoft",
+      "to-gray-100": "to-light-bg",
+      "border-gray-200": "border-light-border",
+      "border-gray-300": "border-light-border",
+      "text-gray-900": "text-light-text",
+      "text-gray-800": "text-light-text",
+      "text-gray-700": "text-light-text",
+      "text-gray-600": "text-light-text"
+    }
+  }
+}

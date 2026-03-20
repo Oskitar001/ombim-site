@@ -43,9 +43,9 @@ export default function HomePage() {
       <main
         className="
           pt-12 pb-20 min-h-screen 
-          border-t border-gray-200 dark:border-gray-700
-          bg-white dark:bg-[#111]
-          bg-gradient-to-b from-gray-50 to-gray-100 dark:from-[#111] dark:to-[#111]
+          border-t border-[#d1d5db] dark:border-[#3a3a3a]
+          bg-[#f3f4f6]Soft dark:bg-[#242424]
+          bg-gradient-to-b from-light-bgSoft to-light-bg dark:from-dark-bg dark:to-dark-bg
         "
         role="main"
       >
@@ -57,19 +57,19 @@ export default function HomePage() {
             <div className="relative inline-block">
               <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
 
-              <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-gray-900 dark:text-gray-100">
+              <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
                 Modelado 3D & Software para Tekla Structures
               </h1>
             </div>
 
             <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
 
-            <p className="text-gray-700 dark:text-gray-300 text-xl md:text-2xl leading-relaxed mb-6">
+            <p className="text-[#1f2937] dark:text-[#e6e6e6] text-xl md:text-2xl leading-relaxed mb-6">
               Más de <strong>20 años de experiencia</strong> en modelado 3D con Tekla Structures,
               aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
             </p>
 
-            <p className="text-gray-700 dark:text-gray-300 text-lg md:text-xl leading-relaxed mb-10">
+            <p className="text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed mb-10">
               Además, más de <strong>100 proyectos</strong> han sido optimizados con
               <strong> software propio</strong>: plugins, automatizaciones, macros y herramientas avanzadas
               que aceleran el flujo BIM y reducen errores.
@@ -93,7 +93,7 @@ export default function HomePage() {
               <div
                 key={index}
                 role="article"
-                className="reveal bg-white dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100 dark:border-gray-700"
+                className="reveal bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100 dark:border-[#3a3a3a]"
               >
                 <div className="rounded-xl overflow-hidden mb-4">
                   <iframe
@@ -106,11 +106,11 @@ export default function HomePage() {
                   ></iframe>
                 </div>
 
-                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                <h3 className="text-xl font-semibold mb-2 text-[#1f2937] dark:text-[#e6e6e6]">
                   {app.title}
                 </h3>
 
-                <p className="text-gray-600 dark:text-gray-300 mb-4">{app.description}</p>
+                <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">{app.description}</p>
 
                 <a
                   href="/contacto"
@@ -134,29 +134,29 @@ export default function HomePage() {
             ))}
           </div>
 
-          <p className="reveal text-gray-600 dark:text-gray-300 text-center mt-24 mb-4">
+          <p className="reveal text-[#1f2937] dark:text-[#e6e6e6] text-center mt-24 mb-4">
             ¿Quieres ver ejemplos reales aplicados a proyectos como el tuyo?
           </p>
 
           {/* ENVUELTAS PARA QUE NO ROMPAN EL MODO OSCURO */}
-          <div className="bg-white dark:bg-[#111]">
+          <div className="bg-[#f3f4f6]Soft dark:bg-[#242424]">
             <AboutSection />
           </div>
 
-          <div className="bg-white dark:bg-[#111]">
+          <div className="bg-[#f3f4f6]Soft dark:bg-[#242424]">
             <TrustSection />
           </div>
 
-          <div className="bg-white dark:bg-[#111]">
+          <div className="bg-[#f3f4f6]Soft dark:bg-[#242424]">
             <TestimonialsSection />
           </div>
 
           <div className="reveal text-center mt-32">
-            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+            <h2 className="text-3xl font-bold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
               ¿Quieres ver cómo funciona en tu proyecto?
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
+            <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-6">
               Te preparamos una demo personalizada sin compromiso.
             </p>
 

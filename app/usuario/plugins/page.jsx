@@ -15,7 +15,7 @@ export default function MisPlugins() {
       <h1 className="text-3xl font-bold mb-6">Mis Plugins</h1>
 
       {plugins.length === 0 && (
-        <p className="text-gray-600 dark:text-gray-300">
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
           Aún no has comprado ningún plugin.
         </p>
       )}
@@ -23,7 +23,7 @@ export default function MisPlugins() {
       {plugins.map(p => (
         <div
           key={p.plugin_id}
-          className="p-4 mb-4 rounded-lg border bg-white dark:bg-[#1a1a1a]"
+          className="p-4 mb-4 rounded-lg border bg-[#f3f4f6]Soft dark:bg-[#1a1a1a]"
         >
           <h2 className="text-xl font-bold">{p.nombre}</h2>
 

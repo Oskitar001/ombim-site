@@ -33,14 +33,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="pt-32 flex flex-col items-center px-6 bg-white dark:bg-[#111] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+    <div className="pt-32 flex flex-col items-center px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
         Crear cuenta
       </h1>
 
       <form
         onSubmit={handleRegister}
-        className="flex flex-col gap-4 w-full max-w-sm bg-white dark:bg-[#1a1a1a] p-6 rounded-lg shadow border border-gray-200 dark:border-gray-700"
+        className="flex flex-col gap-4 w-full max-w-sm bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] p-6 rounded-lg shadow border border-[#d1d5db] dark:border-[#3a3a3a]"
       >
         <input
           type="text"
@@ -48,7 +48,7 @@ export default function RegisterPage() {
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
         />
 
         <input
@@ -57,7 +57,7 @@ export default function RegisterPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
         />
 
         <input
@@ -66,7 +66,7 @@ export default function RegisterPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
         />
 
         <button
@@ -89,7 +89,7 @@ export default function RegisterPage() {
         )}
       </form>
 
-      <p className="mt-4 text-gray-700 dark:text-gray-300">
+      <p className="mt-4 text-[#1f2937] dark:text-[#e6e6e6]">
         ¿Ya tienes cuenta?{" "}
         <a href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
           Inicia sesión aquí

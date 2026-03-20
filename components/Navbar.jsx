@@ -80,7 +80,7 @@ export default function Navbar() {
   const avatar = user?.nombre ? user.nombre.charAt(0).toUpperCase() : "U";
 
   return (
-    <nav className="w-full py-4 bg-light-bg dark:bg-dark-bg shadow-soft dark:shadow-none border-b border-light-border dark:border-dark-border fixed top-0 left-0 z-50">
+    <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] shadow-soft dark:shadow-none border-b border-[#d1d5db] dark:border-[#3a3a3a] fixed top-0 left-0 z-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
 
         {/* LOGO */}
@@ -95,7 +95,7 @@ export default function Navbar() {
             alt="OMBIM Logo Dark"
             className="h-10 w-auto md:h-16 hidden dark:block"
           />
-          <span className="text-xl md:text-3xl font-bold whitespace-nowrap text-light-text dark:text-dark-text">
+          <span className="text-xl md:text-3xl font-bold whitespace-nowrap text-[#1f2937] dark:text-[#e6e6e6]">
             OMBIM
           </span>
         </Link>
@@ -108,7 +108,7 @@ export default function Navbar() {
         </button>
 
         {/* MENÚ ESCRITORIO */}
-        <div className="hidden md:flex gap-6 text-lg items-center text-light-text dark:text-dark-text">
+        <div className="hidden md:flex gap-6 text-lg items-center text-[#1f2937] dark:text-[#e6e6e6]">
           <Link href="/" className="hover:text-brand transition">Inicio</Link>
           <Link href="/sobre-mi" className="hover:text-brand transition">Sobre mí</Link>
           <Link href="/servicios" className="hover:text-brand transition">Servicios</Link>
@@ -121,9 +121,9 @@ export default function Navbar() {
             onClick={toggleTheme}
             className="
               px-3 py-2 rounded-lg
-              bg-light-bgSoft dark:bg-dark-bgSoft
-              border border-light-border dark:border-dark-border
-              hover:bg-gray-200 dark:hover:bg-dark-border
+              bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+              border border-[#d1d5db] dark:border-[#3a3a3a]
+              hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border
               transition
             "
           >
@@ -145,8 +145,8 @@ export default function Navbar() {
 
               <div
                 className={`
-                  absolute right-0 mt-2 bg-light-bg dark:bg-dark-bgSoft
-                  border border-light-border dark:border-dark-border
+                  absolute right-0 mt-2 bg-[#f3f4f6] dark:bg-[#242424]Soft
+                  border border-[#d1d5db] dark:border-[#3a3a3a]
                   shadow-soft rounded-lg p-3 w-40 z-50
                   transition-all duration-200 origin-top-right
                   ${menuOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
@@ -155,14 +155,14 @@ export default function Navbar() {
                 <Link
                   href="/panel"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 hover:bg-light-bgSoft dark:hover:bg-dark-border rounded"
+                  className="block px-3 py-2 hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border rounded"
                 >
                   Panel
                 </Link>
 
                 <button
                   onClick={logout}
-                  className="block w-full text-left px-3 py-2 hover:bg-light-bgSoft dark:hover:bg-dark-border rounded"
+                  className="block w-full text-left px-3 py-2 hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border rounded"
                 >
                   Cerrar sesión
                 </button>
@@ -172,10 +172,10 @@ export default function Navbar() {
             <Link
               href="/login"
               className="
-                bg-light-bgSoft dark:bg-dark-bgSoft
-                border border-light-border dark:border-dark-border
+                bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+                border border-[#d1d5db] dark:border-[#3a3a3a]
                 px-4 py-2 rounded-lg font-medium
-                hover:bg-gray-200 dark:hover:bg-dark-border
+                hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border
                 transition
               "
             >
@@ -187,7 +187,7 @@ export default function Navbar() {
 
       {/* MENÚ MÓVIL */}
       {open && (
-        <div className="md:hidden bg-light-bg dark:bg-dark-bgSoft shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-light-text dark:text-dark-text border-t border-light-border dark:border-dark-border">
+        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#242424]Soft shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6] border-t border-[#d1d5db] dark:border-[#3a3a3a]">
           <Link href="/" onClick={() => setOpen(false)} className="hover:text-brand transition">Inicio</Link>
           <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-brand transition">Sobre mí</Link>
           <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-brand transition">Servicios</Link>
@@ -215,10 +215,10 @@ export default function Navbar() {
               href="/login"
               onClick={() => setOpen(false)}
               className="
-                bg-light-bgSoft dark:bg-dark-bgSoft
-                border border-light-border dark:border-dark-border
+                bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+                border border-[#d1d5db] dark:border-[#3a3a3a]
                 px-4 py-2 rounded-lg font-medium
-                hover:bg-gray-200 dark:hover:bg-dark-border
+                hover:bg-[#f3f4f6]Soft dark:hover:bg-dark-border
                 transition
               "
             >

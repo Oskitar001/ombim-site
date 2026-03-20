@@ -21,25 +21,25 @@ export default function PanelPage() {
   if (!ready) return null;
 
   return (
-    <div className="max-w-3xl mx-auto pt-32 px-6 bg-white dark:bg-[#111] min-h-screen">
+    <div className="max-w-3xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
 
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
         Panel de Usuario
       </h1>
 
-      <div className="bg-white dark:bg-[#1a1a1a] shadow rounded-lg p-6 mb-10 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
+      <div className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow rounded-lg p-6 mb-10 border border-[#d1d5db] dark:border-[#3a3a3a]">
+        <h2 className="text-xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
           Información de tu cuenta
         </h2>
 
-        <p className="text-gray-700 dark:text-gray-300">
-          <strong className="text-gray-900 dark:text-gray-100">Nombre:</strong> {user.nombre}
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+          <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Nombre:</strong> {user.nombre}
         </p>
-        <p className="text-gray-700 dark:text-gray-300">
-          <strong className="text-gray-900 dark:text-gray-100">Email:</strong> {user.email}
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+          <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Email:</strong> {user.email}
         </p>
-        <p className="text-gray-700 dark:text-gray-300">
-          <strong className="text-gray-900 dark:text-gray-100">Rol:</strong> {user.role}
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+          <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Rol:</strong> {user.role}
         </p>
       </div>
 

@@ -19,7 +19,7 @@ export default function UsoLicencia({ params }) {
 
       <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-gray-200 dark:bg-gray-800">
+          <tr className="bg-[#f3f4f6]Soft dark:bg-[#242424]Soft">
             <th className="p-2 text-left">IP</th>
             <th className="p-2 text-left">User Agent</th>
             <th className="p-2 text-left">Fecha</th>
@@ -28,7 +28,7 @@ export default function UsoLicencia({ params }) {
 
         <tbody>
           {usos.map(u => (
-            <tr key={u.id} className="border-b dark:border-gray-700">
+            <tr key={u.id} className="border-b dark:border-[#3a3a3a]">
               <td className="p-2">{u.ip}</td>
               <td className="p-2">{u.user_agent}</td>
               <td className="p-2">{new Date(u.fecha).toLocaleString()}</td>

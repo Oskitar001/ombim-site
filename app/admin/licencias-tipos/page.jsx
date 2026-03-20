@@ -80,9 +80,9 @@ export default function TiposLicenciaPage() {
         </button>
       </div>
 
-      <table className="w-full bg-white shadow rounded">
+      <table className="w-full bg-[#f3f4f6]Soft shadow rounded">
         <thead>
-          <tr className="bg-gray-200 text-left">
+          <tr className="bg-[#f3f4f6]Soft text-left">
             <th className="p-2">Nombre</th>
             <th className="p-2">Descripción</th>
             <th className="p-2">Acciones</th>

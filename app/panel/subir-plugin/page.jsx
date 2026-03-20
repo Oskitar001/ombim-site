@@ -29,33 +29,33 @@ export default function SubirPlugin() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto pt-32 px-6 bg-white dark:bg-[#111] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+    <div className="max-w-3xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
         Subir nuevo plugin
       </h1>
 
       <form
         onSubmit={subir}
-        className="bg-white dark:bg-[#1a1a1a] shadow p-6 rounded space-y-4 border border-gray-200 dark:border-gray-700"
+        className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow p-6 rounded space-y-4 border border-[#d1d5db] dark:border-[#3a3a3a]"
       >
         <input
           name="nombre"
           placeholder="Nombre del plugin"
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           required
         />
 
         <textarea
           name="descripcion"
           placeholder="Descripción"
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           required
         />
 
         <input
           type="file"
           name="archivo"
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           required
         />
 
@@ -63,7 +63,7 @@ export default function SubirPlugin() {
           type="text"
           name="video_url"
           placeholder="URL del video (opcional)"
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#111] text-gray-900 dark:text-gray-100 p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
         />
 
         <button

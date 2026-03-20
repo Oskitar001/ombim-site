@@ -13,8 +13,8 @@ export default function RootLayout({ children }) {
       <body
         className="
           pt-20
-          bg-light-bg text-light-text
-          dark:bg-dark-bg dark:text-dark-text
+          bg-[#f3f4f6] text-[#1f2937]
+          dark:bg-[#242424] dark:text-[#e6e6e6]
           transition-colors duration-300
           min-h-screen
           flex flex-col

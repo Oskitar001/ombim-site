@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST() {
-  const res = NextResponse.json({ message: "Logout OK" });
+  const cookieStore = await cookies();
 
-  res.cookies.set("session", "", {
+  cookieStore.set("sb-access-token", "", {
     httpOnly: true,
-    secure: true,        // 🔥 obligatorio en HTTPS
-    sameSite: "lax",     // 🔥 necesario para móvil
+    secure: true,
+    sameSite: "lax",
     path: "/",
-    maxAge: 0            // 🔥 borra la cookie correctamente
+    maxAge: 0
   });
 
-  return res;
+  cookieStore.set("sb-refresh-token", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0
+  });
+
+  return NextResponse.json({ ok: true });
 }

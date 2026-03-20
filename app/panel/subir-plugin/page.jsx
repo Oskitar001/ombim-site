@@ -5,28 +5,41 @@ import { useRouter } from "next/navigation";
 export default function SubirPlugin() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
-        if (!data.user || data.user.role !== "admin") router.push("/login");
-        else setUser(data.user);
+        if (!data.user || data.role !== "admin") router.push("/login");
+        else {
+          setUser(data.user);
+          setRole(data.role);
+        }
       });
-  }, []);
+  }, [router]);
 
   const subir = async (e) => {
     e.preventDefault();
 
     const form = new FormData(e.target);
 
-    await fetch("/api/plugin/upload", {
+    const res = await fetch("/api/admin/plugins/crear", {
       method: "POST",
       body: form
     });
 
+    if (!res.ok) {
+      alert("Error al subir el plugin");
+      return;
+    }
+
     router.push("/panel/plugins");
   };
+
+  if (!user || role !== "admin") {
+    return <p className="pt-32 text-center">Cargando...</p>;
+  }
 
   return (
     <div className="max-w-3xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
@@ -36,6 +49,7 @@ export default function SubirPlugin() {
 
       <form
         onSubmit={subir}
+        encType="multipart/form-data"
         className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow p-6 rounded space-y-4 border border-[#d1d5db] dark:border-[#3a3a3a]"
       >
         <input
@@ -53,8 +67,19 @@ export default function SubirPlugin() {
         />
 
         <input
+          type="number"
+          name="precio"
+          placeholder="Precio del plugin (0 = gratis)"
+          step="0.01"
+          min="0"
+          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        />
+
+        <input
           type="file"
           name="archivo"
+          accept=".zip"
           className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 w-full rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
           required
         />

@@ -1,26 +1,41 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET() {
   try {
-    // cookies() ahora es ASÍNCRONO en Next.js 14
     const cookieStore = await cookies();
-    const cookie = cookieStore.get("session");
+    const accessToken = cookieStore.get("sb-access-token")?.value;
 
-    if (!cookie || !cookie.value) {
-      return NextResponse.json({ user: null });
+    if (!accessToken) {
+      return NextResponse.json({ user: null, role: null });
     }
 
-    try {
-      const user = JSON.parse(cookie.value);
-      return NextResponse.json({ user });
-    } catch (err) {
-      console.error("Error al parsear cookie:", err);
-      return NextResponse.json({ user: null });
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      }
+    );
+
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
+    if (!user) {
+      return NextResponse.json({ user: null, role: null });
     }
+
+    const role = user.user_metadata?.role ?? "user";
+
+    return NextResponse.json({ user, role });
 
   } catch (err) {
     console.error("ME ERROR:", err);
-    return NextResponse.json({ user: null });
+    return NextResponse.json({ user: null, role: null });
   }
 }

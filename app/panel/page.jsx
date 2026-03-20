@@ -6,19 +6,26 @@ import Link from "next/link";
 export default function PanelPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then(res => res.json())
       .then(data => {
-        if (!data.user) router.push("/login");
-        else setUser(data.user);
+        if (!data.user) {
+          router.push("/login");
+        } else {
+          setUser(data.user);
+          setRole(data.role || "user");
+        }
         setReady(true);
       });
-  }, []);
+  }, [router]);
 
   if (!ready) return null;
+
+  const nombre = user?.user_metadata?.nombre || "Usuario";
 
   return (
     <div className="max-w-3xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
@@ -33,27 +40,25 @@ export default function PanelPage() {
         </h2>
 
         <p className="text-[#1f2937] dark:text-[#e6e6e6]">
-          <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Nombre:</strong> {user.nombre}
+          <strong>Nombre:</strong> {nombre}
         </p>
         <p className="text-[#1f2937] dark:text-[#e6e6e6]">
-          <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Email:</strong> {user.email}
+          <strong>Email:</strong> {user.email}
         </p>
         <p className="text-[#1f2937] dark:text-[#e6e6e6]">
-          <strong className="text-[#1f2937] dark:text-[#e6e6e6]">Rol:</strong> {user.role}
+          <strong>Rol:</strong> {role}
         </p>
       </div>
 
-      {user.role === "admin" ? (
+      {role === "admin" ? (
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-6 rounded-lg">
           <h2 className="text-xl font-semibold mb-4 text-blue-700 dark:text-blue-300">
             Opciones de Administrador
           </h2>
 
           <ul className="space-y-3">
-
-            {/* Plugins (ya estaban) */}
             <li>
-              <Link href="/panel/plugins" className="text-blue-600 dark:text-blue-400 hover:underline">
+              <Link href="/admin/plugins" className="text-blue-600 dark:text-blue-400 hover:underline">
                 ➤ Gestionar Plugins
               </Link>
             </li>
@@ -62,8 +67,6 @@ export default function PanelPage() {
                 ➤ Subir nuevo plugin
               </Link>
             </li>
-
-            {/* Rutas ADMIN reales */}
             <li>
               <Link href="/admin/licencias/list" className="text-blue-600 dark:text-blue-400 hover:underline">
                 ➤ Gestionar Licencias
@@ -84,7 +87,6 @@ export default function PanelPage() {
                 ➤ Ver Logs del Sistema
               </Link>
             </li>
-
           </ul>
         </div>
       ) : (

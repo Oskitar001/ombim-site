@@ -7,50 +7,52 @@ export default function PanelLicencias() {
   const [licencias, setLicencias] = useState([]);
 
   useEffect(() => {
-    // Leer cookie session
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("session="));
+    // Obtener usuario logueado
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          window.location.href = "/login";
+          return;
+        }
+        setUser(data.user);
 
-    if (!cookie) {
-      window.location.href = "/login";
-      return;
-    }
-
-    const session = JSON.parse(decodeURIComponent(cookie.split("=")[1]));
-    setUser(session);
-
-    // Cargar licencias del usuario
-    fetch(`/api/licencias/user/${session.id}`)
-      .then((res) => res.json())
-      .then((data) => setLicencias(data));
+        // Cargar licencias del usuario
+        fetch("/api/licencias/mias", { credentials: "include" })
+          .then(res => res.json())
+          .then(data => setLicencias(data || []));
+      });
   }, []);
 
-  if (!user) return <p>Cargando...</p>;
+  if (!user) return <p className="pt-32 text-center">Cargando...</p>;
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Mis Licencias</h1>
+    <div className="max-w-4xl mx-auto pt-32 px-6">
+      <h1 className="text-3xl font-bold mb-6">Mis Licencias</h1>
 
-      <table style={{ width: "100%", marginTop: "1rem" }}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Código</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
+      <div className="space-y-4">
+        {licencias.map((l) => (
+          <div
+            key={l.id}
+            className="bg-white dark:bg-[#1a1a1a] p-4 rounded shadow border border-gray-300 dark:border-gray-700"
+          >
+            <p><strong>Plugin:</strong> {l.plugin_id}</p>
+            <p><strong>Email Tekla:</strong> {l.email_tekla}</p>
+            <p><strong>Estado:</strong> {l.estado}</p>
+            <p><strong>Activaciones:</strong> {l.activaciones_usadas}/{l.max_activaciones}</p>
 
-        <tbody>
-          {licencias.map((l) => (
-            <tr key={l.id}>
-              <td>{l.id}</td>
-              <td>{l.codigo}</td>
-              <td>{l.estado}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            {l.fecha_expiracion && (
+              <p><strong>Expira:</strong> {new Date(l.fecha_expiracion).toLocaleDateString()}</p>
+            )}
+
+            {l.notas && (
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <strong>Notas:</strong> {l.notas}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

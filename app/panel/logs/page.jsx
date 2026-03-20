@@ -1,30 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PanelLogs() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("session="));
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          router.push("/login");
+          return;
+        }
 
-    if (!cookie) {
-      window.location.href = "/login";
-      return;
-    }
+        setUser(data.user);
 
-    const session = JSON.parse(decodeURIComponent(cookie.split("=")[1]));
-    setUser(session);
+        fetch(`/api/logs/user/${data.user.id}`)
+          .then(res => res.json())
+          .then(data => setLogs(data || []));
+      });
+  }, [router]);
 
-    fetch(`/api/logs/user/${session.id}`)
-      .then((res) => res.json())
-      .then((data) => setLogs(data));
-  }, []);
-
-  if (!user) return <p>Cargando...</p>;
+  if (!user) return <p className="pt-32 text-center">Cargando...</p>;
 
   return (
     <div style={{ padding: "2rem" }}>

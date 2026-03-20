@@ -1,27 +1,22 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { checkAdmin } from "@/lib/checkAdmin";
+import { requireAdmin } from "../../_utils";
 
 export async function GET(req, { params }) {
-  const admin = await checkAdmin();
-  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
 
-  const { id } = params;
+  const { supabase } = auth;
 
-  const { data: licencia, error } = await supabaseAdmin
+  const { data: licencia } = await supabase
     .from("licencias")
     .select("*")
-    .eq("id", id)
+    .eq("id", params.id)
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const { data: activaciones } = await supabaseAdmin
-    .from("licencia_activaciones")
+  const { data: activaciones } = await supabase
+    .from("activaciones")
     .select("*")
-    .eq("licencia_id", id);
+    .eq("licencia_id", params.id);
 
   return NextResponse.json({ licencia, activaciones });
 }

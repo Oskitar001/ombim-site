@@ -1,129 +1,137 @@
 "use client";
 
 import { useState } from "react";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
+import { useRouter } from "next/navigation";
 
-export default function PagoClient({ plugin, tiposLicencia }) {
-  const [tipoLicencia, setTipoLicencia] = useState("");
-  const [licencias, setLicencias] = useState([{ email_tekla: "" }]);
+export default function PagoClient({ id, plugin, tipos }) {
+  const router = useRouter();
 
-  const addRow = () => {
-    setLicencias([...licencias, { email_tekla: "" }]);
+  const [email, setEmail] = useState("");
+  const [filas, setFilas] = useState([
+    { tipo_id: tipos[0]?.id || null, cantidad: 1 }
+  ]);
+
+  const añadirFila = () => {
+    setFilas([
+      ...filas,
+      { tipo_id: tipos[0]?.id || null, cantidad: 1 }
+    ]);
   };
 
-  const removeRow = (index) => {
-    setLicencias(licencias.filter((_, i) => i !== index));
+  const eliminarFila = (index) => {
+    setFilas(filas.filter((_, i) => i !== index));
   };
 
-  const updateEmail = (index, value) => {
-    const updated = [...licencias];
-    updated[index].email_tekla = value;
-    setLicencias(updated);
+  const actualizarFila = (index, campo, valor) => {
+    const nuevas = [...filas];
+    nuevas[index][campo] = valor;
+    setFilas(nuevas);
   };
 
-  const comprar = async () => {
-    const res = await fetch("/api/transferencia", {
+  const enviar = async (e) => {
+    e.preventDefault();
+
+    const res = await fetch("/api/pagos/crear", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        plugin_id: plugin.id,
-        tipo_id: tipoLicencia,
-        licencias
+        plugin_id: id,
+        email,
+        licencias: filas
       })
     });
 
-    const data = await res.json();
-    console.log("Respuesta:", data);
+    if (res.ok) {
+      router.push(`/pago/${id}?pendiente=1`);
+    } else {
+      alert("Error al crear el pago.");
+    }
   };
 
   return (
-    <div
-      className="
-        max-w-2xl mx-auto p-6 rounded-2xl
-        bg-[#f3f4f6]Soft dark:bg-[#242424]
-        border border-[#d1d5db] dark:border-[#3a3a3a]
-        shadow-soft dark:shadow-none
-      "
-    >
-      {/* Título */}
-      <h1 className="text-2xl font-bold text-[#1f2937] dark:text-[#e6e6e6] mb-2">
-        Comprar {plugin.nombre}
-      </h1>
+    <form onSubmit={enviar} className="space-y-6">
 
-      <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-6">
-        Precio por licencia: <strong>{plugin.precio} €</strong>
-      </p>
+      {/* EMAIL */}
+      <div>
+        <label className="block font-semibold mb-1">
+          Email de Tekla
+        </label>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border px-3 py-2 rounded w-full"
+          placeholder="cliente@tekla.com"
+        />
+      </div>
 
-      {/* Tipo de licencia */}
-      <h3 className="text-lg font-semibold text-[#1f2937] dark:text-[#e6e6e6] mb-2">
-        Tipo de licencia
-      </h3>
+      {/* TABLA DE LICENCIAS */}
+      <div>
+        <label className="block font-semibold mb-2">
+          Licencias a comprar
+        </label>
 
-      <Select
-        value={tipoLicencia}
-        onChange={(e) => setTipoLicencia(e.target.value)}
-        className="mb-6"
-      >
-        <option value="">Seleccionar...</option>
-        {tiposLicencia.map((tipo) => (
-          <option key={tipo.id} value={tipo.id}>
-            {tipo.nombre}
-          </option>
-        ))}
-      </Select>
-
-      {/* Licencias */}
-      <h3 className="text-lg font-semibold text-[#1f2937] dark:text-[#e6e6e6] mb-4">
-        Licencias
-      </h3>
-
-      {licencias.map((lic, index) => (
-        <div
-          key={index}
-          className="
-            mb-4 p-4 rounded-xl
-            bg-[#f3f4f6] dark:bg-[#242424]Soft
-            border border-[#d1d5db] dark:border-[#3a3a3a]
-          "
-        >
-          <label className="block text-[#1f2937] dark:text-[#e6e6e6] mb-1">
-            Email Tekla:
-          </label>
-
-          <Input
-            type="email"
-            value={lic.email_tekla}
-            onChange={(e) => updateEmail(index, e.target.value)}
-          />
-
-          {licencias.length > 1 && (
-            <button
-              onClick={() => removeRow(index)}
-              className="
-                mt-3 text-sm text-red-500 hover:text-red-600
-                transition
-              "
+        <div className="space-y-3">
+          {filas.map((fila, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-4 border p-3 rounded"
             >
-              Eliminar
-            </button>
-          )}
+              {/* Tipo de licencia */}
+              <select
+                value={fila.tipo_id}
+                onChange={(e) =>
+                  actualizarFila(index, "tipo_id", e.target.value)
+                }
+                className="border px-2 py-1 rounded"
+              >
+                {tipos.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre}
+                  </option>
+                ))}
+              </select>
+
+              {/* Cantidad */}
+              <input
+                type="number"
+                min="1"
+                value={fila.cantidad}
+                onChange={(e) =>
+                  actualizarFila(index, "cantidad", Number(e.target.value))
+                }
+                className="border px-2 py-1 rounded w-20"
+              />
+
+              {/* Eliminar */}
+              <button
+                type="button"
+                onClick={() => eliminarFila(index)}
+                className="text-red-600 font-bold"
+              >
+                X
+              </button>
+            </div>
+          ))}
         </div>
-      ))}
 
-      <Button
-        onClick={addRow}
-        className="mb-6 bg-[#f3f4f6]Soft dark:bg-[#242424]Soft text-[#1f2937] dark:text-[#e6e6e6] hover:bg-gray-300 dark:hover:bg-dark-border"
+        <button
+          type="button"
+          onClick={añadirFila}
+          className="mt-3 bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+        >
+          Añadir fila
+        </button>
+      </div>
+
+      {/* BOTÓN ENVIAR */}
+      <button
+        type="submit"
+        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
       >
-        Añadir otra licencia
-      </Button>
-
-      <hr className="border-[#d1d5db] dark:border-[#3a3a3a] mb-6" />
-
-      <Button onClick={comprar} className="w-full">
-        Comprar por transferencia
-      </Button>
-    </div>
+        Crear pago
+      </button>
+    </form>
   );
 }

@@ -26,7 +26,7 @@ function checkFile(filePath) {
   // Buscar createClient
   if (content.includes("createClient")) {
     const hasURL = content.includes("process.env.SUPABASE_URL");
-    const hasService = content.includes("process.env.SUPABASE_SERVICE_KEY");
+    const hasService = content.includes("process.env.SUPABASE_SERVICE_ROLE_KEY");
     const hasAnon = content.includes("SUPABASE_ANON_KEY");
 
     if (!hasURL || !hasService) {
@@ -34,7 +34,7 @@ function checkFile(filePath) {
         file: filePath,
         issue: !hasURL
           ? "❌ Falta SUPABASE_URL"
-          : "❌ Falta SUPABASE_SERVICE_KEY",
+          : "❌ Falta SUPABASE_SERVICE_ROLE_KEY",
       });
     }
 

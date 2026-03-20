@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(req) {
   const token = req.nextUrl.searchParams.get("token");
 
   if (!token) {
-    return NextResponse.json({ error: "Token inválido" }, { status: 400 });
+    return NextResponse.redirect("/login?error=missing_token");
   }
 
   const supabase = createClient(
@@ -13,27 +14,27 @@ export async function GET(req) {
     process.env.SUPABASE_ANON_KEY
   );
 
-  // Buscar usuario con ese token
-  const { data: users } = await supabase
-    .from("users")
-    .select("*")
-    .eq("token_verificacion", token)
-    .limit(1);
+  // Verificar email en Supabase Auth
+  const { data, error } = await supabase.auth.verifyOtp({
+    token,
+    type: "email"
+  });
 
-  if (!users || users.length === 0) {
-    return NextResponse.json({ error: "Token no válido" }, { status: 400 });
+  if (error) {
+    console.error(error);
+    return NextResponse.redirect("/login?error=verify_failed");
   }
 
-  const user = users[0];
+  // Crear cookie de sesión
+  const session = data.session;
+  const cookieStore = await cookies();
 
-  // Marcar como verificado
-  await supabase
-    .from("users")
-    .update({
-      verificado: true,
-      token_verificacion: null
-    })
-    .eq("id", user.id);
+  cookieStore.set("session", session.access_token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/"
+  });
 
-return NextResponse.redirect(new URL("/login?verified=1", process.env.NEXT_PUBLIC_DOMAIN));
+  return NextResponse.redirect("/dashboard");
 }

@@ -42,7 +42,7 @@ export async function POST(req) {
 
     const supabase = createClient(
       process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     // Crear licencia

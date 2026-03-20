@@ -15,8 +15,8 @@ const EXCLUDE = [
 
 const TARGETS = [
   {
-    from: "SUPABASE_SERVICE_KEY",
-    to: "SUPABASE_SERVICE_KEY"
+    from: "SUPABASE_SERVICE_ROLE_KEY",
+    to: "SUPABASE_SERVICE_ROLE_KEY"
   }
 ];
 

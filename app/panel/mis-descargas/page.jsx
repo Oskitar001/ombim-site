@@ -17,8 +17,12 @@ export default function MisDescargas() {
 
     fetch("/api/download/history", { credentials: "include" })
       .then(res => res.json())
-      .then(data => setDescargas(data));
-  }, []);
+      .then(data => setDescargas(data || []));
+  }, [router]);
+
+  if (!user) {
+    return <p className="pt-32 text-center">Cargando...</p>;
+  }
 
   return (
     <div className="max-w-3xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">

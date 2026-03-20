@@ -1,45 +1,16 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "../_utils";
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("session")?.value;
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
 
-  if (!sessionCookie) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  const { supabase } = auth;
 
-  const session = JSON.parse(sessionCookie);
-
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Solo admin" }, { status: 403 });
-  }
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  );
-
-  const { data, error } = await supabase
-    .from("licencias_uso")
-    .select(`
-      id,
-      clave,
-      ip,
-      user_agent,
-      fecha,
-      claves_entregadas (
-        user_id,
-        plugin_id
-      )
-    `);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  const { data } = await supabase
+    .from("logs_uso")
+    .select("*")
+    .order("fecha", { ascending: false });
 
   return NextResponse.json(data);
 }

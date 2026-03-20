@@ -1,24 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function LoginClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const params = useSearchParams();
-  const verified = params.get("verified");
-
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
+
+    console.log("HANDLE LOGIN EJECUTADO"); // ← PARA VER SI SE EJECUTA
 
     let res;
     try {
       res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
@@ -38,20 +37,12 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="pt-32 flex flex-col items-center px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-        Iniciar sesión
-      </h1>
-
-      {verified && (
-        <div className="w-full max-w-sm mb-4 p-3 rounded-lg border border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-center shadow-sm">
-          <strong>¡Email verificado!</strong> Ya puedes iniciar sesión.
-        </div>
-      )}
+    <div className="pt-32 flex flex-col items-center px-6 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Iniciar sesión</h1>
 
       <form
         onSubmit={handleLogin}
-        className="flex flex-col gap-4 w-full max-w-sm bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] p-6 rounded-lg shadow border border-[#d1d5db] dark:border-[#3a3a3a]"
+        className="flex flex-col gap-4 w-full max-w-sm p-6 rounded-lg shadow border"
       >
         <input
           type="email"
@@ -59,7 +50,7 @@ export default function LoginClient() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border p-2 rounded"
         />
 
         <input
@@ -68,29 +59,22 @@ export default function LoginClient() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border p-2 rounded"
         />
 
         <button
           type="submit"
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition active:scale-95"
+          className="bg-blue-600 text-white py-2 rounded"
         >
           Entrar
         </button>
 
         {error && (
-          <p className="text-red-600 dark:text-red-400 text-center">
+          <p className="text-red-600 text-center">
             {error}
           </p>
         )}
       </form>
-
-      <p className="mt-4 text-[#1f2937] dark:text-[#e6e6e6]">
-        ¿No tienes cuenta?{" "}
-        <a href="/register" className="text-blue-600 dark:text-blue-400 hover:underline">
-          Regístrate aquí
-        </a>
-      </p>
     </div>
   );
 }

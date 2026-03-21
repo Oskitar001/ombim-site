@@ -77,7 +77,10 @@ export default function Navbar() {
 
   if (!ready) return null;
 
-  const avatar = user?.nombre ? user.nombre.charAt(0).toUpperCase() : "U";
+  // ⭐ Avatar con inicial del nombre si existe
+  const avatar = user?.nombre
+    ? user.nombre.charAt(0).toUpperCase()
+    : "U";
 
   return (
     <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] shadow-soft dark:shadow-none border-b border-[#d1d5db] dark:border-[#3a3a3a] fixed top-0 left-0 z-50">
@@ -100,35 +103,15 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* HAMBURGUESA ESTILO iOS */}
+        {/* HAMBURGUESA */}
         <button
           className="md:hidden relative w-8 h-8 flex items-center justify-center"
           onClick={() => setOpen(!open)}
           aria-label="Abrir menú"
         >
-          {/* Línea 1 */}
-          <span
-            className={`
-              absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300
-              ${open ? "w-6 rotate-45 translate-y-0" : "w-7 -translate-y-2"}
-            `}
-          ></span>
-
-          {/* Línea 2 */}
-          <span
-            className={`
-              absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300
-              ${open ? "w-0 opacity-0" : "w-7 opacity-100"}
-            `}
-          ></span>
-
-          {/* Línea 3 */}
-          <span
-            className={`
-              absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300
-              ${open ? "w-6 -rotate-45 translate-y-0" : "w-7 translate-y-2"}
-            `}
-          ></span>
+          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-6 rotate-45 translate-y-0" : "w-7 -translate-y-2"}`}></span>
+          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-0 opacity-0" : "w-7 opacity-100"}`}></span>
+          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-6 -rotate-45 translate-y-0" : "w-7 translate-y-2"}`}></span>
         </button>
 
         {/* MENÚ ESCRITORIO */}
@@ -143,18 +126,12 @@ export default function Navbar() {
           {/* SWITCH TEMA */}
           <button
             onClick={toggleTheme}
-            className="
-              px-3 py-2 rounded-lg
-              bg-[#ffffff] dark:bg-[#2e2e2e]
-              border border-[#d1d5db] dark:border-[#3a3a3a]
-              hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a]
-              transition
-            "
+            className="px-3 py-2 rounded-lg bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
           >
             {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
           </button>
 
-          {/* USUARIO */}
+          {/* ⭐ USUARIO */}
           {user ? (
             <div className="relative" ref={menuRef}>
               <button
@@ -164,7 +141,9 @@ export default function Navbar() {
                 <div className="w-9 h-9 bg-brand text-white rounded-full flex items-center justify-center font-bold">
                   {avatar}
                 </div>
-                {user.nombre}
+
+                {/* ⭐ Mostrar nombre */}
+                <span>{user.nombre}</span>
               </button>
 
               <div
@@ -195,13 +174,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="
-                bg-[#ffffff] dark:bg-[#2e2e2e]
-                border border-[#d1d5db] dark:border-[#3a3a3a]
-                px-4 py-2 rounded-lg font-medium
-                hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a]
-                transition
-              "
+              className="bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] px-4 py-2 rounded-lg font-medium hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
             >
               Inicia sesión o regístrate
             </Link>
@@ -238,13 +211,7 @@ export default function Navbar() {
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="
-                bg-[#ffffff] dark:bg-[#2e2e2e]
-                border border-[#d1d5db] dark:border-[#3a3a3a]
-                px-4 py-2 rounded-lg font-medium
-                hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a]
-                transition
-              "
+              className="bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] px-4 py-2 rounded-lg font-medium hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
             >
               Inicia sesión o regístrate
             </Link>

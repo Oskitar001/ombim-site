@@ -38,7 +38,16 @@ export default function LoginClient() {
       return;
     }
 
-    // 🔥 Login OK → redirigir al panel (donde sí se carga el nombre)
+    // ⭐ Mostrar nombre si existe
+    if (data.user?.user_metadata?.nombre || data.user?.user_metadata?.member) {
+      const nombre =
+        data.user.user_metadata.nombre ||
+        data.user.user_metadata.member;
+
+      console.log("Bienvenido", nombre);
+    }
+
+    // ⭐ Redirigir al panel
     window.location.href = "/panel";
   }
 
@@ -74,6 +83,15 @@ export default function LoginClient() {
           disabled={loading}
         >
           {loading ? "Entrando..." : "Entrar"}
+        </button>
+
+        {/* ⭐ Botón cancelar */}
+        <button
+          type="button"
+          onClick={() => window.location.href = "/"}
+          className="bg-gray-300 text-black py-2 rounded"
+        >
+          Cancelar
         </button>
 
         <Link

@@ -14,7 +14,6 @@ export default function RegisterPage() {
     setError("");
     setOk("");
 
-    // 🔥 ENVÍA EL NOMBRE CORRECTAMENTE A TU API
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -28,7 +27,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // 🔥 MENSAJE DE ÉXITO
     setOk("Registro completado. Revisa tu email para confirmar tu cuenta.");
   }
 
@@ -74,6 +72,15 @@ export default function RegisterPage() {
           className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition active:scale-95"
         >
           Registrarse
+        </button>
+
+        {/* ⭐ BOTÓN CANCELAR */}
+        <button
+          type="button"
+          onClick={() => window.location.href = "/"}
+          className="bg-gray-300 dark:bg-gray-700 text-black dark:text-white py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition active:scale-95"
+        >
+          Cancelar
         </button>
 
         {error && (

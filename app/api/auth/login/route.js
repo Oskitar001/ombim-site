@@ -18,9 +18,18 @@ export async function POST(req) {
   // 2. Obtener sesión actual (esto genera la cookie)
   const { data: sessionData } = await supabase.auth.getSession();
 
+  // ⭐ Asegurar que el nombre viene en la respuesta
+  const user = {
+    ...data.user,
+    nombre:
+      data.user?.user_metadata?.nombre ||
+      data.user?.user_metadata?.member ||
+      null
+  };
+
   // 3. Responder con la cookie incluida
   return NextResponse.json(
-    { user: data.user, session: sessionData.session },
+    { user, session: sessionData.session },
     { status: 200 }
   );
 }

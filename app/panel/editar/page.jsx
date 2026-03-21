@@ -3,13 +3,26 @@
 // ======================================================
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function EditarUsuarioPage() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [ok, setOk] = useState("");
   const [error, setError] = useState("");
+
+  // ⭐ Cargar datos actuales del usuario
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setNombre(data.user.nombre || "");
+          setEmail(data.user.email || "");
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSave(e) {
     e.preventDefault();
@@ -58,6 +71,15 @@ export default function EditarUsuarioPage() {
 
         <button className="bg-blue-600 text-white py-2 rounded">
           Guardar cambios
+        </button>
+
+        {/* ⭐ BOTÓN CANCELAR */}
+        <button
+          type="button"
+          onClick={() => window.location.href = "/panel"}
+          className="bg-gray-300 text-black py-2 rounded hover:bg-gray-400 transition"
+        >
+          Cancelar
         </button>
 
         {ok && <p className="text-green-600">{ok}</p>}

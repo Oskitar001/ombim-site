@@ -1,5 +1,6 @@
 // ======================================================
-// PÁGINA USUARIOS - app/admin/users/page.jsx
+// 1) BOTÓN EDITAR EN LA TABLA DE USUARIOS
+//    (app/admin/users/page.jsx)
 // ======================================================
 "use client";
 import { useEffect, useState } from "react";
@@ -73,18 +74,29 @@ export default function AdminUsersPage() {
                   {u.created_at ? new Date(u.created_at).toLocaleString() : "—"}
                 </td>
                 <td className="p-2 space-x-2">
+                  
+                  {/* 🔥 NUEVO: BOTÓN EDITAR */}
+                  <button
+                    className="px-2 py-1 text-xs bg-green-600 text-white rounded"
+                    onClick={() => window.location.href = `/admin/users/${u.id}`}
+                  >
+                    Editar
+                  </button>
+
                   <button
                     className="px-2 py-1 text-xs bg-blue-600 text-white rounded"
                     onClick={() => changeRole(u.id, role === "admin" ? "user" : "admin")}
                   >
                     Hacer {role === "admin" ? "user" : "admin"}
                   </button>
+
                   <button
                     className="px-2 py-1 text-xs bg-red-600 text-white rounded"
                     onClick={() => deleteUser(u.id)}
                   >
                     Eliminar
                   </button>
+
                 </td>
               </tr>
             );

@@ -38,9 +38,15 @@ export async function POST(req) {
     // Obtener sesión si existe
     const { data: sessionData } = await supabase.auth.getSession();
 
+    // ⭐ AÑADIR NOMBRE DIRECTAMENTE AL OBJETO USER
+    const user = {
+      ...data.user,
+      nombre: data.user?.user_metadata?.nombre || null
+    };
+
     return NextResponse.json({
       ok: true,
-      user: data.user,
+      user,
       session: sessionData.session,
       message: "Registro completado. Revisa tu email para confirmar tu cuenta."
     });

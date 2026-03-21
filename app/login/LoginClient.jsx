@@ -38,8 +38,8 @@ export default function LoginClient() {
       return;
     }
 
-    // Login OK → redirigir
-    window.location.href = "/plugins";
+    // 🔥 Login OK → redirigir al panel (donde sí se carga el nombre)
+    window.location.href = "/panel";
   }
 
   return (

@@ -14,6 +14,7 @@ export default function RegisterPage() {
     setError("");
     setOk("");
 
+    // 🔥 ENVÍA EL NOMBRE CORRECTAMENTE A TU API
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -27,9 +28,8 @@ export default function RegisterPage() {
       return;
     }
 
+    // 🔥 MENSAJE DE ÉXITO
     setOk("Registro completado. Revisa tu email para confirmar tu cuenta.");
-    
-
   }
 
   return (

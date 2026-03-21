@@ -5,9 +5,16 @@ export async function POST(req) {
   try {
     const { nombre, email, password } = await req.json();
 
+    if (!nombre || !email || !password) {
+      return NextResponse.json(
+        { error: "Faltan campos obligatorios" },
+        { status: 400 }
+      );
+    }
+
     const supabase = await supabaseServer();
 
-    // Crear usuario
+    // Crear usuario con metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -21,14 +28,14 @@ export async function POST(req) {
     });
 
     if (error) {
-      console.error(error);
+      console.error("SUPABASE REGISTER ERROR:", error);
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
       );
     }
 
-    // Obtener sesión (si Supabase la crea)
+    // Obtener sesión si existe
     const { data: sessionData } = await supabase.auth.getSession();
 
     return NextResponse.json({

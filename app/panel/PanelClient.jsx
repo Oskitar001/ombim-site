@@ -1,4 +1,3 @@
-
 // ===============================
 // app/panel/PanelClient.jsx
 // ===============================
@@ -17,6 +16,16 @@ export default function PanelClient({ user }) {
         <p><strong>Nombre:</strong> {nombre}</p>
         <p><strong>Email:</strong> {user.email}</p>
         <p><strong>Rol:</strong> {role}</p>
+
+        {/* 🔥 Botón para editar usuario */}
+        <div className="mt-4">
+          <Link
+            href="/panel/editar"
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            Editar usuario
+          </Link>
+        </div>
       </div>
 
       {role === "admin" ? (

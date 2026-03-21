@@ -1,3 +1,6 @@
+// ===============================
+// app/panel/page.jsx
+// ===============================
 import { supabaseServer } from "@/lib/supabaseServer";
 import PanelClient from "./PanelClient";
 import { redirect } from "next/navigation";

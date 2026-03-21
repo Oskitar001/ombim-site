@@ -1,12 +1,18 @@
+// ======================================================
+// API USUARIOS - app/api/admin/users/list/route.js
+// ======================================================
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export async function GET() {
-  const supabase = createClient(
+function supabaseAdmin() {
+  return createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
+}
 
+export async function GET() {
+  const supabase = supabaseAdmin();
   const { data, error } = await supabase.auth.admin.listUsers();
 
   if (error) {

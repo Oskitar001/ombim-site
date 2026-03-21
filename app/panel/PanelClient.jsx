@@ -1,3 +1,7 @@
+
+// ===============================
+// app/panel/PanelClient.jsx
+// ===============================
 "use client";
 import Link from "next/link";
 

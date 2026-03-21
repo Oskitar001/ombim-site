@@ -1,48 +1,94 @@
+// ======================================================
+// PÁGINA USUARIOS - app/admin/users/page.jsx
+// ======================================================
 "use client";
 import { useEffect, useState } from "react";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
+  const loadUsers = () => {
+    setLoading(true);
     fetch("/api/admin/users/list")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setUsers(data.users || []);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadUsers();
   }, []);
 
-  if (loading) {
-    return <div className="p-10">Cargando usuarios...</div>;
-  }
+  const changeRole = async (userId, role) => {
+    setActionLoading(true);
+    await fetch("/api/admin/users/role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role }),
+    });
+    setActionLoading(false);
+    loadUsers();
+  };
+
+  const deleteUser = async (userId) => {
+    if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
+    setActionLoading(true);
+    await fetch(`/api/admin/users/delete?userId=${userId}`, {
+      method: "DELETE",
+    });
+    setActionLoading(false);
+    loadUsers();
+  };
+
+  if (loading) return <div className="p-10">Cargando usuarios...</div>;
 
   return (
     <div className="p-10">
       <h1 className="text-3xl font-bold mb-6">Gestión de Usuarios</h1>
+      {actionLoading && <p className="mb-4 text-sm text-gray-500">Aplicando cambios...</p>}
 
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="bg-gray-200 dark:bg-gray-700">
-            <th className="p-3 text-left">Nombre</th>
-            <th className="p-3 text-left">Email</th>
-            <th className="p-3 text-left">Rol</th>
-            <th className="p-3 text-left">Creado</th>
+          <tr className="bg-gray-200">
+            <th className="p-2 text-left">Nombre</th>
+            <th className="p-2 text-left">Email</th>
+            <th className="p-2 text-left">Rol</th>
+            <th className="p-2 text-left">Creado</th>
+            <th className="p-2 text-left">Acciones</th>
           </tr>
         </thead>
-
         <tbody>
-          {users.map(user => (
-            <tr key={user.id} className="border-b dark:border-gray-700">
-              <td className="p-3">{user.user_metadata?.nombre || "—"}</td>
-              <td className="p-3">{user.email}</td>
-              <td className="p-3">{user.user_metadata?.role || "user"}</td>
-              <td className="p-3">
-                {new Date(user.created_at).toLocaleString()}
-              </td>
-            </tr>
-          ))}
+          {users.map((u) => {
+            const role = u.user_metadata?.role || "user";
+            return (
+              <tr key={u.id} className="border-b">
+                <td className="p-2">{u.user_metadata?.nombre || "—"}</td>
+                <td className="p-2">{u.email}</td>
+                <td className="p-2">{role}</td>
+                <td className="p-2">
+                  {u.created_at ? new Date(u.created_at).toLocaleString() : "—"}
+                </td>
+                <td className="p-2 space-x-2">
+                  <button
+                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded"
+                    onClick={() => changeRole(u.id, role === "admin" ? "user" : "admin")}
+                  >
+                    Hacer {role === "admin" ? "user" : "admin"}
+                  </button>
+                  <button
+                    className="px-2 py-1 text-xs bg-red-600 text-white rounded"
+                    onClick={() => deleteUser(u.id)}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

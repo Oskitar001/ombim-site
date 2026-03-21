@@ -1,35 +1,17 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("sb-access-token")?.value;
+    const supabase = await supabaseServer();
 
-    if (!accessToken) {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
       return NextResponse.json({ user: null, role: null });
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        }
-      }
-    );
-
-    const { data } = await supabase.auth.getUser();
     const user = data.user;
-
-    if (!user) {
-      return NextResponse.json({ user: null, role: null });
-    }
-
     const role = user.user_metadata?.role ?? "user";
 
     return NextResponse.json({ user, role });

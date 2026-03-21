@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+  const supabase = await supabaseServer();
 
-  const { data, error } = await supabase.from("plugins").select("*");
+  const { data, error } = await supabase
+    .from("plugins")
+    .select("*")
+    .order("id", { ascending: false });
 
-  if (error) return NextResponse.json({ error: "Error al obtener plugins" }, { status: 500 });
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Error obteniendo plugins" }, { status: 500 });
+  }
 
   return NextResponse.json(data);
 }

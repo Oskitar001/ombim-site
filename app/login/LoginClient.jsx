@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function LoginClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    console.log("HANDLE LOGIN EJECUTADO"); // ← PARA VER SI SE EJECUTA
+    console.log("HANDLE LOGIN EJECUTADO");
 
     let res;
     try {
@@ -23,6 +26,7 @@ export default function LoginClient() {
       });
     } catch (err) {
       setError("No se pudo conectar con el servidor");
+      setLoading(false);
       return;
     }
 
@@ -30,9 +34,11 @@ export default function LoginClient() {
 
     if (!res.ok) {
       setError(data.error || "Error al iniciar sesión");
+      setLoading(false);
       return;
     }
 
+    // Login OK → redirigir
     window.location.href = "/plugins";
   }
 
@@ -65,9 +71,17 @@ export default function LoginClient() {
         <button
           type="submit"
           className="bg-blue-600 text-white py-2 rounded"
+          disabled={loading}
         >
-          Entrar
+          {loading ? "Entrando..." : "Entrar"}
         </button>
+
+        <Link
+          href="/register"
+          className="text-blue-600 text-center underline"
+        >
+          Crear cuenta nueva
+        </Link>
 
         {error && (
           <p className="text-red-600 text-center">

@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req) {
   try {
     const { nombre, email, password } = await req.json();
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
+    const supabase = await supabaseServer();
 
+    // Crear usuario
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -18,20 +16,25 @@ export async function POST(req) {
           nombre,
           role: "user"
         },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_DOMAIN}/verify`
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/verify`
       }
     });
 
     if (error) {
       console.error(error);
       return NextResponse.json(
-        { error: "Error creando usuario" },
-        { status: 500 }
+        { error: error.message },
+        { status: 400 }
       );
     }
 
+    // Obtener sesión (si Supabase la crea)
+    const { data: sessionData } = await supabase.auth.getSession();
+
     return NextResponse.json({
       ok: true,
+      user: data.user,
+      session: sessionData.session,
       message: "Registro completado. Revisa tu email para confirmar tu cuenta."
     });
 

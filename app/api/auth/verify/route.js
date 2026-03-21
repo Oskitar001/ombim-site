@@ -1,40 +1,31 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET(req) {
   const token = req.nextUrl.searchParams.get("token");
+  const email = req.nextUrl.searchParams.get("email");
 
-  if (!token) {
+  if (!token || !email) {
     return NextResponse.redirect("/login?error=missing_token");
   }
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  );
+  const supabase = await supabaseServer();
 
-  // Verificar email en Supabase Auth
+  // Verificar email
   const { data, error } = await supabase.auth.verifyOtp({
     token,
+    email,
     type: "email"
   });
 
   if (error) {
-    console.error(error);
+    console.error("VERIFY ERROR:", error);
     return NextResponse.redirect("/login?error=verify_failed");
   }
 
-  // Crear cookie de sesión
-  const session = data.session;
-  const cookieStore = await cookies();
+  // Obtener sesión (si Supabase la genera)
+  const { data: sessionData } = await supabase.auth.getSession();
 
-  cookieStore.set("session", session.access_token, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    path: "/"
-  });
-
-  return NextResponse.redirect("/dashboard");
+  // Redirigir al panel
+  return NextResponse.redirect("/panel");
 }

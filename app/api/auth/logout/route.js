@@ -1,24 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST() {
-  const cookieStore = await cookies();
+  const supabase = await supabaseServer();
 
-  cookieStore.set("sb-access-token", "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0
-  });
-
-  cookieStore.set("sb-refresh-token", "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0
-  });
+  // Cerrar sesión en Supabase (invalida tokens y cookies)
+  await supabase.auth.signOut();
 
   return NextResponse.json({ ok: true });
 }

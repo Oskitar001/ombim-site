@@ -1,49 +1,58 @@
 import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
 
-export default function proxy(request) {
-  const { nextUrl, cookies } = request;
-  const pathname = nextUrl.pathname;
+export default async function proxy(request) {
+  const pathname = request.nextUrl.pathname;
 
-  // Proxy: añadimos el origin real
-  const response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  // Ignorar rutas internas de Next.js
+  if (pathname.startsWith("/_next")) {
+    return NextResponse.next();
+  }
 
-  response.headers.set("x-origin", nextUrl.origin);
+  const supabase = await supabaseServer();
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
 
-  // Leer cookie de sesión (como string)
-  const sessionCookie = cookies.get("session")?.value || "";
+  // Rutas protegidas
+  const protectedRoutes = [
+    "/panel",
+    "/usuario",
+    "/plugins",
+    "/api/download"
+  ];
 
-  // Rutas que requieren admin
-  const isAdminRoute =
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/api/admin");
-
-  if (isAdminRoute) {
-    if (!sessionCookie) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-
-    // Comprobación segura para Edge Runtime
-    const isAdmin = sessionCookie.includes(`"role":"admin"`);
-
-    if (!isAdmin) {
+  if (protectedRoutes.some(r => pathname.startsWith(r))) {
+    if (!user) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
-  return response;
+  // Rutas admin
+  const adminRoutes = [
+    "/admin",
+    "/api/admin"
+  ];
+
+  if (adminRoutes.some(r => pathname.startsWith(r))) {
+    if (!user || user.user_metadata?.role !== "admin") {
+      return NextResponse.redirect(new URL("/panel", request.url));
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
+    "/panel",
+    "/panel/:path*",
+    "/usuario",
+    "/usuario/:path*",
+    "/plugins",
+    "/plugins/:path*",
+    "/api/download/:path*",
+    "/admin",
     "/admin/:path*",
     "/api/admin/:path*",
-    "/panel/:path*",
-    "/usuario/:path*",
-    "/api/download/:path*",
-    "/plugins/:path*",
   ],
 };

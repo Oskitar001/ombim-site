@@ -32,7 +32,7 @@ const envLocal = loadEnvFile(".env.local");
 // 2. Lista de variables obligatorias + validadores
 // -------------------------------
 const REQUIRED = {
-  SUPABASE_URL: {
+  NEXT_PUBLIC_SUPABASE_URL: {
     validate: (v) => v.startsWith("https://") && v.includes(".supabase.co"),
     message: "Debe ser una URL válida de Supabase (https://xxxx.supabase.co)"
   },

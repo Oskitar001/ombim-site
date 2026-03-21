@@ -9,8 +9,8 @@ const TARGETS = [
     to: "SUPABASE_SERVICE_ROLE_KEY"
   },
   {
-    from: "SUPABASE_ANON_KEY",
-    to: "SUPABASE_ANON_KEY" // por si quieres mantenerlo igual
+    from: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    to: "NEXT_PUBLIC_SUPABASE_ANON_KEY" // por si quieres mantenerlo igual
   }
 ];
 

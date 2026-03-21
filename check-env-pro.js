@@ -4,7 +4,7 @@ dotenv.config();
 
 // Lista de variables obligatorias
 const REQUIRED = {
-  SUPABASE_URL: {
+  NEXT_PUBLIC_SUPABASE_URL: {
     validate: (v) => v.startsWith("https://") && v.includes(".supabase.co"),
     message: "Debe ser una URL válida de Supabase (https://xxxx.supabase.co)"
   },

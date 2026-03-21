@@ -25,15 +25,15 @@ function checkFile(filePath) {
 
   // Buscar createClient
   if (content.includes("createClient")) {
-    const hasURL = content.includes("process.env.SUPABASE_URL");
+    const hasURL = content.includes("process.env.NEXT_PUBLIC_SUPABASE_URL");
     const hasService = content.includes("process.env.SUPABASE_SERVICE_ROLE_KEY");
-    const hasAnon = content.includes("SUPABASE_ANON_KEY");
+    const hasAnon = content.includes("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
     if (!hasURL || !hasService) {
       errors.push({
         file: filePath,
         issue: !hasURL
-          ? "❌ Falta SUPABASE_URL"
+          ? "❌ Falta NEXT_PUBLIC_SUPABASE_URL"
           : "❌ Falta SUPABASE_SERVICE_ROLE_KEY",
       });
     }
@@ -51,7 +51,7 @@ console.log("🔍 Escaneando rutas API...");
 scanDir(apiDir);
 
 if (errors.length === 0) {
-  console.log("✅ Todas las rutas usan correctamente SUPABASE_URL y SERVICE_ROLE");
+  console.log("✅ Todas las rutas usan correctamente NEXT_PUBLIC_SUPABASE_URL y SERVICE_ROLE");
 } else {
   console.log("\n❗ Problemas encontrados:\n");
   errors.forEach((e) => {

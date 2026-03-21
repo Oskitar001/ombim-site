@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
-export async function POST(req) {
-  const { pago_id, emails } = await req.json();
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const pago_id = searchParams.get("pago_id");
 
-  if (!pago_id || !emails?.length) {
-    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  if (!pago_id) {
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
   const cookieStore = await cookies();
@@ -27,6 +28,7 @@ export async function POST(req) {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
 
+  // Obtener pago
   const { data: pago } = await supabase
     .from("pagos")
     .select("*")
@@ -37,13 +39,9 @@ export async function POST(req) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
-  await supabase
-    .from("pagos")
-    .update({
-      emails_tekla: emails,
-      estado: "esperando_transferencia"
-    })
-    .eq("id", pago_id);
-
-  return NextResponse.json({ ok: true });
+  // Devolver cantidad de licencias compradas
+  return NextResponse.json({
+    pago,
+    cantidad: pago.cantidad || 0
+  });
 }

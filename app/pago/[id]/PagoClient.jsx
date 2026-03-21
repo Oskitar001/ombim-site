@@ -12,10 +12,7 @@ export default function PagoClient({ id, plugin, tipos }) {
   ]);
 
   const añadirFila = () => {
-    setFilas([
-      ...filas,
-      { tipo_id: tipos[0]?.id || null, cantidad: 1 }
-    ]);
+    setFilas([...filas, { tipo_id: tipos[0]?.id || null, cantidad: 1 }]);
   };
 
   const eliminarFila = (index) => {
@@ -41,11 +38,15 @@ export default function PagoClient({ id, plugin, tipos }) {
       })
     });
 
-    if (res.ok) {
-      router.push(`/pago/${id}?pendiente=1`);
-    } else {
+    if (!res.ok) {
       alert("Error al crear el pago.");
+      return;
     }
+
+    const data = await res.json();
+
+    // REDIRECCIÓN CORRECTA
+    router.push(`/pago/licencias/${data.pago_id}`);
   };
 
   return (
@@ -78,7 +79,6 @@ export default function PagoClient({ id, plugin, tipos }) {
               key={index}
               className="flex items-center gap-4 border p-3 rounded"
             >
-              {/* Tipo de licencia */}
               <select
                 value={fila.tipo_id}
                 onChange={(e) =>
@@ -93,7 +93,6 @@ export default function PagoClient({ id, plugin, tipos }) {
                 ))}
               </select>
 
-              {/* Cantidad */}
               <input
                 type="number"
                 min="1"
@@ -104,7 +103,6 @@ export default function PagoClient({ id, plugin, tipos }) {
                 className="border px-2 py-1 rounded w-20"
               />
 
-              {/* Eliminar */}
               <button
                 type="button"
                 onClick={() => eliminarFila(index)}
@@ -125,7 +123,6 @@ export default function PagoClient({ id, plugin, tipos }) {
         </button>
       </div>
 
-      {/* BOTÓN ENVIAR */}
       <button
         type="submit"
         className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"

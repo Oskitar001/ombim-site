@@ -1,4 +1,3 @@
-
 // ======================================================
 // API: app/api/auth/update-user/route.js
 // ======================================================
@@ -19,8 +18,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    // Actualizar datos
-    const { error } = await supabase.auth.updateUser({
+    // ⭐ Actualizar datos del usuario
+    const { data, error } = await supabase.auth.updateUser({
       email: email || user.email,
       data: {
         nombre: nombre || user.user_metadata?.nombre
@@ -31,7 +30,14 @@ export async function POST(req) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ ok: true });
+    // ⭐ Devolver usuario actualizado con nombre accesible directamente
+    return NextResponse.json({
+      ok: true,
+      user: {
+        ...data.user,
+        nombre: data.user.user_metadata?.nombre || null
+      }
+    });
 
   } catch (err) {
     console.error("UPDATE USER ERROR:", err);

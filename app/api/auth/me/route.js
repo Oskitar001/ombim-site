@@ -12,9 +12,22 @@ export async function GET() {
     }
 
     const user = data.user;
+
+    // ⭐ AÑADIMOS EL NOMBRE DIRECTAMENTE
+    const nombre =
+      user.user_metadata?.nombre ||
+      user.user_metadata?.member ||
+      null;
+
     const role = user.user_metadata?.role ?? "user";
 
-    return NextResponse.json({ user, role });
+    return NextResponse.json({
+      user: {
+        ...user,
+        nombre // ⭐ AHORA EL NAVBAR LO RECIBE
+      },
+      role
+    });
 
   } catch (err) {
     console.error("ME ERROR:", err);

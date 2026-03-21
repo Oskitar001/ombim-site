@@ -21,10 +21,10 @@ export default function PanelClient({ user }) {
           <ul className="space-y-3">
             <li><Link href="/admin/plugins">➤ Gestionar Plugins</Link></li>
             <li><Link href="/panel/subir-plugin">➤ Subir nuevo plugin</Link></li>
-            <li><Link href="/admin/licencias/list">➤ Gestionar Licencias</Link></li>
-            <li><Link href="/admin/users/list">➤ Gestionar Usuarios</Link></li>
-            <li><Link href="/admin/hardware/list">➤ Gestionar Hardware</Link></li>
-            <li><Link href="/admin/logs/list">➤ Ver Logs del Sistema</Link></li>
+            <li><Link href="/admin/licencias">➤ Gestionar Licencias</Link></li>
+            <li><Link href="/admin/users">➤ Gestionar Usuarios</Link></li>
+            <li><Link href="/admin/hardware">➤ Gestionar Hardware</Link></li>
+            <li><Link href="/admin/logs">➤ Ver Logs del Sistema</Link></li>
           </ul>
         </div>
       ) : (

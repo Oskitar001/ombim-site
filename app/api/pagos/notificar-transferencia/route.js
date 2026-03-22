@@ -22,12 +22,32 @@ export async function POST(req) {
     .update({ estado: "transferencia_notificada" })
     .eq("id", pago_id);
 
-  const html = plantillaTransferenciaNotificada(
-    userData.user.email,
-    pago_id
-  );
+  try {
+    const html = plantillaTransferenciaNotificada(
+      userData.user.email,
+      pago_id
+    );
 
-  await enviarEmail(process.env.ADMIN_EMAIL, "Transferencia notificada", html);
+    if (!process.env.ADMIN_EMAIL) {
+      console.error("ERROR: ADMIN_EMAIL no está definido en .env");
+      return NextResponse.json(
+        { error: "ADMIN_EMAIL no configurado" },
+        { status: 500 }
+      );
+    }
 
-  return NextResponse.json({ ok: true });
+    await enviarEmail(
+      process.env.ADMIN_EMAIL,
+      "Transferencia notificada",
+      html
+    );
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("ERROR ENVIANDO EMAIL:", err);
+    return NextResponse.json(
+      { error: "Error enviando email", detalle: err.message },
+      { status: 500 }
+    );
+  }
 }

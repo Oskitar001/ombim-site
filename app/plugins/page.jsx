@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -15,7 +16,7 @@ export default function PluginsPage() {
   useEffect(() => {
     fetch("/api/plugin", { credentials: "include" })
       .then(res => res.json())
-      .then(data => setPlugins(data));
+      .then(data => setPlugins(data || []));
   }, []);
 
   return (
@@ -24,11 +25,10 @@ export default function PluginsPage() {
 
       {plugins.map(p => {
         const videoId = getVideoId(p.video_url);
-        const key = p.id;
 
         return (
           <div
-            key={key}
+            key={p.id}
             className="mb-16 p-6 rounded-xl shadow border"
           >
             <Link
@@ -44,7 +44,6 @@ export default function PluginsPage() {
 
             <p className="mb-4">{p.descripcion}</p>
 
-            {/* SOLO FOTO — SIN VIDEO */}
             {videoId && (
               <Link href={`/plugins/${p.id}`}>
                 <img

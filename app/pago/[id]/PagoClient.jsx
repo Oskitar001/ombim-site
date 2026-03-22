@@ -30,7 +30,7 @@ export default function PagoClient({ id, plugin, tipos }) {
 
     const res = await fetch("/api/pagos/crear", {
       method: "POST",
-      credentials: "include", // ← NECESARIO PARA ENVIAR LA COOKIE
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         plugin_id: id,
@@ -52,19 +52,13 @@ export default function PagoClient({ id, plugin, tipos }) {
     }
 
     const data = await res.json();
-
-    // REDIRECCIÓN CORRECTA
     router.push(`/pago/licencias/${data.pago_id}`);
   };
 
   return (
     <form onSubmit={enviar} className="space-y-6">
-
-      {/* EMAIL */}
       <div>
-        <label className="block font-semibold mb-1">
-          Email de Tekla
-        </label>
+        <label className="block font-semibold mb-1">Email de Tekla</label>
         <input
           type="email"
           required
@@ -75,22 +69,16 @@ export default function PagoClient({ id, plugin, tipos }) {
         />
       </div>
 
-      {/* TABLA DE LICENCIAS */}
       <div>
-        <label className="block font-semibold mb-2">
-          Licencias a comprar
-        </label>
+        <label className="block font-semibold mb-2">Licencias a comprar</label>
 
         <div className="space-y-3">
           {filas.map((fila, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-4 border p-3 rounded"
-            >
+            <div key={index} className="flex items-center gap-4 border p-3 rounded">
               <select
                 value={fila.tipo_id}
                 onChange={(e) =>
-                  actualizarFila(index, "tipo_id", e.target.value)
+                  actualizarFila(index, "tipo_id", Number(e.target.value))
                 }
                 className="border px-2 py-1 rounded"
               >

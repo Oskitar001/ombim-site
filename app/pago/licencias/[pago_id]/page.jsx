@@ -3,20 +3,46 @@
 import { useEffect, useState } from "react";
 
 export default function PaginaLicencias({ params }) {
-  const pagoId = params.pago_id;
+  // Next.js 15 → params es un Promise
+  const [pagoId, setPagoId] = useState(null);
   const [cantidad, setCantidad] = useState(0);
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Resolver params
   useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setPagoId(resolved.pago_id);
+    }
+    resolver();
+  }, [params]);
+
+  // Cargar datos del pago
+  useEffect(() => {
+    if (!pagoId) return;
+
     async function cargar() {
-      const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`);
+      const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`, {
+        cache: "no-store",
+        credentials: "include"
+      });
+
+      if (!res.ok) {
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
 
-      setCantidad(data.cantidad);
-      setEmails(Array(data.cantidad).fill(""));
+      // data.pago.cantidad → correcto
+      const cant = data?.pago?.cantidad || 0;
+
+      setCantidad(cant);
+      setEmails(Array(cant).fill(""));
       setLoading(false);
     }
+
     cargar();
   }, [pagoId]);
 
@@ -27,7 +53,6 @@ export default function PaginaLicencias({ params }) {
   };
 
   async function guardarEmails() {
-    // Validación
     if (emails.some((e) => !e.trim())) {
       alert("Todos los emails son obligatorios.");
       return;
@@ -41,6 +66,7 @@ export default function PaginaLicencias({ params }) {
     await fetch("/api/pagos/guardar-emails", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ pago_id: pagoId, emails }),
     });
 
@@ -51,6 +77,7 @@ export default function PaginaLicencias({ params }) {
     await fetch("/api/pagos/notificar-transferencia", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ pago_id: pagoId }),
     });
     alert("Transferencia notificada");

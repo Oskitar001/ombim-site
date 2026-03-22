@@ -1,39 +1,22 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET(req, { params }) {
-  const plugin_id = params.id;
+  // Next.js 15 → params es un Promise
+  const resolved = await params;
+  const plugin_id = resolved.id;
 
-  const cookieStore = await cookies();
-  const session = cookieStore.get("session")?.value;
+  const supabase = await supabaseServer();
 
-  if (!session) {
-    return NextResponse.json({ pago: null });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SECRET_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${session}` } },
-    }
-  );
-
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !userData?.user) {
-    return NextResponse.json({ pago: null });
-  }
-
-  const user = userData.user;
-
-  const { data: pago } = await supabase
-    .from("pagos")
+  const { data, error } = await supabase
+    .from("plugins")
     .select("*")
-    .eq("plugin_id", plugin_id)
-    .eq("user_id", user.id)
-    .maybeSingle();
+    .eq("id", plugin_id)
+    .single();
 
-  return NextResponse.json({ pago: pago || null });
+  if (error || !data) {
+    return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
 }

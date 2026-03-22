@@ -4,7 +4,6 @@ import PagoClient from "./PagoClient";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export default async function PagoPage({ params }) {
-  // Next.js 15: params es un Promise → hay que resolverlo
   const resolved = await params;
   const id = resolved.id;
 
@@ -12,7 +11,6 @@ export default async function PagoPage({ params }) {
   const host = hdr.get("host");
   const protocol = host.includes("localhost") ? "http" : "https";
 
-  // Obtener plugin
   const pluginURL = `${protocol}://${host}/api/plugin/${id}`;
   const res = await fetch(pluginURL, { cache: "no-store" });
 
@@ -20,18 +18,16 @@ export default async function PagoPage({ params }) {
 
   const plugin = await res.json();
 
-  // Obtener tipos de licencia
   const supabase = await supabaseServer();
   const { data: tipos } = await supabase
     .from("licencia_tipos")
     .select("*")
     .order("nombre", { ascending: true });
 
-  // Obtener estado del pago
   const pagoURL = `${protocol}://${host}/api/pagos/estado?plugin_id=${id}`;
   const pagoRes = await fetch(pagoURL, {
     cache: "no-store",
-    credentials: "include" // Necesario para enviar la cookie de sesión
+    credentials: "include"
   });
 
   const pago = pagoRes.ok ? await pagoRes.json() : null;
@@ -44,7 +40,6 @@ export default async function PagoPage({ params }) {
         {plugin.precio > 0 ? `${plugin.precio} €` : "Gratis"}
       </p>
 
-      {/* Estado del pago */}
       {pago?.estado === "pendiente" && (
         <p className="text-yellow-600 font-semibold mb-6">
           Pago pendiente de confirmación.
@@ -58,7 +53,6 @@ export default async function PagoPage({ params }) {
         </div>
       )}
 
-      {/* Formulario de compra */}
       <PagoClient id={id} plugin={plugin} tipos={tipos || []} />
     </div>
   );

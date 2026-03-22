@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req) {
   try {
@@ -13,16 +13,15 @@ export async function POST(req) {
       return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SECRET_KEY,
-      {
-        global: { headers: { Authorization: `Bearer ${session}` } },
-      }
-    );
+    const supabase = await supabaseServer(session);
 
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData?.user) {
+      return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+    }
+
+    const user = userData.user;
 
     const { plugin_id, email, licencias } = await req.json();
 
@@ -30,10 +29,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
     }
 
-    // Calcular cantidad total de licencias
     const cantidad = licencias.reduce((acc, fila) => acc + fila.cantidad, 0);
 
-    // Crear pago
     const { data: pago, error: pagoError } = await supabase
       .from("pagos")
       .insert({

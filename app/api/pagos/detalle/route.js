@@ -14,7 +14,7 @@ export async function GET(req) {
   const session = cookieStore.get("session")?.value;
 
   if (!session) {
-    return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+    return NextResponse.json({ pago: null });
   }
 
   const supabase = createClient(
@@ -28,12 +28,16 @@ export async function GET(req) {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
 
+  if (!user) {
+    return NextResponse.json({ pago: null });
+  }
+
   const { data: pago } = await supabase
     .from("pagos")
     .select("*")
     .eq("plugin_id", plugin_id)
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  return NextResponse.json({ pago });
+  return NextResponse.json({ pago: pago || null });
 }

@@ -27,7 +27,8 @@ export default function PluginClient({ plugin, pluginId }) {
       .then(res => res.json())
       .then(data => setUser(data.user || null));
 
-    fetch(`/api/pagos/detalle?plugin_id=${pluginId}`, {
+    // ⭐ CORREGIDO: barra final obligatoria
+    fetch(`/api/pagos/detalle/?plugin_id=${pluginId}`, {
       credentials: "include"
     })
       .then(res => (res.ok ? res.json() : null))

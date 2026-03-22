@@ -27,10 +27,8 @@ export default function PluginClient({ plugin, pluginId }) {
       .then(res => res.json())
       .then(data => setUser(data.user || null));
 
-    // ⭐ CORREGIDO: barra final obligatoria
-    fetch(`/api/pagos/detalle/?plugin_id=${pluginId}`, {
-      credentials: "include"
-    })
+    // ⭐ API CORRECTA: /api/plugin/[id]
+    fetch(`/api/plugin/${pluginId}`, { credentials: "include" })
       .then(res => (res.ok ? res.json() : null))
       .then(data => setPago(data));
   }, [pluginId]);
@@ -81,7 +79,7 @@ export default function PluginClient({ plugin, pluginId }) {
           {esDePago && (
             <div className="mt-6 space-y-4">
 
-              {!pago && (
+              {!pago?.pago && (
                 <a
                   href={`/pago/${pluginId}`}
                   className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"

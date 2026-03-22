@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
   try {
@@ -12,18 +12,14 @@ export async function POST(req) {
       );
     }
 
-    const supabase = await supabaseServer();
-
     // Crear usuario con metadata
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          nombre,
-          role: "user"
-        },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/verify`
+      email_confirm: true,
+      user_metadata: {
+        nombre,
+        role: "user"
       }
     });
 
@@ -35,10 +31,7 @@ export async function POST(req) {
       );
     }
 
-    // Obtener sesión si existe
-    const { data: sessionData } = await supabase.auth.getSession();
-
-    // ⭐ AÑADIR NOMBRE DIRECTAMENTE AL OBJETO USER
+    // Usuario con nombre incluido
     const user = {
       ...data.user,
       nombre: data.user?.user_metadata?.nombre || null
@@ -47,7 +40,6 @@ export async function POST(req) {
     return NextResponse.json({
       ok: true,
       user,
-      session: sessionData.session,
       message: "Registro completado. Revisa tu email para confirmar tu cuenta."
     });
 

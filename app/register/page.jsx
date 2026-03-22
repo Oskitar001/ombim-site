@@ -74,7 +74,6 @@ export default function RegisterPage() {
           Registrarse
         </button>
 
-        {/* ⭐ BOTÓN CANCELAR */}
         <button
           type="button"
           onClick={() => window.location.href = "/"}

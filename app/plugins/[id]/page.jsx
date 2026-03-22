@@ -11,7 +11,12 @@ export default async function PluginPage({ params }) {
     .single();
 
   if (error || !plugin) {
-    return <div className="pt-32 px-6">Plugin no encontrado</div>;
+    console.error("PLUGIN ERROR:", error);
+    return (
+      <div className="pt-32 px-6 text-red-600">
+        Plugin no encontrado
+      </div>
+    );
   }
 
   return <PluginClient plugin={plugin} pluginId={id} />;

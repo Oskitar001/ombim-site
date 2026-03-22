@@ -77,10 +77,13 @@ export default function Navbar() {
 
   if (!ready) return null;
 
-  // ⭐ Avatar con inicial del nombre si existe
-  const avatar = user?.nombre
-    ? user.nombre.charAt(0).toUpperCase()
-    : "U";
+  // ⭐ Obtener nombre real desde user_metadata
+  const nombre = user?.user_metadata?.nombre;
+
+  // ⭐ Avatar: inicial del nombre o inicial del email
+  const avatar = nombre
+    ? nombre.charAt(0).toUpperCase()
+    : user?.email?.charAt(0).toUpperCase();
 
   return (
     <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] shadow-soft dark:shadow-none border-b border-[#d1d5db] dark:border-[#3a3a3a] fixed top-0 left-0 z-50">
@@ -143,7 +146,7 @@ export default function Navbar() {
                 </div>
 
                 {/* ⭐ Mostrar nombre */}
-                <span>{user.nombre}</span>
+                <span>{user.user_metadata?.nombre}</span>
               </button>
 
               <div

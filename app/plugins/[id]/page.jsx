@@ -1,8 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import PluginClient from "./PluginClient";
 
-export default async function PluginPage({ params }) {
-  const { id } = params;
+export default async function PluginPage(props) {
+  const { id } = await props.params; // ← ESTA ES LA CLAVE
 
   const { data: plugin, error } = await supabaseAdmin
     .from("plugins")

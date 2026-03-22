@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, { params }) {
-  const { id } = params;
+export async function GET(req, props) {
+  const { id } = await props.params; // ← ESTA ES LA CLAVE
 
   const { data, error } = await supabaseAdmin
     .from("plugins")
@@ -11,7 +11,11 @@ export async function GET(req, { params }) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
+    console.error("PLUGIN ERROR:", error);
+    return NextResponse.json(
+      { error: "Plugin no encontrado" },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);

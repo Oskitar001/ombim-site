@@ -3,7 +3,7 @@ import PluginClient from "./PluginClient";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export default async function PluginPage({ params }) {
-  const id = params.id;
+  const { id } = await params;
 
   const supabase = await supabaseServer();
 

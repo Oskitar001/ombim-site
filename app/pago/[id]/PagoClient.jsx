@@ -30,6 +30,7 @@ export default function PagoClient({ id, plugin, tipos }) {
 
     const res = await fetch("/api/pagos/crear", {
       method: "POST",
+      credentials: "include", // ← NECESARIO PARA ENVIAR LA COOKIE
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         plugin_id: id,
@@ -38,8 +39,15 @@ export default function PagoClient({ id, plugin, tipos }) {
       })
     });
 
+    if (res.status === 401) {
+      alert("Debes iniciar sesión.");
+      router.push("/login");
+      return;
+    }
+
     if (!res.ok) {
-      alert("Error al crear el pago.");
+      const data = await res.json();
+      alert("Error al crear el pago: " + data.error);
       return;
     }
 

@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req, props) {
-  const { id } = await props.params; // ← ESTA ES LA CLAVE
+  const { id } = await props.params;
 
   const { data, error } = await supabaseAdmin
     .from("plugins")
     .select("*")
-    .eq("id", id)
+    .eq("id", id) // o uuid si tu tabla usa uuid
     .single();
 
   if (error || !data) {

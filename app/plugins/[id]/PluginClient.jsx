@@ -23,9 +23,35 @@ export default function PluginClient({ plugin, pluginId }) {
         <p className="text-lg font-semibold mb-4 text-green-600">Gratis</p>
       )}
 
+      {/* ⭐ VIDEO DEL PLUGIN */}
+      {plugin.video_url && (
+        <div
+          className="relative w-full mt-6"
+          style={{ paddingBottom: "56.25%" }}
+        >
+          <iframe
+            src={plugin.video_url}
+            title="Video del plugin"
+            allowFullScreen
+            className="absolute top-0 left-0 w-full h-full rounded border"
+          />
+        </div>
+      )}
+
+      {/* ⭐ ARCHIVO / IMAGEN */}
+      {plugin.archivo_url && (
+        <img
+          src={plugin.archivo_url}
+          alt={plugin.nombre}
+          className="w-full rounded border mt-6"
+        />
+      )}
+
+      {/* ⭐ BOTONES */}
       {user ? (
         <>
           <DescargarBoton pluginId={pluginId} />
+
           {plugin.precio > 0 && (
             <a
               href={`/pago/${pluginId}`}

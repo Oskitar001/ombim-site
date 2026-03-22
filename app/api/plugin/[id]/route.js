@@ -12,20 +12,22 @@ export async function GET(req, { params }) {
     return NextResponse.json({ pago: null });
   }
 
+  // ⭐ USAR SECRET KEY, NO ANON KEY
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.SUPABASE_SECRET_KEY,
     {
       global: { headers: { Authorization: `Bearer ${session}` } },
     }
   );
 
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
+  const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userError || !userData?.user) {
     return NextResponse.json({ pago: null });
   }
+
+  const user = userData.user;
 
   const { data: pago } = await supabase
     .from("pagos")

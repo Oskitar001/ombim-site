@@ -4,10 +4,10 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const pago_id = searchParams.get("pago_id");
+  const plugin_id = searchParams.get("plugin_id");
 
-  if (!pago_id) {
-    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  if (!plugin_id) {
+    return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
   }
 
   const cookieStore = await cookies();
@@ -28,20 +28,12 @@ export async function GET(req) {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
 
-  // Obtener pago
   const { data: pago } = await supabase
     .from("pagos")
     .select("*")
-    .eq("id", pago_id)
+    .eq("plugin_id", plugin_id)
+    .eq("user_id", user.id)
     .single();
 
-  if (!pago || pago.user_id !== user.id) {
-    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-  }
-
-  // Devolver cantidad de licencias compradas
-  return NextResponse.json({
-    pago,
-    cantidad: pago.cantidad || 0
-  });
+  return NextResponse.json({ pago });
 }

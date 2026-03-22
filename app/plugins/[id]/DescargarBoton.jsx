@@ -1,7 +1,6 @@
 "use client";
 
 export default function DescargarBoton({ pluginId, user }) {
-  // Si no hay usuario → no permitir descarga
   if (!user) {
     return (
       <button
@@ -13,7 +12,6 @@ export default function DescargarBoton({ pluginId, user }) {
     );
   }
 
-  // Usuario logueado → permitir descarga
   return (
     <a
       href={`/api/plugin/download?id=${pluginId}`}

@@ -27,14 +27,13 @@ export default function PluginClient({ plugin, pluginId }) {
       .then(res => res.json())
       .then(data => setUser(data.user || null));
 
-    fetch(`/api/pagos/estado?plugin_id=${pluginId}`, {
+    fetch(`/api/pagos/detalle?plugin_id=${pluginId}`, {
       credentials: "include"
     })
       .then(res => (res.ok ? res.json() : null))
       .then(data => setPago(data));
   }, [pluginId]);
 
-  // FIX: evita que React pinte un "0"
   const esDePago = plugin.precio > 0;
 
   return (
@@ -90,20 +89,20 @@ export default function PluginClient({ plugin, pluginId }) {
                 </a>
               )}
 
-              {pago?.estado === "pendiente" && (
+              {pago?.pago?.estado === "pendiente" && (
                 <p className="text-yellow-600 font-semibold">
                   Pago pendiente de confirmación.
                 </p>
               )}
 
-              {pago?.estado === "confirmado" && !pago?.clave && (
+              {pago?.pago?.estado === "confirmado" && !pago?.pago?.clave && (
                 <RecibirClaves pluginId={pluginId} />
               )}
 
-              {pago?.clave && (
+              {pago?.pago?.clave && (
                 <div className="bg-green-100 p-4 rounded mt-4">
                   <p className="font-semibold">Ya tienes tu clave:</p>
-                  <p className="text-lg font-mono mt-1">{pago.clave}</p>
+                  <p className="text-lg font-mono mt-1">{pago.pago.clave}</p>
                 </div>
               )}
             </div>

@@ -1,0 +1,345 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\mias\route.js
+============================================================
+
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+
+    // Obtener token del usuario
+    const token =
+      cookieStore.get("sb-access-token")?.value ||
+      cookieStore.get("sb:token")?.value ||
+      cookieStore.get("sb:access-token")?.value ||
+      cookieStore.get("supabase-auth-token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+    }
+
+    // Cliente Supabase con token del usuario
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SECRET_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    );
+
+    // Obtener usuario autenticado
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData?.user) {
+      return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+    }
+
+    const user = userData.user;
+
+    // Obtener licencias del usuario
+    const { data, error } = await supabase
+      .from("licencias")
+      .select("*, plugins(nombre)")
+      .eq("user_id", user.id)
+      .order("fecha_creacion", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return NextResponse.json({ error: "ERROR_DB" }, { status: 500 });
+    }
+
+    // Formatear respuesta
+    const licencias = data.map((l) => ({
+      id: l.id,
+      email_tekla: l.email_tekla,
+      plugin_nombre: l.plugins?.nombre || "—",
+      estado: l.estado,
+      activaciones_usadas: l.activaciones_usadas,
+      max_activaciones: l.max_activaciones,
+      fecha_creacion: l.fecha_creacion,
+    }));
+
+    return NextResponse.json(licencias);
+  } catch (err) {
+    console.error("Error en /api/licencias/mias:", err);
+    return NextResponse.json({ error: "ERROR_INTERNO" }, { status: 500 });
+  }
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\logs\user\[id]\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+
+export async function GET(req, { params }) {
+  const sessionCookie = cookies().get("session")?.value;
+
+  if (!sessionCookie) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const session = JSON.parse(sessionCookie);
+
+  if (session.id !== params.id && session.role !== "admin") {
+    return NextResponse.json({ error: "Prohibido" }, { status: 403 });
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY
+  );
+
+  const { data, error } = await supabase
+    .from("logs")
+    .select("*")
+    .eq("usuario_id", params.id)
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
+============================================================
+
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function POST(req) {
+  try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session")?.value;
+
+    if (!session) {
+      return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+    }
+
+    const supabase = await supabaseServer(session);
+
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !userData?.user) {
+      return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+    }
+
+    const user = userData.user;
+
+    const { plugin_id, email, licencias } = await req.json();
+
+    if (!plugin_id || !email || !licencias?.length) {
+      return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
+    }
+
+    const cantidad = licencias.reduce((acc, fila) => acc + fila.cantidad, 0);
+
+    const { data: pago, error: pagoError } = await supabase
+      .from("pagos")
+      .insert({
+        user_id: user.id,
+        plugin_id,
+        email_tekla: email,
+        cantidad,
+        metodo: "transferencia",
+        estado: "pendiente"
+      })
+      .select()
+      .single();
+
+    if (pagoError) {
+      console.error(pagoError);
+      return NextResponse.json({ error: pagoError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, pago_id: pago.id });
+
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\estado\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const plugin_id = searchParams.get("plugin_id");
+
+  if (!plugin_id) {
+    return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
+  }
+
+  const cookieStore = await cookies();
+  const session = cookieStore.get("session")?.value;
+
+  if (!session) {
+    return NextResponse.json({ pago: null });
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY,
+    {
+      global: { headers: { Authorization: `Bearer ${session}` } },
+    }
+  );
+
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+
+  if (!user) {
+    return NextResponse.json({ pago: null });
+  }
+
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*")
+    .eq("plugin_id", plugin_id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  return NextResponse.json({ pago: pago || null });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+
+export async function POST(req) {
+  const { pago_id, emails } = await req.json();
+
+  if (!pago_id || !emails?.length) {
+    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+
+  const cookieStore = await cookies();
+  const session = cookieStore.get("session")?.value;
+
+  if (!session) {
+    return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY,
+    {
+      global: { headers: { Authorization: `Bearer ${session}` } },
+    }
+  );
+
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  if (!pago || pago.user_id !== user.id) {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  }
+
+  await supabase
+    .from("pagos")
+    .update({
+      emails_tekla: emails,
+      estado: "esperando_transferencia"
+    })
+    .eq("id", pago_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function POST(req) {
+  const { pago_id } = await req.json();
+
+  const cookieStore = await cookies();
+  const session = cookieStore.get("session")?.value;
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY,
+    {
+      global: { headers: { Authorization: `Bearer ${session}` } },
+    }
+  );
+
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  if (pago.user_id !== user.id)
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+
+  await supabase
+    .from("pagos")
+    .update({ estado: "transferencia_notificada" })
+    .eq("id", pago_id);
+
+  await resend.emails.send({
+    from: "OMBIM <noreply@ombim.com>",
+    to: "o.martinez@ombim.com",
+    subject: `Transferencia notificada - Pago ${pago_id}`,
+    html: `<p>El usuario ${user.email} ha marcado el pago como transferido.</p>`,
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+

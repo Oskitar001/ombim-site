@@ -1,0 +1,357 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\reset\ResetClient.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+export default function ResetClient() {
+  const params = useSearchParams();
+  const token = params.get("token");
+
+  const [password, setPassword] = useState("");
+  const [msg, setMsg] = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setMsg("");
+
+    const res = await fetch("/api/auth/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password })
+    });
+
+    const data = await res.json();
+    setMsg(data.message || data.error);
+
+    if (res.ok) {
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
+    }
+  }
+
+  return (
+    <div className="pt-32 flex flex-col items-center px-6 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Nueva contraseña</h1>
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4 w-full max-w-sm p-6 rounded-lg shadow border"
+      >
+        <input
+          type="password"
+          placeholder="Nueva contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="border p-2 rounded"
+        />
+
+        <button className="bg-blue-600 text-white py-2 rounded">
+          Guardar contraseña
+        </button>
+
+        {msg && <p className="text-center">{msg}</p>}
+      </form>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\reset-request\page.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function ResetRequestPage() {
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setMsg("");
+
+    const res = await fetch("/api/auth/reset-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+    setMsg(data.message);
+  }
+
+  return (
+    <div className="pt-32 flex flex-col items-center px-6 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Recuperar contraseña</h1>
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4 w-full max-w-sm p-6 rounded-lg shadow border"
+      >
+        <input
+          type="email"
+          placeholder="Tu correo"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="border p-2 rounded"
+        />
+
+        <button className="bg-blue-600 text-white py-2 rounded">
+          Enviar enlace
+        </button>
+
+        {msg && <p className="text-center">{msg}</p>}
+      </form>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\success\page.jsx
+============================================================
+
+export default function SuccessPage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 dark:bg-[#0f1a0f]">
+      <h1 className="text-4xl font-bold text-green-700 dark:text-green-300 mb-4">
+        ¡Pago completado!
+      </h1>
+
+      <p className="text-lg text-[#1f2937] dark:text-[#e6e6e6] mb-6 text-center max-w-xl">
+        Tu compra se ha procesado correctamente. En unos minutos recibirás un email con tus datos de acceso.
+      </p>
+
+      <a
+        href="/"
+        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition active:scale-95"
+      >
+        Volver al inicio
+      </a>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\usuario\plugins\page.jsx
+============================================================
+
+"use client";
+import { useEffect, useState } from "react";
+
+export default function MisPlugins() {
+  const [plugins, setPlugins] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/usuario/plugins", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setPlugins(data));
+  }, []);
+
+  return (
+    <div className="max-w-3xl mx-auto pt-32 px-6">
+      <h1 className="text-3xl font-bold mb-6">Mis Plugins</h1>
+
+      {plugins.length === 0 && (
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+          Aún no has comprado ningún plugin.
+        </p>
+      )}
+
+      {plugins.map(p => (
+        <div
+          key={p.plugin_id}
+          className="p-4 mb-4 rounded-lg border bg-[#f3f4f6]Soft dark:bg-[#1a1a1a]"
+        >
+          <h2 className="text-xl font-bold">{p.nombre}</h2>
+
+          <p className="mt-1">
+            <strong>Estado:</strong> {p.estado}
+          </p>
+
+          {p.clave && (
+            <p className="mt-1">
+              <strong>Clave:</strong>{" "}
+              <span className="font-mono">{p.clave}</span>
+            </p>
+          )}
+
+          <div className="mt-4 flex gap-3">
+            <a
+              href={`/plugins/${p.plugin_id}`}
+              className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700"
+            >
+              Ver plugin
+            </a>
+
+            {p.clave && (
+              <a
+                href={p.archivo_url}
+                download
+                className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
+              >
+                Descargar plugin
+              </a>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\verify\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token");
+
+  if (!token) {
+    return NextResponse.redirect("/login?error=missing_token");
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  // 1. Verificar email
+  const { data, error } = await supabase.auth.verifyOtp({
+    token,
+    type: "email"
+  });
+
+  if (error) {
+    console.error(error);
+    return NextResponse.redirect("/login?error=verify_failed");
+  }
+
+  // 2. Iniciar sesión automáticamente
+  const session = data.session;
+
+  if (!session) {
+    return NextResponse.redirect("/login?error=no_session");
+  }
+
+  // 3. Guardar cookie
+  const cookieStore = await cookies();
+  cookieStore.set("session", session.access_token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    path: "/"
+  });
+
+  // 4. Redirigir al usuario logueado
+  return NextResponse.redirect("/dashboard");
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
+============================================================
+
+export default function AboutSection() {
+  return (
+    <section className="reveal max-w-3xl mx-auto text-center mt-32 mb-24 
+                        bg-transparent dark:bg-transparent px-6">
+      
+      <h2 className="text-3xl font-bold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+        Sobre OMBIM
+      </h2>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed">
+        Somos especialistas en <strong>Tekla Structures</strong> con más de 10 años de experiencia
+        desarrollando <strong>automatizaciones, plugins y software BIM</strong> para ingenierías,
+        constructoras y oficinas técnicas.
+        Nuestro enfoque combina <strong>experiencia real en obra</strong> con desarrollo avanzado,
+        creando herramientas que resuelven problemas reales del día a día.
+      </p>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
+  const [tipo, setTipo] = useState(tipoActual);
+  const [loading, setLoading] = useState(false);
+
+  async function guardar() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/tipo", {
+      method: "POST",
+      body: JSON.stringify({ id, tipo_id: tipo }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-bold mb-2">Tipo de licencia</h3>
+
+      <select
+        className="border p-2 w-full"
+        value={tipo}
+        onChange={(e) => setTipo(e.target.value)}
+      >
+        {tipos.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.nombre}
+          </option>
+        ))}
+      </select>
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+        onClick={guardar}
+        disabled={loading}
+      >
+        Guardar tipo
+      </button>
+    </div>
+  );
+}
+
+

@@ -1,13 +1,43 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../_utils";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function GET() {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
-  const { supabase } = auth;
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  const { data } = await supabase.from("plugins").select("*");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []);
+}
 
-  return NextResponse.json({ plugins: data });
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const body = await req.json();
+  const { nombre, descripcion, precio, archivo_url, video_url } = body;
+
+  if (!nombre) {
+    return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .insert({
+      nombre,
+      descripcion,
+      precio,
+      archivo_url,
+      video_url,
+    })
+    .select("id")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ id: data.id });
 }

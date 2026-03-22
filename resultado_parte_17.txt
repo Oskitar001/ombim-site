@@ -1,0 +1,334 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\licencias\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function MisLicenciasPage() {
+  const [licencias, setLicencias] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function cargar() {
+      const res = await fetch("/api/licencias/mias");
+      const data = await res.json();
+      setLicencias(data || []);
+      setLoading(false);
+    }
+    cargar();
+  }, []);
+
+  if (loading) return <p>Cargando licencias...</p>;
+
+  return (
+    <div className="max-w-4xl mx-auto pt-10">
+      <h1 className="text-3xl font-bold mb-6">Mis licencias</h1>
+
+      {licencias.length === 0 && <p>No tienes licencias activas.</p>}
+
+      {licencias.map((lic) => (
+        <div key={lic.id} className="border p-4 mb-4 rounded bg-white shadow">
+          <p><strong>ID:</strong> {lic.id}</p>
+          <p><strong>Email Tekla:</strong> {lic.email_tekla}</p>
+          <p><strong>Plugin:</strong> {lic.plugin_nombre}</p>
+          <p><strong>Estado:</strong> {lic.estado}</p>
+          <p><strong>Activaciones:</strong> {lic.activaciones_usadas}/{lic.max_activaciones}</p>
+          <p><strong>Fecha:</strong> {new Date(lic.fecha_creacion).toLocaleString()}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\licencias\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function PaginaLicencias({ params }) {
+  const pagoId = params.id;
+  const [licencias, setLicencias] = useState([]);
+  const [emails, setEmails] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function cargar() {
+      const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`);
+      const data = await res.json();
+
+      setLicencias(data.licencias || []);
+      setEmails((data.licencias || []).map(() => ""));
+      setLoading(false);
+    }
+    cargar();
+  }, [pagoId]);
+
+  const actualizarEmail = (i, valor) => {
+    const copia = [...emails];
+    copia[i] = valor;
+    setEmails(copia);
+  };
+
+  async function guardarEmails() {
+    await fetch("/api/pagos/guardar-emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pago_id: pagoId, emails }),
+    });
+    alert("Emails guardados");
+  }
+
+  async function notificarTransferencia() {
+    await fetch("/api/pagos/notificar-transferencia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pago_id: pagoId }),
+    });
+    alert("Transferencia notificada");
+  }
+
+  if (loading) return <p>Cargando...</p>;
+
+  return (
+    <div className="max-w-3xl mx-auto pt-20 px-6">
+      <h1 className="text-3xl font-bold mb-6">Asignar emails de Tekla</h1>
+
+      {licencias.map((_, i) => (
+        <div key={i} className="border p-4 rounded mb-3">
+          <p className="font-semibold">Licencia #{i + 1}</p>
+          <input
+            type="email"
+            className="border px-3 py-2 rounded w-full mt-2"
+            placeholder="email@tekla.com"
+            value={emails[i]}
+            onChange={(e) => actualizarEmail(i, e.target.value)}
+          />
+        </div>
+      ))}
+
+      <button
+        onClick={guardarEmails}
+        className="bg-blue-600 text-white px-4 py-2 rounded mr-3"
+      >
+        Guardar emails
+      </button>
+
+      <button
+        onClick={notificarTransferencia}
+        className="bg-green-600 text-white px-4 py-2 rounded"
+      >
+        He hecho la transferencia
+      </button>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\licencias-admin\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function LicenciasAdmin() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+  const [licencias, setLicencias] = useState([]);
+
+  useEffect(() => {
+    // Verificar admin
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user || data.role !== "admin") {
+          router.push("/login");
+        } else {
+          setUser(data.user);
+          setRole(data.role);
+        }
+      });
+
+    // Cargar todas las licencias
+    fetch("/api/licencias/todas")
+      .then(res => res.json())
+      .then(data => setLicencias(data || []));
+  }, [router]);
+
+  if (!user || role !== "admin") return <p className="pt-32 text-center">Cargando...</p>;
+
+  return (
+    <div className="max-w-6xl mx-auto pt-32 px-6">
+      <h1 className="text-3xl font-bold mb-6">Licencias Generadas</h1>
+
+      <div className="space-y-4">
+        {licencias.map((l) => (
+          <div
+            key={l.id}
+            className="bg-white dark:bg-[#1a1a1a] p-4 rounded shadow border border-gray-300 dark:border-gray-700"
+          >
+            <p><strong>ID:</strong> {l.id}</p>
+            <p><strong>Usuario:</strong> {l.email_tekla}</p>
+            <p><strong>Plugin:</strong> {l.plugin_id}</p>
+            <p><strong>Estado:</strong> {l.estado}</p>
+            <p><strong>Activaciones:</strong> {l.activaciones_usadas}/{l.max_activaciones}</p>
+
+            {l.fecha_creacion && (
+              <p><strong>Creada:</strong> {new Date(l.fecha_creacion).toLocaleString()}</p>
+            )}
+
+            {l.fecha_expiracion && (
+              <p><strong>Expira:</strong> {new Date(l.fecha_expiracion).toLocaleDateString()}</p>
+            )}
+
+            {l.notas && (
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <strong>Notas:</strong> {l.notas}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\logs\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function PanelLogs() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          router.push("/login");
+          return;
+        }
+
+        setUser(data.user);
+
+        fetch(`/api/logs/user/${data.user.id}`)
+          .then(res => res.json())
+          .then(data => setLogs(data || []));
+      });
+  }, [router]);
+
+  if (!user) return <p className="pt-32 text-center">Cargando...</p>;
+
+  return (
+    <div style={{ padding: "2rem" }}>
+      <h1>Mis Logs</h1>
+
+      <table style={{ width: "100%", marginTop: "1rem" }}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Acción</th>
+            <th>IP</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {logs.map((log) => (
+            <tr key={log.id}>
+              <td>{log.id}</td>
+              <td>{log.accion}</td>
+              <td>{log.ip}</td>
+              <td>{log.fecha}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-descargas\page.jsx
+============================================================
+
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function MisDescargas() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [descargas, setDescargas] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) router.push("/login");
+        else setUser(data.user);
+      });
+
+    fetch("/api/download/history", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setDescargas(data || []));
+  }, [router]);
+
+  if (!user) {
+    return <p className="pt-40 text-center">Cargando...</p>;
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto pt-40 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
+        Mis Descargas
+      </h1>
+
+      {descargas.length === 0 && (
+        <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+          No has descargado nada todavía.
+        </p>
+      )}
+
+      {descargas.map(d => (
+        <div
+          key={d.id}
+          className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow p-4 rounded mb-4 border border-[#d1d5db] dark:border-[#3a3a3a]"
+        >
+          <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+            <strong>Plugin:</strong> {d.plugin_nombre}
+          </p>
+
+          <p className="text-[#1f2937] dark:text-[#e6e6e6]">
+            <strong>Fecha:</strong> {d.fecha}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+

@@ -1,108 +1,45 @@
-"use client";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-import { useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
 
-export default function PluginsPage() {
-  const [plugins, setPlugins] = useState([]);
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
+export default async function AdminPluginsPage() {
+  const admin = await requireAdmin();
+  if (!admin) return <div className="pt-32 px-6">Acceso denegado.</div>;
 
-  async function cargar() {
-    const res = await fetch("/api/admin/plugins");
-    const data = await res.json();
-    setPlugins(data.plugins || []);
-  }
-
-  async function crear() {
-    const res = await fetch("/api/admin/plugins/crear", {
-      method: "POST",
-      body: JSON.stringify({ nombre, descripcion }),
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
-
-    setNombre("");
-    setDescripcion("");
-    cargar();
-  }
-
-  async function borrar(id) {
-    if (!confirm("¿Eliminar este plugin?")) return;
-
-    const res = await fetch("/api/admin/plugins/borrar", {
-      method: "POST",
-      body: JSON.stringify({ id }),
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
-
-    cargar();
-  }
-
-  useEffect(() => {
-    cargar();
-  }, []);
+  const { data: plugins } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Plugins</h2>
+    <div className="max-w-4xl mx-auto pt-32 px-6">
+      <h1 className="text-2xl font-bold mb-4">Plugins</h1>
 
-      <div className="mb-6">
-        <input
-          className="border p-2 mr-2"
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-        />
+      <a
+        href="/panel/admin/plugins/nuevo"
+        className="inline-block mb-4 bg-green-600 text-white px-4 py-2 rounded"
+      >
+        Nuevo plugin
+      </a>
 
-        <input
-          className="border p-2 mr-2"
-          placeholder="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-        />
+      {!plugins?.length && <p>No hay plugins.</p>}
 
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={crear}
-        >
-          Crear
-        </button>
-      </div>
-
-      <table className="w-full bg-gray-100 shadow rounded">
-        <thead>
-          <tr className="bg-gray-200 text-left">
-            <th className="p-2">Nombre</th>
-            <th className="p-2">Descripción</th>
-            <th className="p-2">Acciones</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {plugins.map((p) => (
-            <tr key={p.id} className="border-t">
-              <td className="p-2">{p.nombre}</td>
-              <td className="p-2">{p.descripcion}</td>
-              <td className="p-2">
-                <button className="text-red-600" onClick={() => borrar(p.id)}>
-                  Borrar
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {plugins?.map((p) => (
+        <div key={p.id} className="border p-4 rounded mb-3">
+          <p className="font-semibold">{p.nombre}</p>
+          <p>{p.descripcion}</p>
+          <p className="mt-1">{p.precio} €</p>
+          <div className="mt-2 flex gap-3">
+            <a
+              href={`/panel/admin/plugins/editar/${p.id}`}
+              className="text-blue-600 underline"
+            >
+              Editar
+            </a>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

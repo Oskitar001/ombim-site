@@ -1,0 +1,226 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(public)\contacto\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Contacto | Óscar Martínez",
+  description: "Contacta con Óscar Martínez para colaboraciones en Tekla Structures.",
+};
+
+export default function ContactoPage() {
+  return (
+    <section className="max-w-4xl mx-auto px-6 mt-20 mb-32 bg-[#f3f4f6]Soft dark:bg-[#242424]">
+      
+      <div className="text-center mb-16">
+        <div className="relative inline-block">
+          <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
+
+          <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
+            Contacto
+          </h1>
+        </div>
+
+        <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
+
+        <p className="text-center text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
+          ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
+          Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
+        </p>
+      </div>
+
+      <form
+        method="POST"
+        action="/api/contact"
+        className="grid gap-6 bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] p-10 rounded-2xl shadow-soft border border-[#d1d5db] dark:border-[#3a3a3a]"
+      >
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre"
+          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        />
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        />
+
+        <textarea
+          name="mensaje"
+          placeholder="Mensaje"
+          rows="5"
+          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        ></textarea>
+
+        <button
+          type="submit"
+          className="px-6 py-4 bg-blue-600 text-black dark:text-white rounded-xl font-semibold text-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95"
+        >
+          Enviar mensaje
+        </button>
+      </form>
+
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent mt-20"></div>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(public)\demos\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Demos | Óscar Martínez",
+  description: "Ejemplos de automatizaciones, plugins y trabajos realizados en Tekla Structures.",
+};
+
+export default function DemosPage() {
+  return (
+    <section className="py-24 max-w-5xl mx-auto px-6 bg-[#f3f4f6]Soft dark:bg-[#242424]">
+      <h1 className="text-4xl font-bold text-center mb-12 text-[#1f2937] dark:text-[#e6e6e6]">
+        Demos y Automatizaciones
+      </h1>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] text-center mb-16 max-w-3xl mx-auto">
+        Aquí puedes ver algunos ejemplos de las automatizaciones, plugins y herramientas que he desarrollado para Tekla Structures. 
+        Cada una de ellas está pensada para reducir tiempos, evitar errores y mejorar el flujo de trabajo en proyectos reales.
+      </p>
+
+      <div className="grid md:grid-cols-2 gap-12">
+
+        {/* EJEMPLO 1 */}
+        <div className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow rounded-xl p-6 border border-[#d1d5db] dark:border-[#3a3a3a]">
+          <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+            Plugin: Uniones automáticas de elementos
+          </h2>
+
+          <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
+            Herramientas que generan uniones de forma automática según criterios definidos por el cliente.
+          </p>
+
+          <div className="aspect-video bg-black dark:bg-[#000] rounded-lg overflow-hidden">
+            <iframe
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/VIDEO_ID"
+              title="Demo plugin Tekla"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+
+        {/* EJEMPLO 2 */}
+        <div className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow rounded-xl p-6 border border-[#d1d5db] dark:border-[#3a3a3a]">
+          <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+            Automatización: Listados de producción
+          </h2>
+
+          <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
+            Script que genera planillas de producción en segundos, evitando errores manuales.
+          </p>
+
+          <div className="aspect-video bg-black dark:bg-[#000] rounded-lg overflow-hidden">
+            <iframe
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/VIDEO_ID"
+              title="Demo automatización Tekla"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+
+      </div>
+
+      <p className="text-center text-[#1f2937] dark:text-[#e6e6e6] mt-16">
+        ¿Quieres ver una demo personalizada o necesitas una herramienta a medida?  
+        <a href="/contacto" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+          Contáctame aquí
+        </a>.
+      </p>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(public)\servicios\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Servicios | Óscar Martínez",
+  description: "Servicios de modelado en Tekla, planos, producción y automatizaciones.",
+};
+
+export default function ServiciosPage() {
+  return (
+    <section className="py-24 bg-[#f3f4f6] dark:bg-[#242424] px-6">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-12 text-[#1f2937] dark:text-[#e6e6e6]">
+          Servicios
+        </h1>
+
+        <div className="grid md:grid-cols-2 gap-10">
+          
+          <div className="p-6 bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Modelado BIM en Tekla Structures
+            </h2>
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Modelado de estructuras metálicas y de hormigón</li>
+              <li>• Detallado constructivo</li>
+              <li>• Colaboración con Trimble Connect y Tekla Model Sharing</li>
+              <li>• Exportación planos y modelo a PDF, CAD e IFC</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Planos y documentación técnica
+            </h2>
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Planos de fabricación</li>
+              <li>• Planos de montaje</li>
+              <li>• Listados y planillas de producción</li>
+              <li>• Cuadros de materiales</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Automatizaciones y plugins para Tekla
+            </h2>
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Desarrollo de plugins a medida</li>
+              <li>• Automatización de tareas repetitivas</li>
+              <li>• Generación automática de planos y listados</li>
+              <li>• Herramientas internas para empresas prefabricadoras, ingenierías y constructoras</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Colaboración externa
+            </h2>
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Refuerzo de equipos técnicos</li>
+              <li>• Soporte en picos de trabajo</li>
+              <li>• Trabajo por proyecto o por horas</li>
+              <li>• Comunicación directa y flexible</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+

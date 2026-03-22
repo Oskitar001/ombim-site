@@ -1,0 +1,146 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
+============================================================
+
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function enviarEmail(to, subject, html) {
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject,
+      html,
+    });
+
+    return true;
+  } catch (err) {
+    console.error("Error enviando email:", err);
+    return false;
+  }
+}
+
+export function plantillaLicenciasActivadas(emails) {
+  return `
+    <div style="font-family: Arial; padding: 20px;">
+      <h2 style="color: #4CAF50;">Tus licencias están activas</h2>
+      <p>Se han activado las licencias para los siguientes emails de Tekla:</p>
+      <ul>
+        ${emails.map((e) => `<li>${e}</li>`).join("")}
+      </ul>
+      <p>Gracias por confiar en OMBIM.</p>
+    </div>
+  `;
+}
+
+export function plantillaTransferenciaNotificada(usuario, pagoId) {
+  return `
+    <div style="font-family: Arial; padding: 20px;">
+      <h2>Transferencia notificada</h2>
+      <p>El usuario <strong>${usuario}</strong> ha notificado la transferencia del pago:</p>
+      <p><strong>ID del pago:</strong> ${pagoId}</p>
+    </div>
+  `;
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
+============================================================
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+// Guarda logs de acciones administrativas
+export async function logAdminAction({ tipo, mensaje, user_id }) {
+  try {
+    await supabaseAdmin.from("admin_logs").insert([
+      {
+        tipo,
+        mensaje,
+        user_id,
+        fecha: new Date().toISOString()
+      }
+    ]);
+  } catch (err) {
+    console.error("Error guardando log admin:", err);
+  }
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabase.js
+============================================================
+
+import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseAdmin.js
+============================================================
+
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SECRET_KEY
+);
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseServer.js
+============================================================
+
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+
+export async function supabaseServer(sessionToken = null) {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY,
+    {
+      cookies: {
+        get(name) {
+          // Si pasamos un token manualmente, lo usamos
+          if (sessionToken && name === "sb-access-token") {
+            return sessionToken;
+          }
+
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          try {
+            cookieStore.set(name, value, {
+              ...options,
+              secure: process.env.NODE_ENV === "production"
+            });
+          } catch {}
+        },
+        remove(name, options) {
+          try {
+            cookieStore.set(name, "", {
+              ...options,
+              maxAge: 0,
+              secure: process.env.NODE_ENV === "production"
+            });
+          } catch {}
+        }
+      }
+    }
+  );
+}
+
+

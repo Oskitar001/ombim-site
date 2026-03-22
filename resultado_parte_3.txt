@@ -1,0 +1,304 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\admin\users\[id]\page.jsx
+============================================================
+
+// ======================================================
+// 2) PÁGINA DE EDICIÓN DE USUARIO
+//    app/admin/users/[id]/page.jsx
+// ======================================================
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function EditUserPage({ params }) {
+  const userId = params.id;
+
+  const [user, setUser] = useState(null);
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("user");
+  const [ok, setOk] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/users/list")
+      .then((res) => res.json())
+      .then((data) => {
+        const u = data.users.find((x) => x.id === userId);
+        if (u) {
+          setUser(u);
+          setNombre(u.user_metadata?.nombre || "");
+          setEmail(u.email);
+          setRole(u.user_metadata?.role || "user");
+        }
+      });
+  }, [userId]);
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setOk("");
+    setError("");
+
+    const res = await fetch("/api/admin/users/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, nombre, email, role }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Error al actualizar usuario");
+      return;
+    }
+
+    setOk("Usuario actualizado correctamente");
+  }
+
+  if (!user) return <div className="p-10">Cargando usuario...</div>;
+
+  return (
+    <div className="p-10 max-w-xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Editar Usuario</h1>
+
+      <form onSubmit={handleSave} className="flex flex-col gap-4 p-6 rounded-lg shadow border">
+
+        <input
+          type="text"
+          placeholder="Nombre"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="email"
+          placeholder="Correo"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="user">Usuario</option>
+          <option value="admin">Administrador</option>
+        </select>
+
+        <button className="bg-blue-600 text-white py-2 rounded">
+          Guardar cambios
+        </button>
+
+        {ok && <p className="text-green-600">{ok}</p>}
+        {error && <p className="text-red-600">{error}</p>}
+      </form>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\dashboard\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../_utils";
+
+export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+
+  const [licencias, activas, bloqueadas, activaciones, pagos, ingresos] =
+    await Promise.all([
+      supabase.from("licencias").select("*", { count: "exact" }),
+      supabase.from("licencias").select("*", { count: "exact" }).eq("estado", "activa"),
+      supabase.from("licencias").select("*", { count: "exact" }).eq("estado", "bloqueada"),
+      supabase.from("activaciones").select("*", { count: "exact" }),
+      supabase.from("pagos").select("*", { count: "exact" }),
+      supabase.rpc("total_ingresos")
+    ]);
+
+  return NextResponse.json({
+    totalLicencias: licencias.count,
+    licenciasActivas: activas.count,
+    licenciasBloqueadas: bloqueadas.count,
+    activacionesTotales: activaciones.count,
+    totalPagos: pagos.count,
+    ingresosTotales: ingresos.data || 0
+  });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\hardware\route.js
+============================================================
+
+// ======================================================
+// API HARDWARE - app/api/admin/hardware/list/route.js
+// (asume tabla "hardware" con columnas: id, user_id, tekla_email, machine_id, created_at)
+// ======================================================
+export async function GET() {
+  const supabase = supabaseAdmin();
+  const { data, error } = await supabase
+    .from("hardware")
+    .select("id,user_id,tekla_email,machine_id,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ hardware: data });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../_utils";
+
+export async function GET(req) {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+  const q = req.nextUrl.searchParams.get("q") || "";
+
+  const { data } = await supabase
+    .from("licencias")
+    .select("*")
+    .ilike("email_tekla", `%${q}%`);
+
+  return NextResponse.json({ licencias: data });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\uso\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../../_utils";
+
+export async function GET(req) {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+  const clave = req.nextUrl.searchParams.get("clave");
+
+  const { data } = await supabase
+    .from("logs_uso")
+    .select("*")
+    .eq("clave", clave)
+    .order("fecha", { ascending: false });
+
+  return NextResponse.json(data);
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\[id]\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../../_utils";
+
+export async function GET(req, { params }) {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+
+  const { data: licencia } = await supabase
+    .from("licencias")
+    .select("*")
+    .eq("id", params.id)
+    .single();
+
+  const { data: activaciones } = await supabase
+    .from("activaciones")
+    .select("*")
+    .eq("licencia_id", params.id);
+
+  return NextResponse.json({ licencia, activaciones });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias-tipos\borrar\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../../_utils";
+
+export async function POST(req) {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+  const { id } = await req.json();
+
+  const { error } = await supabase.from("licencias_tipos").delete().eq("id", id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  return NextResponse.json({ ok: true });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias-tipos\crear\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../../_utils";
+
+export async function POST(req) {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+  const body = await req.json();
+
+  const { error } = await supabase.from("licencias_tipos").insert(body);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  return NextResponse.json({ ok: true });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias-tipos\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "../_utils";
+
+export async function GET() {
+  const auth = await requireAdmin();
+  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+
+  const { supabase } = auth;
+
+  const { data } = await supabase.from("licencias_tipos").select("*");
+
+  return NextResponse.json({ tipos: data });
+}
+
+

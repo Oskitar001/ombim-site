@@ -1,47 +1,33 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { supabaseServer } from "@/lib/supabaseServer";
+import { enviarEmail, plantillaTransferenciaNotificada } from "@/lib/email";
 
 export async function POST(req) {
-  const { pago_id } = await req.json();
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get("session")?.value;
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SECRET_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${session}` } },
-    }
-  );
-
+  const supabase = await supabaseServer();
   const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
 
-  const { data: pago } = await supabase
-    .from("pagos")
-    .select("*")
-    .eq("id", pago_id)
-    .single();
+  if (!userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
 
-  if (pago.user_id !== user.id)
-    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  const body = await req.json();
+  const { pago_id } = body;
+
+  if (!pago_id) {
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  }
 
   await supabase
     .from("pagos")
     .update({ estado: "transferencia_notificada" })
     .eq("id", pago_id);
 
-  await resend.emails.send({
-    from: "OMBIM <noreply@ombim.com>",
-    to: "o.martinez@ombim.com",
-    subject: `Transferencia notificada - Pago ${pago_id}`,
-    html: `<p>El usuario ${user.email} ha marcado el pago como transferido.</p>`,
-  });
+  const html = plantillaTransferenciaNotificada(
+    userData.user.email,
+    pago_id
+  );
+
+  await enviarEmail(process.env.ADMIN_EMAIL, "Transferencia notificada", html);
 
   return NextResponse.json({ ok: true });
 }

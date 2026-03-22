@@ -1,0 +1,259 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(public)\sobre-mi\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Sobre mí | Óscar Martínez",
+  description: "Especialista en Tekla Structures con más de 23 años de experiencia.",
+};
+
+export default function SobreMiPage() {
+  return (
+    <section className="py-24 max-w-4xl mx-auto px-6 bg-[#f3f4f6]Soft dark:bg-[#242424]">
+      <h1 className="text-4xl font-bold mb-10 text-center text-[#1f2937] dark:text-[#e6e6e6]">
+        Sobre mí
+      </h1>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
+        Soy <strong>Óscar Martínez</strong>, técnico especialista en Tekla Structures. Durante <strong>23 años</strong> trabajé en <strong>PACADAR (Buñol, Valencia)</strong>, una empresa referente en prefabricado y estructuras. Allí participé en proyectos reales de fabricación, montaje y producción, lo que me dio una visión completa del proceso constructivo.
+      </p>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
+        Esa experiencia me permite entender no solo el modelo, sino también las necesidades reales de taller y obra.
+      </p>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
+        Desde hace un año trabajo como <strong>autónomo</strong>, colaborando con empresas que necesitan apoyo técnico fiable, rápido y con experiencia real. Además, me especialicé en <strong>programación para Tekla</strong>, creando plugins y automatizaciones que ahorran horas de trabajo y reducen errores.
+      </p>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed">
+        Mi objetivo es sencillo: <strong>hacer el trabajo más fácil, más rápido y más preciso</strong>.
+      </p>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\admin\hardware\page.jsx
+============================================================
+
+// ======================================================
+// PÁGINA HARDWARE - app/admin/hardware/page.jsx
+// ======================================================
+"use client";
+import { useEffect, useState } from "react";
+
+export default function AdminHardwarePage() {
+  const [hardware, setHardware] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/hardware/list")
+      .then((res) => res.json())
+      .then((data) => {
+        setHardware(data.hardware || []);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="p-10">Cargando hardware...</div>;
+
+  return (
+    <div className="p-10">
+      <h1 className="text-3xl font-bold mb-6">Gestión de Hardware</h1>
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="p-2 text-left">ID</th>
+            <th className="p-2 text-left">Usuario</th>
+            <th className="p-2 text-left">Email Tekla</th>
+            <th className="p-2 text-left">Machine ID</th>
+            <th className="p-2 text-left">Creado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hardware.map((h) => (
+            <tr key={h.id} className="border-b">
+              <td className="p-2">{h.id}</td>
+              <td className="p-2">{h.user_id}</td>
+              <td className="p-2">{h.tekla_email}</td>
+              <td className="p-2">{h.machine_id}</td>
+              <td className="p-2">
+                {h.created_at ? new Date(h.created_at).toLocaleString() : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\admin\logs\page.jsx
+============================================================
+
+// ======================================================
+// PÁGINA LOGS - app/admin/logs/page.jsx
+// ======================================================
+"use client";
+import { useEffect, useState } from "react";
+
+export default function AdminLogsPage() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/logs/list")
+      .then((res) => res.json())
+      .then((data) => {
+        setLogs(data.logs || []);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="p-10">Cargando logs...</div>;
+
+  return (
+    <div className="p-10">
+      <h1 className="text-3xl font-bold mb-6">Logs del Sistema</h1>
+      <div className="space-y-2 text-sm font-mono bg-black text-green-300 p-4 rounded">
+        {logs.map((log) => (
+          <div key={log.id} className="border-b border-green-800 pb-1 mb-1">
+            <span className="text-xs text-gray-400">
+              [{log.created_at ? new Date(log.created_at).toLocaleString() : "—"}]
+            </span>{" "}
+            <span className="font-bold">({log.level})</span>{" "}
+            <span>{log.message}</span>
+            {log.context && (
+              <div className="text-xs text-gray-400">
+                {typeof log.context === "string"
+                  ? log.context
+                  : JSON.stringify(log.context)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\admin\users\page.jsx
+============================================================
+
+// ======================================================
+// 1) BOTÓN EDITAR EN LA TABLA DE USUARIOS
+//    (app/admin/users/page.jsx)
+// ======================================================
+"use client";
+import { useEffect, useState } from "react";
+
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const loadUsers = () => {
+    setLoading(true);
+    fetch("/api/admin/users/list")
+      .then((res) => res.json())
+      .then((data) => {
+        setUsers(data.users || []);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const changeRole = async (userId, role) => {
+    setActionLoading(true);
+    await fetch("/api/admin/users/role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, role }),
+    });
+    setActionLoading(false);
+    loadUsers();
+  };
+
+  const deleteUser = async (userId) => {
+    if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
+    setActionLoading(true);
+    await fetch(`/api/admin/users/delete?userId=${userId}`, {
+      method: "DELETE",
+    });
+    setActionLoading(false);
+    loadUsers();
+  };
+
+  if (loading) return <div className="p-10">Cargando usuarios...</div>;
+
+  return (
+    <div className="p-10">
+      <h1 className="text-3xl font-bold mb-6">Gestión de Usuarios</h1>
+      {actionLoading && <p className="mb-4 text-sm text-gray-500">Aplicando cambios...</p>}
+
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="p-2 text-left">Nombre</th>
+            <th className="p-2 text-left">Email</th>
+            <th className="p-2 text-left">Rol</th>
+            <th className="p-2 text-left">Creado</th>
+            <th className="p-2 text-left">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((u) => {
+            const role = u.user_metadata?.role || "user";
+            return (
+              <tr key={u.id} className="border-b">
+                <td className="p-2">{u.user_metadata?.nombre || "—"}</td>
+                <td className="p-2">{u.email}</td>
+                <td className="p-2">{role}</td>
+                <td className="p-2">
+                  {u.created_at ? new Date(u.created_at).toLocaleString() : "—"}
+                </td>
+                <td className="p-2 space-x-2">
+                  
+                  {/* 🔥 NUEVO: BOTÓN EDITAR */}
+                  <button
+                    className="px-2 py-1 text-xs bg-green-600 text-white rounded"
+                    onClick={() => window.location.href = `/admin/users/${u.id}`}
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded"
+                    onClick={() => changeRole(u.id, role === "admin" ? "user" : "admin")}
+                  >
+                    Hacer {role === "admin" ? "user" : "admin"}
+                  </button>
+
+                  <button
+                    className="px-2 py-1 text-xs bg-red-600 text-white rounded"
+                    onClick={() => deleteUser(u.id)}
+                  >
+                    Eliminar
+                  </button>
+
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+

@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req, { params }) {
-  // Next.js 15 → params es un Promise
-  const resolved = await params;
-  const plugin_id = resolved.id;
+  const { id } = params;
 
-  const supabase = await supabaseServer();
-
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("plugins")
     .select("*")
-    .eq("id", plugin_id)
+    .eq("id", id)
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
   }
 
   return NextResponse.json(data);

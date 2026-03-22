@@ -1,23 +1,16 @@
 "use client";
 
-export default function DescargarBoton({ pluginId, user }) {
-  if (!user) {
-    return (
-      <button
-        onClick={() => alert("Debes iniciar sesión para descargar este plugin.")}
-        className="bg-gray-300 text-gray-700 px-4 py-2 rounded cursor-not-allowed"
-      >
-        Descargar plugin
-      </button>
-    );
-  }
+export default function DescargarBoton({ pluginId }) {
+  const descargar = () => {
+    window.location.href = `/api/plugin/download?plugin_id=${pluginId}`;
+  };
 
   return (
-    <a
-      href={`/api/plugin/download?id=${pluginId}`}
-      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition inline-block"
+    <button
+      onClick={descargar}
+      className="bg-blue-600 text-white px-4 py-2 rounded"
     >
       Descargar plugin
-    </a>
+    </button>
   );
 }

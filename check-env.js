@@ -17,7 +17,7 @@ dotenv.config();
 // 3. Variables obligatorias
 const REQUIRED = [
   "NEXT_PUBLIC_SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "RESEND_API_KEY",

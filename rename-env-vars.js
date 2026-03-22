@@ -5,8 +5,8 @@ const ROOT = process.cwd();
 
 const TARGETS = [
   {
-    from: "SUPABASE_SERVICE_ROLE_KEY",
-    to: "SUPABASE_SERVICE_ROLE_KEY"
+    from: "SUPABASE_SECRET_KEY",
+    to: "SUPABASE_SECRET_KEY"
   },
   {
     from: "NEXT_PUBLIC_SUPABASE_ANON_KEY",

@@ -26,7 +26,7 @@ function checkFile(filePath) {
   // Buscar createClient
   if (content.includes("createClient")) {
     const hasURL = content.includes("process.env.NEXT_PUBLIC_SUPABASE_URL");
-    const hasService = content.includes("process.env.SUPABASE_SERVICE_ROLE_KEY");
+    const hasService = content.includes("process.env.SUPABASE_SECRET_KEY");
     const hasAnon = content.includes("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
     if (!hasURL || !hasService) {
@@ -34,7 +34,7 @@ function checkFile(filePath) {
         file: filePath,
         issue: !hasURL
           ? "❌ Falta NEXT_PUBLIC_SUPABASE_URL"
-          : "❌ Falta SUPABASE_SERVICE_ROLE_KEY",
+          : "❌ Falta SUPABASE_SECRET_KEY",
       });
     }
 

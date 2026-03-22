@@ -34,17 +34,17 @@ function fixFile(filePath) {
 
   // Reemplazar ANON_KEY por SERVICE_ROLE
   if (content.includes("NEXT_PUBLIC_SUPABASE_ANON_KEY")) {
-    content = content.replace(/NEXT_PUBLIC_SUPABASE_ANON_KEY/g, "SUPABASE_SERVICE_ROLE_KEY");
+    content = content.replace(/NEXT_PUBLIC_SUPABASE_ANON_KEY/g, "SUPABASE_SECRET_KEY");
     changed = true;
   }
 
   // Asegurar que se pasan las dos variables
   const regexClient = /createClient\(([^)]+)\)/;
 
-  if (!content.includes("process.env.SUPABASE_SERVICE_ROLE_KEY")) {
+  if (!content.includes("process.env.SUPABASE_SECRET_KEY")) {
     content = content.replace(
       regexClient,
-      `createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)`
+      `createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY)`
     );
     changed = true;
   }

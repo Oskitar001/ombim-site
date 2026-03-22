@@ -37,7 +37,7 @@ const REQUIRED = {
     message: "Debe ser una URL válida de Supabase (https://xxxx.supabase.co)"
   },
 
-  SUPABASE_SERVICE_ROLE_KEY: {
+  SUPABASE_SECRET_KEY: {
     validate: (v) => {
       try {
         jwt.decode(v);

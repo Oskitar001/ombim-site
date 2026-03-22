@@ -42,14 +42,14 @@ function fixFile(filePath) {
 
   // Reemplazar ANON_KEY por SERVICE_ROLE
   if (content.includes("NEXT_PUBLIC_SUPABASE_ANON_KEY")) {
-    content = content.replace(/NEXT_PUBLIC_SUPABASE_ANON_KEY/g, "SUPABASE_SERVICE_ROLE_KEY");
+    content = content.replace(/NEXT_PUBLIC_SUPABASE_ANON_KEY/g, "SUPABASE_SECRET_KEY");
     changed = true;
   }
 
   // Reemplazar cualquier createClient incorrecto
   content = content.replace(
     /createClient\([^)]*\)/g,
-    `createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)`
+    `createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY)`
   );
 
   if (changed) {

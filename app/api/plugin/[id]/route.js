@@ -12,7 +12,6 @@ export async function GET(req, { params }) {
     return NextResponse.json({ pago: null });
   }
 
-  // ⭐ USAR SECRET KEY, NO ANON KEY
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SECRET_KEY,

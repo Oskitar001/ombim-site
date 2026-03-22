@@ -22,7 +22,7 @@ export async function GET() {
     // Cliente Supabase con token del usuario
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      process.env.SUPABASE_SECRET_KEY,
       {
         global: {
           headers: {

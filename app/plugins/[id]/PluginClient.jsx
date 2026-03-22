@@ -27,7 +27,6 @@ export default function PluginClient({ plugin, pluginId }) {
       .then(res => res.json())
       .then(data => setUser(data.user || null));
 
-    // ⭐ API CORRECTA: /api/plugin/[id]
     fetch(`/api/plugin/${pluginId}`, { credentials: "include" })
       .then(res => (res.ok ? res.json() : null))
       .then(data => setPago(data));

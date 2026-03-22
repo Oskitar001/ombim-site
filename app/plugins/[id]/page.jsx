@@ -1,43 +1,21 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { notFound } from "next/navigation";
+import PluginClient from "./PluginClient";
+import { supabaseServer } from "@/lib/supabaseServer";
 
-export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const plugin_id = searchParams.get("plugin_id");
+export default async function PluginPage({ params }) {
+  const id = params.id;
 
-  if (!plugin_id) {
-    return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
-  }
+  const supabase = await supabaseServer();
 
-  const cookieStore = await cookies();
-  const session = cookieStore.get("session")?.value;
-
-  if (!session) {
-    return NextResponse.json({ pago: null });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      global: { headers: { Authorization: `Bearer ${session}` } },
-    }
-  );
-
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
-
-  if (!user) {
-    return NextResponse.json({ pago: null });
-  }
-
-  const { data: pago } = await supabase
-    .from("pagos")
+  const { data: plugin, error } = await supabase
+    .from("plugins")
     .select("*")
-    .eq("plugin_id", plugin_id)
-    .eq("user_id", user.id)
-    .maybeSingle();
+    .eq("id", id)
+    .single();
 
-  return NextResponse.json({ pago: pago || null });
+  if (error || !plugin) {
+    notFound();
+  }
+
+  return <PluginClient plugin={plugin} pluginId={id} />;
 }

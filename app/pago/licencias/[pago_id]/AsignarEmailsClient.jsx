@@ -96,6 +96,22 @@ export default function AsignarEmailsClient({ pago_id }) {
         Plugin: <strong>{pago.plugin_id}</strong>
       </p>
 
+      {/* 🔵 DATOS PARA TRANSFERENCIA */}
+      <div className="bg-gray-100 p-4 rounded mb-6 border">
+        <h2 className="text-xl font-semibold mb-3">Datos para realizar la transferencia</h2>
+
+        <p><strong>Titular:</strong> Oscar Martinez Alonso</p>
+        <p><strong>IBAN:</strong> ES72 2100 2737 9002 0006 4372</p>
+        <p><strong>BIC/SWIFT:</strong> CAIXESBBXXX</p>
+        <p><strong>Concepto:</strong> Pago plugin Tekla – ID: {pago_id}</p>
+        <p><strong>Importe:</strong> {pago.importe} €</p>
+
+        <p className="text-sm text-gray-600 mt-3">
+          Una vez realizada la transferencia, pulsa el botón “He realizado la transferencia”.
+        </p>
+      </div>
+
+      {/* 🔵 FORMULARIO DE EMAILS */}
       <div className="space-y-3 mb-6">
         {licencias.map((l, i) => (
           <div key={l.id} className="flex gap-2">

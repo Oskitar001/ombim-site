@@ -19,7 +19,6 @@ export default function AdminLayout({ children }) {
         return;
       }
 
-      // Si NO es admin → fuera
       if (data.user.user_metadata?.role !== "admin") {
         router.push("/panel");
         return;

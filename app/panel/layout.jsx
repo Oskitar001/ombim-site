@@ -1,31 +1,7 @@
-"use client";
+// ❌ NO pongas "use client" aquí
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import PanelAuth from "./panel-auth";
 
 export default function PanelLayout({ children }) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function check() {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
-      const data = await res.json();
-
-      if (!data?.user) {
-        router.push("/login");
-        return;
-      }
-
-      setLoading(false);
-    }
-
-    check();
-  }, [router]);
-
-  if (loading) {
-    return <div className="p-10">Cargando panel...</div>;
-  }
-
-  return <>{children}</>;
+  return <PanelAuth>{children}</PanelAuth>;
 }

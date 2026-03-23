@@ -1,15 +1,31 @@
 import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
-export async function POST() {
-  const response = NextResponse.json({ ok: true });
+export async function GET(req) {
+  const response = NextResponse.next();
 
-  // Borrar cookies de Supabase
-  response.cookies.set("sb-access-token", "", { maxAge: 0, path: "/" });
-  response.cookies.set("sb-refresh-token", "", { maxAge: 0, path: "/" });
-  response.cookies.set("supabase-auth-token", "", { maxAge: 0, path: "/" });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => req.cookies.get(name)?.value,
+        set: (name, value, options) =>
+          response.cookies.set(name, value, options),
+        remove: (name, options) =>
+          response.cookies.set(name, "", { ...options, maxAge: 0 }),
+      },
+    }
+  );
 
-  // Borrar cookie del rol
-  response.cookies.set("sb-user-role", "", { maxAge: 0, path: "/" });
+  const { data, error } = await supabase.auth.getUser();
 
-  return response;
+  if (error || !data?.user) {
+    return NextResponse.json({ user: null });
+  }
+
+  return NextResponse.json({
+    user: data.user,
+    role: data.user.user_metadata?.role || "user",
+  });
 }

@@ -31,7 +31,14 @@ export default function AdminLayout({ children }) {
     load();
   }, [router]);
 
-  if (loading) return <div className="p-10">Cargando admin...</div>;
+  // ⭐ IMPORTANTE: mantener el contenedor flex incluso mientras carga
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-lg font-semibold">Cargando admin...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">

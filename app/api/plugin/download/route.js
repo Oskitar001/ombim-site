@@ -24,17 +24,16 @@ export async function GET(req) {
     .single();
 
   if (error || !plugin?.archivo_url) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Plugin no encontrado" },
+      { status: 404 }
+    );
   }
 
-  // Registrar descarga
-  await supabase
-    .from("descargas")
-    .insert({
-      user_id: userData.user.id,
-      plugin_id,
-    });
+  await supabase.from("descargas").insert({
+    user_id: userData.user.id,
+    plugin_id,
+  });
 
-  // Redirigir al archivo (Supabase Storage, S3, etc.)
   return NextResponse.redirect(plugin.archivo_url);
 }

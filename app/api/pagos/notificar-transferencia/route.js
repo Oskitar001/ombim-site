@@ -17,7 +17,6 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  // 🔵 1. Obtener el pago completo con licencias
   const { data: pago, error: pagoError } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
@@ -31,18 +30,13 @@ export async function POST(req) {
     );
   }
 
-  // 🔵 2. Actualizar estado
   await supabase
     .from("pagos")
     .update({ estado: "transferencia_notificada" })
     .eq("id", pago_id);
 
   try {
-    // 🔵 3. Generar HTML completo usando el pago completo
-    const html = plantillaTransferenciaNotificada(
-      userData.user.email,
-      pago
-    );
+    const html = plantillaTransferenciaNotificada(userData.user.email, pago);
 
     if (!process.env.ADMIN_EMAIL) {
       console.error("ERROR: ADMIN_EMAIL no está definido en .env");
@@ -52,7 +46,6 @@ export async function POST(req) {
       );
     }
 
-    // 🔵 4. Enviar email al administrador
     await enviarEmail(
       process.env.ADMIN_EMAIL,
       "Transferencia notificada",

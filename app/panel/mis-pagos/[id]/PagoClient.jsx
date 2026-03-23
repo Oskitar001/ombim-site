@@ -1,78 +1,91 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function PagoClient({ pago }) {
-  const [mensaje, setMensaje] = useState("");
+export default function PagoClient({ pagoId }) {
+  const [pago, setPago] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const solicitarFactura = async () => {
-    setMensaje("");
-    setError("");
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
 
-    const res = await fetch("/api/facturacion/solicitar-factura", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pago_id: pago.id }),
-    });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error || "Error cargando el pago");
+          setLoading(false);
+          return;
+        }
 
-    const data = await res.json();
+        const data = await res.json();
+        setPago(data);
+      } catch (e) {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (!res.ok) {
-      setError(data.error || "Error solicitando factura");
-      return;
-    }
+    if (pagoId) cargar();
+  }, [pagoId]);
 
-    setMensaje("Factura solicitada correctamente.");
-  };
+  if (loading) return <div className="p-4">Cargando pago...</div>;
+  if (error) return <div className="p-4 text-red-600">{error}</div>;
+  if (!pago) return <div className="p-4">Pago no encontrado.</div>;
 
-  const descargarFactura = () => {
-    window.open(`/api/facturacion/pdf?pago_id=${pago.id}`, "_blank");
-  };
+  const { licencias = [], facturacion } = pago;
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 space-y-4">
+      <h1 className="text-xl font-semibold">Detalle del pago</h1>
 
-      <div className="border p-4 rounded">
-        <p><strong>Plugin:</strong> {pago.plugin_id}</p>
-        <p><strong>Importe:</strong> {pago.importe} €</p>
+      <div className="border rounded-lg p-3">
+        <p><strong>ID:</strong> {pago.id}</p>
         <p><strong>Estado:</strong> {pago.estado}</p>
-        <p><strong>Fecha:</strong> {new Date(pago.created_at).toLocaleString()}</p>
-      </div>
-
-      <div className="border p-4 rounded">
-        <h3 className="font-semibold mb-2">Licencias</h3>
-        {pago.licencias?.length ? (
-          <ul className="list-disc ml-6">
-            {pago.licencias.map((l) => (
-              <li key={l.id}>
-                {l.email_tekla || "Sin email asignado"}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No hay licencias asociadas.</p>
+        <p><strong>Cantidad de licencias:</strong> {pago.cantidad_licencias}</p>
+        {pago.fecha && (
+          <p>
+            <strong>Fecha:</strong>{" "}
+            {new Date(pago.fecha).toLocaleString()}
+          </p>
         )}
       </div>
 
-      {/* Botón para descargar factura */}
-      <button
-        onClick={descarcarFactura}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        Descargar factura en PDF
-      </button>
+      <div className="border rounded-lg p-3">
+        <h2 className="font-semibold mb-2">Licencias</h2>
+        {licencias.length === 0 ? (
+          <p>No hay licencias asociadas.</p>
+        ) : (
+          <ul className="space-y-1">
+            {licencias.map((l) => (
+              <li key={l.id} className="border-b pb-1 last:border-b-0">
+                <div><strong>Email Tekla:</strong> {l.email_tekla || "—"}</div>
+                <div><strong>Estado:</strong> {l.estado}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-      {/* Botón para solicitar factura (si quieres mantenerlo) */}
-      <button
-        onClick={solicitarFactura}
-        className="bg-green-600 text-white px-4 py-2 rounded"
-      >
-        Solicitar factura
-      </button>
-
-      {mensaje && <p className="text-green-600">{mensaje}</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      <div className="border rounded-lg p-3">
+        <h2 className="font-semibold mb-2">Datos de facturación</h2>
+        {!facturacion ? (
+          <p>No hay datos de facturación guardados.</p>
+        ) : (
+          <div className="space-y-1">
+            <p><strong>Nombre:</strong> {facturacion.nombre || "—"}</p>
+            <p><strong>NIF/CIF:</strong> {facturacion.nif || "—"}</p>
+            <p><strong>Dirección:</strong> {facturacion.direccion || "—"}</p>
+            <p><strong>Ciudad:</strong> {facturacion.ciudad || "—"}</p>
+            <p><strong>País:</strong> {facturacion.pais || "—"}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,108 +1,87 @@
-"use client";
+import { supabaseServer } from "@/lib/supabaseServer";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+export const dynamic = "force-dynamic";
 
-export default function AdminPlugins() {
-  const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [plugins, setPlugins] = useState([]);
+export default async function MisPluginsPage() {
+  const supabase = await supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    // Verificar admin
-    fetch("/api/auth/me", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        if (!data.user || data.role !== "admin") {
-          router.push("/login");
-        } else {
-          setUser(data.user);
-          setRole(data.role);
-        }
-      });
-
-    // Obtener plugins
-    fetch("/api/plugin")
-      .then(res => res.json())
-      .then(data => setPlugins(data || []));
-  }, [router]);
-
-  if (!user || role !== "admin") {
-    return <p className="pt-32 text-center">Cargando...</p>;
+  if (!userData?.user) {
+    return <div className="text-center mt-20">Debes iniciar sesión para ver tus plugins.</div>;
   }
 
+  // Plugins comprados por el usuario (pagos)
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("id, plugin_id, estado, fecha, cantidad_licencias, plugins(nombre, descripcion)")
+    .eq("user_id", userData.user.id)
+    .neq("estado", "pendiente");
+
+  const pluginIds = [...new Set((pagos || []).map((p) => p.plugin_id))];
+
+  // Licencias asociadas a esos plugins
+  const { data: licencias } = await supabase
+    .from("licencias")
+    .select("*")
+    .in("plugin_id", pluginIds.length ? pluginIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const licenciasPorPlugin = (licencias || []).reduce((acc, l) => {
+    acc[l.plugin_id] = acc[l.plugin_id] || [];
+    acc[l.plugin_id].push(l);
+    return acc;
+  }, {});
+
   return (
-    <div className="max-w-4xl mx-auto pt-32 px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-        Gestión de Plugins
-      </h1>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 text-gray-900">Mis plugins</h1>
 
-      {plugins.map(p => (
-        <div
-          key={p.id}
-          className="bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] shadow p-4 rounded mb-6 border border-[#d1d5db] dark:border-[#3a3a3a]"
-        >
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-xl font-semibold text-[#1f2937] dark:text-[#e6e6e6]">
-                {p.nombre}
-              </h2>
+      {!(pagos || []).length && <p>No has comprado ningún plugin todavía.</p>}
 
-              <p className="mb-2 text-[#1f2937] dark:text-[#e6e6e6]">
-                {p.descripcion}
-              </p>
+      <div className="space-y-4">
+        {(pagos || []).map((pago) => {
+          const plugin = pago.plugins;
+          const lic = licenciasPorPlugin[pago.plugin_id] || [];
 
-              <p className="font-semibold">
-                {p.precio > 0 ? `${p.precio} € (De pago)` : "Gratis"}
-              </p>
+          return (
+            <div
+              key={pago.id}
+              className="bg-white shadow border border-gray-200 rounded p-4 space-y-3"
+            >
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {plugin?.nombre || "Plugin"}
+                  </h2>
+                  {plugin?.descripcion && (
+                    <p className="text-sm text-gray-600 mt-1">{plugin.descripcion}</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Compra: {new Date(pago.fecha).toLocaleString()} · Estado: {pago.estado}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-1">Licencias asociadas</h3>
+                {lic.length ? (
+                  <ul className="list-disc ml-6 text-sm">
+                    {lic.map((l) => (
+                      <li key={l.id}>
+                        {l.email_tekla} · {l.estado} · {l.activaciones_usadas}/
+                        {l.max_activaciones}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    No hay licencias asociadas todavía.
+                  </p>
+                )}
+              </div>
             </div>
-
-            <div className="flex flex-col gap-2 text-right">
-              <Link
-                href={`/plugins/${p.id}`}
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                Ver plugin
-              </Link>
-
-              <Link
-                href={`/panel/pagos?plugin=${p.id}`}
-                className="text-purple-600 dark:text-purple-400 hover:underline"
-              >
-                Ver pagos
-              </Link>
-
-              <Link
-                href={`/panel/editar-plugin/${p.id}`}
-                className="text-green-600 dark:text-green-400 hover:underline"
-              >
-                Editar
-              </Link>
-
-              <button
-                onClick={async () => {
-                  if (!confirm("¿Seguro que quieres borrar este plugin?")) return;
-
-                  const res = await fetch(`/api/plugin/delete?id=${p.id}`, {
-                    method: "DELETE"
-                  });
-
-                  if (res.ok) {
-                    setPlugins(prev => prev.filter(x => x.id !== p.id));
-                  } else {
-                    alert("Error al borrar el plugin.");
-                  }
-                }}
-                className="text-red-600 dark:text-red-400 hover:underline"
-              >
-                Borrar
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
+          );
+        })}
+      </div>
     </div>
   );
 }

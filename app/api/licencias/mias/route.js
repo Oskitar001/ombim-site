@@ -8,7 +8,6 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
 
-    // Obtener token del usuario
     const token =
       cookieStore.get("sb-access-token")?.value ||
       cookieStore.get("sb:token")?.value ||
@@ -19,7 +18,6 @@ export async function GET() {
       return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
     }
 
-    // Cliente Supabase con token del usuario
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SECRET_KEY,
@@ -32,7 +30,6 @@ export async function GET() {
       }
     );
 
-    // Obtener usuario autenticado
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
@@ -41,7 +38,6 @@ export async function GET() {
 
     const user = userData.user;
 
-    // Obtener licencias del usuario
     const { data, error } = await supabase
       .from("licencias")
       .select("*, plugins(nombre)")
@@ -53,7 +49,6 @@ export async function GET() {
       return NextResponse.json({ error: "ERROR_DB" }, { status: 500 });
     }
 
-    // Formatear respuesta
     const licencias = data.map((l) => ({
       id: l.id,
       email_tekla: l.email_tekla,

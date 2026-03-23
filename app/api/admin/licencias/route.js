@@ -10,8 +10,9 @@ export async function GET(req) {
 
   const { data } = await supabase
     .from("licencias")
-    .select("*")
-    .ilike("email_tekla", `%${q}%`);
+    .select("*, plugins(nombre)")
+    .ilike("email_tekla", `%${q}%`)
+    .order("fecha_creacion", { ascending: false });
 
   return NextResponse.json({ licencias: data });
 }

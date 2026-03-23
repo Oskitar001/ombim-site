@@ -10,7 +10,6 @@ export async function GET(req) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  // Obtener pago + licencias
   const { data: pago, error } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
@@ -21,7 +20,6 @@ export async function GET(req) {
     return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
-  // Obtener datos de facturación del usuario
   const { data: facturacion } = await supabase
     .from("facturacion")
     .select("*")

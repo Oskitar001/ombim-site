@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"; // ⬅️ ESTO ES LO QUE EVITA EL ERROR
+
 import { supabaseServer } from "@/lib/supabaseServer";
 import FacturacionClient from "./FacturacionClient";
 
@@ -9,7 +11,6 @@ export default async function Page() {
     return <div className="pt-32 px-6">No autenticado</div>;
   }
 
-  // Obtener datos de facturación si existen
   const { data: facturacion } = await supabase
     .from("facturacion")
     .select("*")

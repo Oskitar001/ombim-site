@@ -9,9 +9,10 @@ export async function POST(req) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
+  const user_id = userData.user.id;
+
   const body = await req.json();
   const {
-    user_id,
     nombre,
     nif,
     direccion,
@@ -21,27 +22,12 @@ export async function POST(req) {
     telefono,
   } = body;
 
-  if (user_id !== userData.user.id) {
-    return NextResponse.json(
-      { error: "No puedes modificar datos de otro usuario" },
-      { status: 403 }
-    );
-  }
-
-  // Comprobar si ya existe registro de facturación
-  const { data: existente } = await supabase
+  // 🔵 Hacemos UPSERT (insertar o actualizar automáticamente)
+  const { error } = await supabase
     .from("facturacion")
-    .select("*")
-    .eq("user_id", user_id)
-    .single();
-
-  let resultado;
-
-  if (existente) {
-    // 🔵 Actualizar
-    resultado = await supabase
-      .from("facturacion")
-      .update({
+    .upsert(
+      {
+        user_id,
         nombre,
         nif,
         direccion,
@@ -50,25 +36,13 @@ export async function POST(req) {
         pais,
         telefono,
         updated_at: new Date(),
-      })
-      .eq("user_id", user_id);
-  } else {
-    // 🔵 Insertar
-    resultado = await supabase.from("facturacion").insert({
-      user_id,
-      nombre,
-      nif,
-      direccion,
-      ciudad,
-      cp,
-      pais,
-      telefono,
-    });
-  }
+      },
+      { onConflict: "user_id" } // asegura que solo haya un registro por usuario
+    );
 
-  if (resultado.error) {
+  if (error) {
     return NextResponse.json(
-      { error: "Error guardando datos", detalle: resultado.error.message },
+      { error: "Error guardando datos", detalle: error.message },
       { status: 500 }
     );
   }

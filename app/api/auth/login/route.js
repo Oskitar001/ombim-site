@@ -1,49 +1,34 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function POST(req) {
-  const supabase = await supabaseServer();
-  const { email, password } = await req.json();
+  const body = await req.json();
+  const { email, password } = body;
 
-  // 1. Login
+  const response = NextResponse.json({ ok: true });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { cookies: response.cookies }
+  );
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
-    password
+    password,
   });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // 2. Obtener sesión
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData?.session?.access_token;
+  const user = data.user;
 
-  if (!token) {
-    return NextResponse.json({ error: "No session token" }, { status: 500 });
-  }
-
-  // 3. Crear cookie "session"
-  const cookieStore = await cookies();
-  cookieStore.set("session", token, {
-    httpOnly: true,
+  response.cookies.set("sb-user-role", user.user_metadata.role || "user", {
+    path: "/",
+    httpOnly: false,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/"
   });
 
-  // 4. Preparar usuario
-  const user = {
-    ...data.user,
-    nombre:
-      data.user?.user_metadata?.nombre ||
-      data.user?.user_metadata?.member ||
-      null
-  };
-
-  return NextResponse.json(
-    { user, session: sessionData.session },
-    { status: 200 }
-  );
+  return response;
 }

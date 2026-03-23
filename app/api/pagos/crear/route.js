@@ -39,6 +39,7 @@ export async function POST(req) {
   const licRows = licencias.map((l) => ({
     pago_id: pago.id,
     plugin_id,
+    user_id: userData.user.id,
     email_tekla: l.email_tekla || "",
     estado: "trial",
   }));

@@ -12,20 +12,28 @@ export default function PagosClient({ pagos }) {
       {pagos.map((pago) => (
         <div
           key={pago.id}
-          className="border p-4 rounded flex justify-between items-center"
+          className="bg-white shadow border border-gray-200 rounded p-4 flex justify-between items-center"
         >
           <div>
-            <p><strong>Plugin:</strong> {pago.plugin_id}</p>
-            <p><strong>Importe:</strong> {pago.importe} €</p>
-            <p><strong>Estado:</strong> {pago.estado}</p>
+            <p>
+              <span className="font-semibold">Plugin:</span>{" "}
+              {pago.plugins?.nombre || pago.plugin_id}
+            </p>
+            <p>
+              <span className="font-semibold">Licencias:</span>{" "}
+              {pago.cantidad_licencias}
+            </p>
+            <p>
+              <span className="font-semibold">Estado:</span> {pago.estado}
+            </p>
             <p className="text-sm text-gray-500">
-              {new Date(pago.created_at).toLocaleString()}
+              {new Date(pago.fecha).toLocaleString()}
             </p>
           </div>
 
           <Link
             href={`/panel/mis-pagos/${pago.id}`}
-            className="bg-blue-600 text-white px-3 py-2 rounded"
+            className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm"
           >
             Ver detalles
           </Link>

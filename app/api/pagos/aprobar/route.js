@@ -1,20 +1,49 @@
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
 import { enviarEmail } from "@/lib/email";
 
 export async function POST(req) {
-  // ... lo que ya teníamos
+  const admin = await requireAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
-  // Obtener usuario y licencias
-  const { data: pagoDetalle } = await supabaseAdmin
+  const body = await req.json();
+  const { pago_id } = body;
+
+  if (!pago_id) {
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  }
+
+  const { data: pago, error: pagoError } = await supabaseAdmin
     .from("pagos")
-    .select("user_id, licencias(email_tekla)")
+    .select("*, licencias(*)")
     .eq("id", pago_id)
     .single();
 
-  const { data: user } = await supabaseAdmin.auth.admin.getUserById(
-    pagoDetalle.user_id
+  if (pagoError || !pago) {
+    return NextResponse.json(
+      { error: "No se encontró el pago" },
+      { status: 404 }
+    );
+  }
+
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "aprobado" })
+    .eq("id", pago_id);
+
+  await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "activa" })
+    .eq("pago_id", pago_id);
+
+  const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(
+    pago.user_id
   );
 
-  const emailsTekla = pagoDetalle.licencias.map((l) => l.email_tekla);
+  const emailsTekla = (pago.licencias || []).map((l) => l.email_tekla);
 
   const html = `
     <div style="font-family: Arial; padding: 20px;">
@@ -27,8 +56,8 @@ export async function POST(req) {
     </div>
   `;
 
-  if (user?.user?.email) {
-    await enviarEmail(user.user.email, "Licencias activadas", html);
+  if (userRes?.user?.email) {
+    await enviarEmail(userRes.user.email, "Licencias activadas", html);
   }
 
   return NextResponse.json({ ok: true });

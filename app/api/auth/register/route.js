@@ -12,37 +12,32 @@ export async function POST(req) {
       );
     }
 
-    // Crear usuario con metadata
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: {
         nombre,
-        role: "user"
-      }
+        role: "user",
+      },
     });
 
     if (error) {
       console.error("SUPABASE REGISTER ERROR:", error);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Usuario con nombre incluido
     const user = {
       ...data.user,
-      nombre: data.user?.user_metadata?.nombre || null
+      nombre: data.user?.user_metadata?.nombre || null,
     };
 
     return NextResponse.json({
       ok: true,
       user,
-      message: "Registro completado. Revisa tu email para confirmar tu cuenta."
+      message:
+        "Registro completado. Revisa tu email para confirmar tu cuenta (correo de OMBIM configurado en Supabase).",
     });
-
   } catch (err) {
     console.error("REGISTER ERROR:", err);
     return NextResponse.json(

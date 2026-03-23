@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../_utils";
 
-export async function GET(req, { params }) {
+export async function GET(_req, { params }) {
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json(auth, { status: auth.status });
 
@@ -9,7 +9,7 @@ export async function GET(req, { params }) {
 
   const { data: licencia } = await supabase
     .from("licencias")
-    .select("*")
+    .select("*, plugins(nombre)")
     .eq("id", params.id)
     .single();
 

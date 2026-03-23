@@ -13,22 +13,28 @@ export default function Page() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // ⭐ NECESARIO PARA GUARDAR LA COOKIE
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error || "Error al iniciar sesión");
+      if (!res.ok) {
+        setError(data.error || "Error al iniciar sesión");
+        setLoading(false);
+        return;
+      }
+
+      // Redirigir al panel
+      window.location.href = "/panel";
+    } catch (err) {
+      setError("Error inesperado. Inténtalo de nuevo.");
       setLoading(false);
-      return;
     }
-
-    // Redirigir al panel
-    window.location.href = "/panel";
   }
 
   return (

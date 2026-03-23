@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
 
-export async function GET() {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase.auth.getUser();
+export async function POST() {
+  const response = NextResponse.json({ ok: true });
 
-  if (error || !data?.user) {
-    return NextResponse.json({ user: null, role: null });
-  }
+  // Borrar cookies de Supabase
+  response.cookies.set("sb-access-token", "", { maxAge: 0, path: "/" });
+  response.cookies.set("sb-refresh-token", "", { maxAge: 0, path: "/" });
+  response.cookies.set("supabase-auth-token", "", { maxAge: 0, path: "/" });
 
-  const user = data.user;
-  const role = user.user_metadata?.role || "user";
+  // Borrar cookie del rol
+  response.cookies.set("sb-user-role", "", { maxAge: 0, path: "/" });
 
-  return NextResponse.json({ user, role });
+  return response;
 }

@@ -37,7 +37,6 @@ export async function POST(req) {
     return NextResponse.json({ estado: "sin_activaciones" });
   }
 
-  // Incrementar activaciones
   await supabaseAdmin
     .from("licencias")
     .update({ activaciones_usadas: lic.activaciones_usadas + 1 })
@@ -45,7 +44,8 @@ export async function POST(req) {
 
   return NextResponse.json({
     estado: lic.estado,
-    activaciones_restantes: lic.max_activaciones - (lic.activaciones_usadas + 1),
+    activaciones_restantes:
+      lic.max_activaciones - (lic.activaciones_usadas + 1),
     fecha_expiracion: lic.fecha_expiracion,
   });
 }

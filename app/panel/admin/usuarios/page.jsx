@@ -5,9 +5,26 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUsuariosPage() {
   const admin = await requireAdmin();
-  if (!admin) return <div className="pt-32 px-6">Acceso denegado.</div>;
 
-  const { data: usuarios } = await supabaseAdmin.auth.admin.listUsers();
+  // Igual que en pagos: si no es admin → fuera
+  if (!admin) {
+    return (
+      <div className="pt-32 px-6">
+        Acceso denegado.
+      </div>
+    );
+  }
+
+  // Obtener lista de usuarios desde Supabase Admin
+  const { data: usuarios, error } = await supabaseAdmin.auth.admin.listUsers();
+
+  if (error) {
+    return (
+      <div className="pt-32 px-6">
+        Error al cargar usuarios.
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto pt-32 px-6">

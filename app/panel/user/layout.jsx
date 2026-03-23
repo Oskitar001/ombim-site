@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function AdminLayout({ children }) {
+export default function UserLayout({ children }) {
   const router = useRouter();
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,9 +19,9 @@ export default function AdminLayout({ children }) {
         return;
       }
 
-      // Si NO es admin → fuera
-      if (data.user.user_metadata?.role !== "admin") {
-        router.push("/panel");
+      // Si es admin → lo mandamos a admin
+      if (data.user.user_metadata?.role === "admin") {
+        router.push("/panel/admin");
         return;
       }
 
@@ -32,21 +32,21 @@ export default function AdminLayout({ children }) {
     load();
   }, [router]);
 
-  if (loading) return <div className="p-10">Cargando admin...</div>;
+  if (loading) return <div className="p-10">Cargando...</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside className="w-64 bg-black text-white p-6 space-y-4">
-        <h2 className="text-xl font-bold mb-6">Admin</h2>
+        <h2 className="text-xl font-bold mb-6">Mi panel</h2>
 
         <nav className="space-y-2">
-          <Link href="/panel/admin/dashboard">Dashboard</Link>
-          <Link href="/panel/admin/licencias">Licencias</Link>
-          <Link href="/panel/admin/licencias-tipos">Tipos de licencia</Link>
-          <Link href="/panel/admin/plugins">Plugins</Link>
-          <Link href="/panel/admin/usuarios">Usuarios</Link>
-          <Link href="/panel/admin/pagos">Pagos</Link>
-          <Link href="/panel/admin/logs">Logs</Link>
+          <Link href="/panel">Inicio</Link>
+          <Link href="/panel/mis-licencias">Mis licencias</Link>
+          <Link href="/panel/mis-plugins">Mis plugins</Link>
+          <Link href="/panel/mis-descargas">Mis descargas</Link>
+          <Link href="/panel/mis-pagos">Mis pagos</Link>
+          <Link href="/panel/mis-facturas">Mis facturas</Link>
+          <Link href="/panel/mis-datos">Datos de facturación</Link>
         </nav>
       </aside>
 

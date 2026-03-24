@@ -14,6 +14,8 @@ export default function Navbar() {
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState("light");
 
+  
+
   const menuRef = useRef(null);
 
   // Obtener usuario
@@ -71,6 +73,9 @@ export default function Navbar() {
   };
 
   if (!ready) return null;
+  console.log("USER METADATA:", user?.user_metadata);
+  const role = user?.user_metadata?.role;
+  const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
 
   const nombre = user?.user_metadata?.nombre;
   const avatar =
@@ -160,7 +165,7 @@ export default function Navbar() {
                 }`}
               >
                 <Link
-                  href="/panel"
+                  href={panelUrl}
                   onClick={() => setMenuOpen(false)}
                   className="block px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
                 >
@@ -203,7 +208,7 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <Link href="/panel" onClick={() => setOpen(false)}>Panel</Link>
+              <Link href={panelUrl} onClick={() => setOpen(false)}>Panel</Link>
               <button onClick={logout}>Cerrar sesión</button>
             </>
           ) : (

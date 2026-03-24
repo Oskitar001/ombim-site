@@ -225,28 +225,30 @@ export default function Page() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\page.jsx
 ============================================================
 
-
-// app/(site)/page.jsx
 "use client";
 
 import AboutSection from "../../components/AboutSection";
 import TrustSection from "../../components/TrustSection";
 import TestimonialsSection from "../../components/TestimonialsSection";
+import RevealObserver from "../../components/RevealObserver";
 
 const apps = [
   {
     title: "Modelado 3D con automatización",
-    description: "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
+    description:
+      "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
     video: "https://www.youtube.com/embed/gQp1t5xRz5Q",
   },
   {
     title: "Aplicaciones Tekla Structures",
-    description: "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
+    description:
+      "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
     video: "https://www.youtube.com/embed/MBL7E9rF2HU",
   },
   {
     title: "Plugin Tekla Structures",
-    description: "Mejora tu productividad con herramientas integradas directamente en Tekla. Flujo de trabajo más ágil y profesional.",
+    description:
+      "Mejora tu productividad con herramientas integradas directamente en Tekla. Flujo de trabajo más ágil y profesional.",
     video: "https://www.youtube.com/embed/9HiQz_x9UCU",
   },
 ];
@@ -254,50 +256,125 @@ const apps = [
 export default function HomePage() {
   return (
     <>
-      <div className='fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50'>
-        <a href='/contacto' className='bg-blue-600 text-black dark:text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all'>
+      <RevealObserver />
+
+      {/* CTA móvil */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
+        <a
+          href="/contacto"
+          className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
+        >
           Solicitar demo
         </a>
       </div>
 
-      <div className='pb-20 min-h-screen bg-[#f3f4f6] dark:bg-[#242424] bg-gradient-to-b from-light-bgSoft to-light-bg dark:from-dark-bg dark:to-dark-bg'>
-        <div className='container mx-auto border-t border-[#d1d5db] dark:border-[#3a3a3a]'>
-          <section className='reveal text-center max-w-4xl mx-auto mt-20 mb-24 px-6'>
-            <div className='relative inline-block'>
-              <span className='absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full'></span>
-              <h1 className='relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]'>
-                Modelado 3D & Software para Tekla Structures
+      {/* Fondo global */}
+      <div className="pb-20 min-h-screen bg-[#f3f4f6] dark:bg-[#242424]">
+
+        {/* CONTENEDOR PRINCIPAL */}
+        <div className="container mx-auto border-t border-gray-300 dark:border-gray-700">
+
+          {/* HERO */}
+          <section className="reveal text-center max-w-4xl mx-auto mt-20 mb-24 px-6">
+            <div className="relative inline-block">
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-300/30 via-transparent to-blue-300/30 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
+
+              <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
+                Modelado 3D y Software para Tekla Structures
               </h1>
             </div>
-            <div className='w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10'></div>
-            <p className='text-[#1f2937] dark:text-[#e6e6e6] text-xl md:text-2xl leading-relaxed mb-6'>Más de <strong>20 años de experiencia</strong>…</p>
-            <p className='text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed mb-10'>Además, más de <strong>100 proyectos</strong>…</p>
-            <a href='/contacto' className='inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-8 py-4 rounded-xl text-lg font-medium hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95'>Solicitar demo personalizada <span className='text-2xl'>→</span></a>
+
+            <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
+
+            <p className="text-[#1f2937] dark:text-[#e6e6e6] text-xl md:text-2xl leading-relaxed mb-6">
+              Más de <strong>20 años de experiencia</strong> en modelado 3D con Tekla Structures,
+              aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
+            </p>
+
+            <p className="text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed mb-10">
+              Más de <strong>100 proyectos reales</strong> optimizados con <strong>software propio</strong>:
+              plugins, automatizaciones y herramientas internas que aceleran tu flujo BIM y reducen errores.
+            </p>
+
+            <a
+              href="/contacto"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
+            >
+              Solicitar demo personalizada <span className="text-2xl">→</span>
+            </a>
           </section>
 
-          <div className='grid md:grid-cols-3 gap-10'>
+          {/* CARDS */}
+          <div className="grid md:grid-cols-3 gap-10 px-6">
             {apps.map((app, index) => (
-              <div key={index} className='reveal bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-soft hover:-translate-y-2 border border-gray-100 dark:border-[#3a3a3a]'>
-                <div className='rounded-xl overflow-hidden mb-4'>
-                  <iframe className='w-full aspect-video' src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1`} allow='autoplay; encrypted-media' allowFullScreen></iframe>
+              <div
+                key={index}
+                className="reveal bg-[#ffffff] dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border border-gray-200 dark:border-gray-700"
+              >
+                <div className="rounded-xl overflow-hidden mb-4">
+                  <iframe
+                    className="w-full aspect-video"
+                    src={`${app.video}?rel=0&modestbranding=1&controls=1&autoplay=0&mute=0`}
+                    title={app.title}
+                    frameBorder="0"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  ></iframe>
                 </div>
-                <h3 className='text-xl font-semibold mb-2'>{app.title}</h3>
-                <p className='text-[#1f2937] dark:text-[#e6e6e6] mb-4'>{app.description}</p>
-                <a href='/contacto' className='group inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95'>Solicitar demo ahora <span className='text-base group-hover:translate-x-1 transition'>→</span></a>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>Respuesta en menos de 24h</p>
+
+                <h3 className="text-xl font-semibold mb-2 text-[#1f2937] dark:text-[#e6e6e6]">
+                  {app.title}
+                </h3>
+
+                <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
+                  {app.description}
+                </p>
+
+                <a
+                  href="/contacto"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 active:scale-95 transition-all"
+                >
+                  Solicitar demo ahora
+                  <span className="text-base">→</span>
+                </a>
+
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Respuesta en menos de 24h
+                </p>
               </div>
             ))}
           </div>
 
-          <AboutSection />
-          <TrustSection />
-          <TestimonialsSection />
+          {/* ABOUT + TRUST + TESTIMONIALS */}
+          <div className="mt-32">
+            <AboutSection />
+            <TrustSection />
+            <TestimonialsSection />
+          </div>
+
+          {/* CTA FINAL */}
+          <div className="reveal text-center mt-32 px-6">
+            <h2 className="text-3xl font-bold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              ¿Quieres ver cómo funciona en tu proyecto?
+            </h2>
+
+            <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-6">
+              Te preparamos una demo personalizada sin compromiso.
+            </p>
+
+            <a
+              href="/contacto"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg active:scale-95"
+            >
+              Solicitar demo personalizada <span className="text-xl">→</span>
+            </a>
+          </div>
+
         </div>
       </div>
     </>
   );
 }
-
 
 
 ============================================================
@@ -1033,10 +1110,10 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(_req, { params }) {
+export async function GET(_, { params }) {
   const admin = await requireAdmin();
   if (!admin.ok) {
-    return NextResponse.json(admin, { status: admin.status || 403 });
+    return NextResponse.json(admin, { status: 403 });
   }
 
   const { data: licencia } = await supabaseAdmin
@@ -1065,7 +1142,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { data } = await supabaseAdmin
     .from("logs_uso")
@@ -1096,7 +1175,7 @@ export async function GET() {
     .select("*")
     .order("fecha", { ascending: false });
 
-  return NextResponse.json(data);
+  return NextResponse.json(data ?? []);
 }
 
 
@@ -1109,17 +1188,21 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(_req, { params }) {
+export async function GET(_, { params }) {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json(admin, { status: 403 });
   }
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("pagos")
     .select("*, licencias(*), facturacion(*)")
     .eq("id", params.id)
     .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
 
   return NextResponse.json({ pago: data });
 }
@@ -1136,7 +1219,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { id } = await req.json();
 
@@ -1165,7 +1250,9 @@ import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function GET() {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { data, error } = await supabaseAdmin
     .from("plugins")
@@ -1181,7 +1268,9 @@ export async function GET() {
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const body = await req.json();
   const { nombre, descripcion, precio, archivo_url, video_url } = body;
@@ -1195,7 +1284,7 @@ export async function POST(req) {
     .insert({
       nombre,
       descripcion,
-      precio,
+      precio: Number(precio) || 0,
       archivo_url,
       video_url,
     })
@@ -1210,6 +1299,7 @@ export async function POST(req) {
 }
 
 
+
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\route.js
 ============================================================
@@ -1221,10 +1311,15 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const body = await req.json();
-  const { error } = await supabaseAdmin.from("usuarios").insert(body);
+
+  const { error } = await supabaseAdmin
+    .from("usuarios")
+    .insert(body);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -1243,9 +1338,11 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, { params }) {
+export async function GET(_, { params }) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { data } = await supabaseAdmin
     .from("usuarios")
@@ -1258,7 +1355,9 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const body = await req.json();
 
@@ -1279,11 +1378,12 @@ export async function PUT(req, { params }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\_utils.js
 ============================================================
 
+// app/api/admin/_utils.js (corregido)
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function requireAdmin() {
-  const cookieStore = await cookies(); // ← IMPORTANTE
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -1291,18 +1391,17 @@ export async function requireAdmin() {
     {
       cookies: {
         get(name) {
-          const cookie = cookieStore.get(name);
-          return cookie?.value;
+          return cookieStore.get(name)?.value;
         },
         set() {},
-        remove() {}
-      }
+        remove() {},
+      },
     }
   );
 
   const {
     data: { user },
-    error
+    error,
   } = await supabase.auth.getUser();
 
   if (error || !user) {
@@ -1317,19 +1416,16 @@ export async function requireAdmin() {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
 ============================================================
 
-// /app/api/auth/login/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function POST(req) {
   const { email, password } = await req.json();
 
-  // Respuesta inicial donde se escribirán las cookies
   const response = NextResponse.json({ ok: true });
 
   const supabase = createServerClient(
@@ -1365,7 +1461,6 @@ export async function POST(req) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Guardamos el rol visible (no sensible)
   const role = data.user.user_metadata?.role ?? "user";
 
   response.cookies.set("sb-user-role", role, {
@@ -1383,7 +1478,6 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\logout\route.js
 ============================================================
 
-// /app/api/auth/logout/route.js
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -1401,7 +1495,6 @@ export async function POST() {
   res.cookies.set("sb-refresh-token", "", cookieOptions);
   res.cookies.set("supabase-auth-token", "", cookieOptions);
 
-  // cookie visible para interfaz
   res.cookies.set("sb-user-role", "", { maxAge: 0, path: "/" });
 
   return res;
@@ -1412,7 +1505,6 @@ export async function POST() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\me\route.js
 ============================================================
 
-// /app/api/auth/me/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
@@ -1426,7 +1518,7 @@ export async function GET(req) {
       cookies: {
         get: (name) => req.cookies.get(name)?.value,
         set: (name, value, options) =>
-          response.cookies.set(name, value, options),
+          response.cookies.set(name, value, { ...options }),
         remove: (name, options) =>
           response.cookies.set(name, "", { ...options, maxAge: 0 }),
       },
@@ -1562,8 +1654,8 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
   const supabase = await supabaseServer();
-
   const { data: userData } = await supabase.auth.getUser();
+
   if (!userData?.user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
@@ -1603,7 +1695,6 @@ export async function POST(req) {
   const supabase = await supabaseServer();
 
   const { data: userData } = await supabase.auth.getUser();
-
   if (!userData?.user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
@@ -1613,11 +1704,10 @@ export async function POST(req) {
 
   const { error } = await supabase
     .from("facturacion")
-    .upsert({
-      user_id,
-      ...body,
-      updated_at: new Date(),
-    }, { onConflict: "user_id" });
+    .upsert(
+      { user_id, ...body, updated_at: new Date() },
+      { onConflict: "user_id" }
+    );
 
   if (error) {
     return NextResponse.json(
@@ -1676,7 +1766,6 @@ import puppeteer from "puppeteer-core";
 
 export async function GET(req) {
   const supabase = await supabaseServer();
-
   const { searchParams } = new URL(req.url);
   const pago_id = searchParams.get("pago_id");
 
@@ -1684,7 +1773,6 @@ export async function GET(req) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  // Obtener pago y licencias
   const { data: pago } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
@@ -1723,7 +1811,7 @@ export async function GET(req) {
 
   if (!empresa) {
     return NextResponse.json(
-      { error: "Datos fiscales del negocio no configurados" },
+      { error: "Datos fiscales no configurados" },
       { status: 500 }
     );
   }
@@ -1733,56 +1821,55 @@ export async function GET(req) {
   const total = (base * 1.21).toFixed(2);
 
   const html = `
-    <h1>Factura #${pago.numero_factura}</h1>
-    <p>Fecha: ${new Date().toLocaleDateString()}</p>
+  <h2>Factura #${pago.numero_factura}</h2>
+  <p>Fecha: ${new Date().toLocaleDateString()}</p>
 
-    <h3>Cliente</h3>
-    <p>${facturacion.nombre}</p>
-    <p>${facturacion.direccion}</p>
-    <p>${facturacion.cp} ${facturacion.ciudad}</p>
+  <h3>Cliente</h3>
+  ${facturacion.nombre}<br>
+  ${facturacion.direccion}<br>
+  ${facturacion.cp} ${facturacion.ciudad}<br>
 
-    <h3>Detalle</h3>
-    <table>
-      <tr><th>Concepto</th><th>Cant</th><th>Base</th><th>IVA</th><th>Total</th></tr>
-      <tr>
-        <td>${pago.plugin_id}</td>
-        <td>${pago.cantidad_licencias}</td>
-        <td>${base} €</td>
-        <td>${iva} €</td>
-        <td>${total} €</td>
-      </tr>
-    </table>
+  <h3>Detalle</h3>
+  <table border="1">
+    <tr><th>Concepto</th><th>Cant</th><th>Base</th><th>IVA</th><th>Total</th></tr>
+    <tr>
+      <td>${pago.plugin_id}</td>
+      <td>${pago.cantidad_licencias}</td>
+      <td>${base} €</td>
+      <td>${iva} €</td>
+      <td>${total} €</td>
+    </tr>
+  </table>
 
-    <h3>Licencias</h3>
-    ${pago.licencias.map(l => `Email Tekla: ${l.email_tekla}`).join("<br>")}
+  <h3>Licencias</h3>
+  ${pago.licencias.map((l) => `Email Tekla: ${l.email_tekla}`).join("<br>")}
 
-    <h3>Total factura: ${total} €</h3>
+  <h3>Total: ${total} €</h3>
 
-    <p><strong>${empresa.nombre}</strong></p>
-    <p>${empresa.cif}</p>
-    <p>${empresa.direccion}</p>
+  <h4>${empresa.nombre}</h4>
+  ${empresa.cif}<br>
+  ${empresa.direccion}
   `;
 
   const browser = await puppeteer.launch({
     args: chromium.args,
     defaultViewport: chromium.defaultViewport,
     executablePath: await chromium.executablePath(),
-    headless: chromium.headless
+    headless: chromium.headless,
   });
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle0" });
 
   const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
-
   await browser.close();
 
   return new NextResponse(pdfBuffer, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename=factura-${pago.numero_factura}.pdf`
-    }
+      "Content-Disposition": `inline; filename=factura-${pago.numero_factura}.pdf`,
+    },
   });
 }
 
@@ -1798,19 +1885,17 @@ import { enviarEmail } from "@/lib/email";
 
 export async function POST(req) {
   const supabase = await supabaseServer();
-  const { data: userData } = await supabase.auth.getUser();
 
+  const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
   const { pago_id } = await req.json();
-
   if (!pago_id) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  // Validar propiedad del pago
   const { data: pago } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
@@ -1825,7 +1910,6 @@ export async function POST(req) {
     );
   }
 
-  // Validar datos de facturación
   const { data: facturacion } = await supabase
     .from("facturacion")
     .select("*")
@@ -1840,11 +1924,11 @@ export async function POST(req) {
   }
 
   const html = `
-    <h3>Solicitud de factura</h3>
-    <p>El usuario ${userData.user.email} solicita factura.</p>
-    <p>Pago ID: ${pago.id}</p>
-    <p>Importe: ${pago.importe ?? "—"} €</p>
-    <p>Nombre: ${facturacion.nombre}</p>
+  <h4>Solicitud de factura</h4>
+  Usuario: ${userData.user.email}<br>
+  Pago ID: ${pago.id}<br>
+  Importe: ${pago.importe ?? "—"} €
+  Nombre: ${facturacion.nombre}
   `;
 
   await enviarEmail(process.env.ADMIN_EMAIL, "Solicitud de factura", html);
@@ -1857,7 +1941,7 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\activar\route.js
 ============================================================
 
-// /app/api/licencias/activar/route.js
+// app/api/licencias/activar/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
@@ -1869,14 +1953,11 @@ export async function POST(req) {
   }
 
   const { licencia_id } = await req.json();
+
   if (!licencia_id) {
-    return NextResponse.json(
-      { error: "Falta licencia_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
-  // Comprobar que existe
   const { data: lic } = await supabaseAdmin
     .from("licencias")
     .select("*")
@@ -1884,13 +1965,9 @@ export async function POST(req) {
     .single();
 
   if (!lic) {
-    return NextResponse.json(
-      { error: "Licencia no encontrada" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
-  // Activar licencia
   await supabaseAdmin
     .from("licencias")
     .update({ estado: "activa" })
@@ -1904,7 +1981,7 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\bloquear\route.js
 ============================================================
 
-// /app/api/licencias/bloquear/route.js
+// app/api/licencias/bloquear/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
@@ -1916,11 +1993,9 @@ export async function POST(req) {
   }
 
   const { licencia_id } = await req.json();
+
   if (!licencia_id) {
-    return NextResponse.json(
-      { error: "Falta licencia_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
   const { data: lic } = await supabaseAdmin
@@ -1930,10 +2005,7 @@ export async function POST(req) {
     .single();
 
   if (!lic) {
-    return NextResponse.json(
-      { error: "Licencia no encontrada" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
   await supabaseAdmin
@@ -1949,22 +2021,17 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\mias\route.js
 ============================================================
 
-// /app/api/licencias/mias/route.js
+// app/api/licencias/mias/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
   try {
-    const supabase = supabaseServer();
-
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser();
+    const supabase = await supabaseServer();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
-      return NextResponse.json(
-        { error: "NO_LOGIN" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "NO_LOGIN" }, { status: 401 });
     }
 
     const { data, error } = await supabase
@@ -1974,10 +2041,7 @@ export async function GET() {
       .order("fecha_creacion", { ascending: false });
 
     if (error) {
-      return NextResponse.json(
-        { error: "ERROR_DB" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "ERROR_DB" }, { status: 500 });
     }
 
     const licencias = data.map((l) => ({
@@ -1992,10 +2056,7 @@ export async function GET() {
 
     return NextResponse.json(licencias);
   } catch (err) {
-    return NextResponse.json(
-      { error: "ERROR_INTERNO" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "ERROR_INTERNO" }, { status: 500 });
   }
 }
 
@@ -2004,7 +2065,7 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\reset-activaciones\route.js
 ============================================================
 
-// /app/api/licencias/reset-activaciones/route.js
+// app/api/licencias/reset-activaciones/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
@@ -2016,11 +2077,9 @@ export async function POST(req) {
   }
 
   const { licencia_id } = await req.json();
+
   if (!licencia_id) {
-    return NextResponse.json(
-      { error: "Falta licencia_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
   const { data: lic } = await supabaseAdmin
@@ -2030,10 +2089,7 @@ export async function POST(req) {
     .single();
 
   if (!lic) {
-    return NextResponse.json(
-      { error: "Licencia no encontrada" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
   await supabaseAdmin
@@ -2049,7 +2105,7 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\todas\route.js
 ============================================================
 
-// /app/api/licencias/todas/route.js
+// app/api/licencias/todas/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
@@ -2061,11 +2117,9 @@ export async function GET(req) {
   }
 
   const id = new URL(req.url).searchParams.get("id");
+
   if (!id) {
-    return NextResponse.json(
-      { error: "Falta id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta id" }, { status: 400 });
   }
 
   const { data, error } = await supabaseAdmin
@@ -2075,10 +2129,7 @@ export async function GET(req) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json(
-      { error: "Licencia no encontrada" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
   return NextResponse.json({ licencia: data });
@@ -2089,7 +2140,7 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
 ============================================================
 
-// /app/api/licencias/trial/route.js
+// app/api/licencias/trial/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
@@ -2103,10 +2154,7 @@ export async function POST(req) {
   const { licencia_id } = await req.json();
 
   if (!licencia_id) {
-    return NextResponse.json(
-      { error: "Falta licencia_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
   const { data: lic } = await supabaseAdmin
@@ -2116,10 +2164,7 @@ export async function POST(req) {
     .single();
 
   if (!lic) {
-    return NextResponse.json(
-      { error: "Licencia no encontrada" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
   await supabaseAdmin
@@ -2135,7 +2180,7 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\aprobar\route.js
 ============================================================
 
-// /app/api/pagos/aprobar/route.js
+// app/api/pagos/aprobar/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
@@ -2144,19 +2189,13 @@ import { enviarEmail } from "@/lib/email";
 export async function POST(req) {
   const admin = await requireAdmin();
   if (!admin.ok) {
-    return NextResponse.json(
-      { error: "No autorizado" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const { pago_id } = await req.json();
 
   if (!pago_id) {
-    return NextResponse.json(
-      { error: "Falta pago_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
   const { data: pago, error } = await supabaseAdmin
@@ -2166,17 +2205,11 @@ export async function POST(req) {
     .single();
 
   if (error || !pago) {
-    return NextResponse.json(
-      { error: "No se encontró el pago" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "No se encontró el pago" }, { status: 404 });
   }
 
-  // Aprobar
-  await supabaseAdmin
-    .from("pagos")
-    .update({ estado: "aprobado" })
-    .eq("id", pago_id);
+  // Aprobar pago
+  await supabaseAdmin.from("pagos").update({ estado: "aprobado" }).eq("id", pago_id);
 
   // Activar licencias
   await supabaseAdmin
@@ -2184,30 +2217,17 @@ export async function POST(req) {
     .update({ estado: "activa" })
     .eq("pago_id", pago_id);
 
-  // Email al usuario
-  const { data: userRes } =
-    await supabaseAdmin.auth.admin.getUserById(
-      pago.user_id
-    );
-
-  const emailsTekla = pago.licencias.map(
-    (l) => l.email_tekla
-  );
+  // Notificar usuario
+  const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(pago.user_id);
+  const emailsTekla = pago.licencias.map((l) => l.email_tekla);
 
   const html = `
-    <h2>Tus licencias han sido activadas</h2>
-    <p>Se han activado las siguientes licencias:</p>
-    <ul>
-      ${emailsTekla.map((e) => `<li>${e}</li>`).join("")}
-    </ul>
+    <h3>Tus licencias han sido activadas</h3>
+    ${emailsTekla.map((e) => `- ${e}<br>`).join("")}
   `;
 
   if (userRes?.user?.email) {
-    await enviarEmail(
-      userRes.user.email,
-      "Licencias activadas",
-      html
-    );
+    await enviarEmail(userRes.user.email, "Licencias activadas", html);
   }
 
   return NextResponse.json({ ok: true });
@@ -2218,34 +2238,27 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
 ============================================================
 
-// /app/api/pagos/crear/route.js
+// app/api/pagos/crear/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) {
-    return NextResponse.json(
-      { error: "No autenticado" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
   const body = await req.json();
   const { plugin_id, licencias } = body;
 
   if (!plugin_id || !licencias?.length) {
-    return NextResponse.json(
-      { error: "Datos incompletos" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
 
   const cantidad = licencias.length;
 
-  // Verificar plugin
   const { data: plugin } = await supabase
     .from("plugins")
     .select("id, precio")
@@ -2253,10 +2266,7 @@ export async function POST(req) {
     .single();
 
   if (!plugin) {
-    return NextResponse.json(
-      { error: "Plugin no encontrado" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 400 });
   }
 
   // Crear pago
@@ -2273,13 +2283,10 @@ export async function POST(req) {
     .single();
 
   if (pagoError) {
-    return NextResponse.json(
-      { error: pagoError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: pagoError.message }, { status: 500 });
   }
 
-  // Crear licencias
+  // Crear licencias asociadas
   const licenciaRows = licencias.map((l) => ({
     pago_id: pago.id,
     plugin_id,
@@ -2288,15 +2295,10 @@ export async function POST(req) {
     estado: "trial",
   }));
 
-  const { error: licError } = await supabase
-    .from("licencias")
-    .insert(licenciaRows);
+  const { error: licError } = await supabase.from("licencias").insert(licenciaRows);
 
   if (licError) {
-    return NextResponse.json(
-      { error: licError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: licError.message }, { status: 500 });
   }
 
   return NextResponse.json({ pago_id: pago.id });
@@ -2307,28 +2309,22 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\detalle\route.js
 ============================================================
 
-// /app/api/pagos/detalle/route.js
+// app/api/pagos/detalle/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET(req) {
-  const supabase = supabaseServer();
-  const { data: userData } = await supabase.auth.getUser();
+  const supabase = await supabaseServer();
 
+  const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) {
-    return NextResponse.json(
-      { error: "No autenticado" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
   const pago_id = new URL(req.url).searchParams.get("pago_id");
 
   if (!pago_id) {
-    return NextResponse.json(
-      { error: "Falta pago_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
   const { data: pago, error } = await supabase
@@ -2339,10 +2335,7 @@ export async function GET(req) {
     .single();
 
   if (error || !pago) {
-    return NextResponse.json(
-      { error: "Pago no encontrado" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
   const { data: facturacion } = await supabase
@@ -2351,10 +2344,7 @@ export async function GET(req) {
     .eq("user_id", pago.user_id)
     .single();
 
-  return NextResponse.json({
-    ...pago,
-    facturacion: facturacion ?? null,
-  });
+  return NextResponse.json({ ...pago, facturacion: facturacion ?? null });
 }
 
 
@@ -2362,21 +2352,18 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
 ============================================================
 
-// /app/api/pagos/guardar-emails/route.js
+// app/api/pagos/guardar-emails/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const body = await req.json();
 
   const { pago_id, emails } = body;
 
   if (!pago_id || !emails?.length) {
-    return NextResponse.json(
-      { error: "Datos incompletos" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
 
   for (const entry of emails) {
@@ -2395,29 +2382,23 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
 ============================================================
 
-// /app/api/pagos/notificar-transferencia/route.js
+// app/api/pagos/notificar-transferencia/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { enviarEmail, plantillaTransferenciaNotificada } from "@/lib/email";
 
 export async function POST(req) {
-  const supabase = supabaseServer();
-
+  const supabase = await supabaseServer();
   const { data: userData } = await supabase.auth.getUser();
+
   if (!userData?.user) {
-    return NextResponse.json(
-      { error: "No autenticado" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
   const { pago_id } = await req.json();
 
   if (!pago_id) {
-    return NextResponse.json(
-      { error: "Falta pago_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
   const { data: pago } = await supabase
@@ -2427,27 +2408,19 @@ export async function POST(req) {
     .single();
 
   if (!pago) {
-    return NextResponse.json(
-      { error: "Pago no encontrado" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
+  // Actualizar estado del pago
   await supabase
     .from("pagos")
     .update({ estado: "transferencia_notificada" })
     .eq("id", pago_id);
 
-  const html = plantillaTransferenciaNotificada(
-    userData.user.email,
-    pago
-  );
+  // Email al admin
+  const html = plantillaTransferenciaNotificada(userData.user.email, pago);
 
-  await enviarEmail(
-    process.env.ADMIN_EMAIL,
-    "Transferencia notificada",
-    html
-  );
+  await enviarEmail(process.env.ADMIN_EMAIL, "Transferencia notificada", html);
 
   return NextResponse.json({ ok: true });
 }
@@ -2457,29 +2430,23 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
 ============================================================
 
-// /app/api/plugin/download/route.js
+// app/api/plugin/download/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData?.user) {
-    return NextResponse.json(
-      { error: "No autenticado" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
   const plugin_id = new URL(req.url).searchParams.get("plugin_id");
 
   if (!plugin_id) {
-    return NextResponse.json(
-      { error: "Falta plugin_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
   }
 
   const { data: plugin, error } = await supabaseAdmin
@@ -2489,19 +2456,13 @@ export async function GET(req) {
     .single();
 
   if (error || !plugin?.archivo_url) {
-    return NextResponse.json(
-      { error: "Plugin no encontrado" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
   }
 
   // Registrar descarga
   await supabase
     .from("descargas")
-    .insert({
-      user_id: userData.user.id,
-      plugin_id,
-    });
+    .insert({ user_id: userData.user.id, plugin_id });
 
   return NextResponse.redirect(plugin.archivo_url);
 }
@@ -2514,6 +2475,11 @@ export async function GET(req) {
 // /app/api/plugin/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+// =========================
+// OBTENER TODOS LOS PLUGINS
+// =========================
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
@@ -2532,11 +2498,55 @@ export async function GET() {
 }
 
 
+
+// =========================
+// CREAR NUEVO PLUGIN (ADMIN)
+// =========================
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { nombre, descripcion, precio, archivo_url, video_url } = body;
+
+  if (!nombre) {
+    return NextResponse.json(
+      { error: "Falta el nombre del plugin" },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .insert({
+      nombre,
+      descripcion,
+      precio: Number(precio) || 0,
+      archivo_url,
+      video_url
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ id: data.id });
+}
+
+
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
 ============================================================
 
-// /app/api/plugin/validate-license/route.js
+// app/api/plugin/validate-license/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -2550,7 +2560,6 @@ export async function POST(req) {
     );
   }
 
-  // Buscar licencia más reciente
   const { data: lic, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
@@ -2564,7 +2573,6 @@ export async function POST(req) {
     return NextResponse.json({ estado: "sin_licencia" });
   }
 
-  // Estado de licencia
   if (lic.estado === "bloqueada") {
     return NextResponse.json({ estado: "bloqueada" });
   }
@@ -2581,7 +2589,7 @@ export async function POST(req) {
     return NextResponse.json({ estado: "sin_activaciones" });
   }
 
-  // Registrar activación
+  // Registrar nueva activación
   await supabaseAdmin
     .from("licencias")
     .update({
@@ -2603,7 +2611,7 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\[id]\route.js
 ============================================================
 
-// /app/api/plugin/[id]/route.js
+// app/api/plugin/[id]/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -2617,10 +2625,7 @@ export async function GET(_, props) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json(
-      { error: "Plugin no encontrado" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
   }
 
   return NextResponse.json(data);
@@ -2630,7 +2635,6 @@ export async function GET(_, props) {
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
 ============================================================
-
 
 // app/layout.jsx
 import "./globals.css";
@@ -2644,18 +2648,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang='es'>
-      <body className='min-h-screen bg-[#f3f4f6] dark:bg-[#242424]'>
+    <html lang="es">
+      <body className="min-h-screen flex flex-col">
         <Navbar />
-        <div className='max-w-7xl mx-auto w-full px-6 pt-[88px]'>
+        <main className="flex-grow">
           {children}
-        </div>
+        </main>
         <Footer />
       </body>
     </html>
   );
 }
-
 
 
 ============================================================
@@ -2773,35 +2776,31 @@ export default async function DashboardPage() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
 ============================================================
 
-// /app/panel/admin/layout.jsx
+// app/panel/admin/layout.jsx
 import { requireAdmin } from "@/lib/checkAdmin";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }) {
   const auth = await requireAdmin();
-  if (!auth.ok) return null; // requireAdmin ya redirige
+
+  if (!auth.ok) {
+    redirect(auth.redirect ?? "/login");
+  }
 
   return (
-    <div className="flex min-h-screen">
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-gray-100 dark:bg-gray-900 p-6 space-y-4">
-        <h2 className="text-xl font-bold mb-4">Admin</h2>
+    <div className="admin-layout flex">
+      <aside className="w-64 p-4 border-r">
+        <h3 className="font-bold mb-4">Admin</h3>
 
-        <nav className="space-y-2">
-          <Link href="/panel/admin/dashboard">Dashboard</Link>
-          <Link href="/panel/admin/licencias">Licencias</Link>
-          <Link href="/panel/admin/licencias-tipos">Tipos de licencia</Link>
-          <Link href="/panel/admin/plugins">Plugins</Link>
-          <Link href="/panel/admin/usuarios">Usuarios</Link>
-          <Link href="/panel/admin/pagos">Pagos</Link>
-          <Link href="/panel/admin/logs">Logs</Link>
+        <nav className="flex flex-col gap-2">
+              <Link href="/panel/admin/logs">Logs</Link>
         </nav>
       </aside>
 
-      {/* CONTENIDO */}
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1 p-4">{children}</main>
     </div>
   );
 }
@@ -3348,55 +3347,4 @@ export default function FacturacionClient({ user_id, datosIniciales }) {
     </div>
   );
 }
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
-============================================================
-
-// /app/panel/facturacion/page.jsx
-import { supabaseServer } from "@/lib/supabaseServer";
-import FacturacionClient from "./FacturacionClient";
-
-export const dynamic = "force-dynamic";
-
-export default async function Page() {
-  const supabase = supabaseServer();
-
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
-    return <p>No autenticado</p>;
-  }
-
-  const { data: facturacion } = await supabase
-    .from("facturacion")
-    .select("*")
-    .eq("user_id", userData.user.id)
-    .single();
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Datos de facturación</h1>
-      <FacturacionClient user_id={userData.user.id} datosIniciales={facturacion ?? {}} />
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\layout.jsx
-============================================================
-
-import PanelAuth from "./panel-auth";
-
-export default function PanelLayout({ children }) {
-  return (
-    <PanelAuth>
-      <div className="pt-[88px] px-6">
-        {children}
-      </div>
-    </PanelAuth>
-  );
-}
-
 

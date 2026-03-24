@@ -20,7 +20,7 @@ export default function AdminLayout({ children }) {
       }
 
       if (data.user.user_metadata?.role !== "admin") {
-        router.push("/panel");
+        router.push("/panel/user");
         return;
       }
 
@@ -31,32 +31,35 @@ export default function AdminLayout({ children }) {
     load();
   }, [router]);
 
-  // ⭐ IMPORTANTE: mantener el contenedor flex incluso mientras carga
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="-mt-[88px] h-[calc(100vh-88px)] flex items-center justify-center bg-gray-100">
         <div className="text-lg font-semibold">Cargando admin...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <aside className="w-64 bg-black text-white p-6 space-y-4">
+    <div className="-mt-[88px] h-[calc(100vh-88px)] flex bg-gray-100 overflow-hidden">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-black text-white p-6 space-y-4 overflow-y-auto">
         <h2 className="text-xl font-bold mb-6">Admin</h2>
 
         <nav className="space-y-2">
-          <Link href="/panel/admin/dashboard">Dashboard</Link>
-          <Link href="/panel/admin/licencias">Licencias</Link>
-          <Link href="/panel/admin/licencias-tipos">Tipos de licencia</Link>
-          <Link href="/panel/admin/plugins">Plugins</Link>
-          <Link href="/panel/admin/usuarios">Usuarios</Link>
-          <Link href="/panel/admin/pagos">Pagos</Link>
-          <Link href="/panel/admin/logs">Logs</Link>
+          <Link href="/panel/admin/dashboard" className="block">Dashboard</Link>
+          <Link href="/panel/admin/licencias" className="block">Licencias</Link>
+          <Link href="/panel/admin/licencias-tipos" className="block">Tipos de licencia</Link>
+          <Link href="/panel/admin/plugins" className="block">Plugins</Link>
+          <Link href="/panel/admin/usuarios" className="block">Usuarios</Link>
+          <Link href="/panel/admin/pagos" className="block">Pagos</Link>
+          <Link href="/panel/admin/logs" className="block">Logs</Link>
         </nav>
       </aside>
 
-      <main className="flex-1 p-10">{children}</main>
+      {/* CONTENIDO */}
+      <main className="flex-1 p-10 overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }

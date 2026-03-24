@@ -7,6 +7,7 @@ export default function ContactoPage() {
   return (
     <section className="max-w-4xl mx-auto px-6 mt-20 mb-32 bg-[#f3f4f6]Soft dark:bg-[#242424]">
       
+      {/* Encabezado */}
       <div className="text-center mb-16">
         <div className="relative inline-block">
           <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
@@ -24,6 +25,7 @@ export default function ContactoPage() {
         </p>
       </div>
 
+      {/* Formulario */}
       <form
         method="POST"
         action="/api/contact"
@@ -61,6 +63,7 @@ export default function ContactoPage() {
         </button>
       </form>
 
+      {/* Separador inferior */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent mt-20"></div>
     </section>
   );

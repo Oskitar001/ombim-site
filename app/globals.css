@@ -2,59 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tipografía global */
+/* ==========  BASE GLOBAL  ========== */
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  font-feature-settings: "liga" 1, "kern" 1;
-  -webkit-font-smoothing: antialiased;
+  @apply font-sans bg-light-bg text-[#1f2937] dark:bg-dark-bg dark:text-[#e6e6e6];
 }
 
-/* Scroll Reveal — DESACTIVADO PARA QUE SE VEA LA HOME */
+/* ==========  TIPOGRAFÍA  ========== */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-[#1f2937] dark:text-[#e6e6e6];
+  }
+
+  a {
+    @apply text-brand hover:text-brand-dark transition-colors;
+  }
+
+  strong {
+    @apply font-semibold;
+  }
+}
+
+/* ==========  SCROLLBAR (OPCIONAL)  ========== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #3a3a3a;
+}
+
+/* ==========  BOTONES Y ELEMENTOS INTERACTIVOS  ========== */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center
+           gap-2 px-4 py-2 rounded-lg font-medium
+           bg-brand text-white hover:bg-brand-dark
+           transition-all shadow-soft hover:shadow-soft-hover;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center
+           gap-2 px-4 py-2 rounded-lg font-medium
+           border border-brand text-brand
+           hover:bg-brand hover:text-white
+           transition-all;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border
+           border-[#d1d5db] dark:border-[#3a3a3a]
+           bg-soft-light dark:bg-soft-dark
+           text-[#1f2937] dark:text-[#e6e6e6]
+           focus:outline-none focus:ring-2 focus:ring-brand transition;
+  }
+
+  .card {
+    @apply bg-soft-light dark:bg-soft-dark
+           shadow-soft hover:shadow-soft-hover
+           border border-[#d1d5db] dark:border-[#3a3a3a]
+           rounded-xl transition-all;
+  }
+}
+
+/* ==========  UTILIDADES EXTRA  ========== */
+
+/* Efecto "reveal" usado en secciones con animación (opcional) */
 .reveal {
-  opacity: 1 !important;
-  transform: none !important;
-  transition: all 0.7s ease-out;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
-
-.reveal-visible {
+.reveal.visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-/* Sombras suaves */
-.shadow-soft {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-}
-
-.shadow-soft-hover:hover {
-  box-shadow: 0 12px 32px rgba(0,0,0,0.10);
-}
-
-/* Focus accesible */
-:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 3px;
-}
-
-/* ========================= */
-/*      LOGO SEGÚN TEMA      */
-/* ========================= */
-
-.logo-light {
-  display: block;
-}
-
-.logo-dark {
-  display: none;
-}
-
-.dark .logo-light {
-  display: none;
-}
-
-.dark .logo-dark {
-  display: block;
 }

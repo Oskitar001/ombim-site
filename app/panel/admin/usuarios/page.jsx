@@ -1,33 +1,28 @@
 import { requireAdmin } from "@/lib/checkAdmin";
+import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsuariosPage() {
-  const admin = await requireAdmin();
+  const auth = await requireAdmin();
 
-  // Igual que en pagos: si no es admin → fuera
-  if (!admin) {
-    return (
-      <div className="pt-32 px-6">
-        Acceso denegado.
-      </div>
-    );
+  if (!auth.ok) {
+    redirect(auth.redirect);
   }
 
-  // Obtener lista de usuarios desde Supabase Admin
   const { data: usuarios, error } = await supabaseAdmin.auth.admin.listUsers();
 
   if (error) {
     return (
-      <div className="pt-32 px-6">
+      <div className="p-10">
         Error al cargar usuarios.
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto pt-32 px-6">
+    <div className="max-w-5xl mx-auto p-10">
       <h1 className="text-2xl font-bold mb-4">Usuarios</h1>
 
       {!usuarios?.users?.length && <p>No hay usuarios.</p>}

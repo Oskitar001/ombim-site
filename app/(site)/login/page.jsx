@@ -17,7 +17,7 @@ export default function Page() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // ⭐ NECESARIO PARA GUARDAR LA COOKIE
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -29,8 +29,16 @@ export default function Page() {
         return;
       }
 
-      // Redirigir al panel
-      window.location.href = "/panel";
+      // ⭐ LEER EL ROL DEL USUARIO
+      const role = data.user?.user_metadata?.role;
+
+      // ⭐ REDIRECCIÓN SEGÚN EL ROL
+      if (role === "admin") {
+        window.location.href = "/panel/admin";
+      } else {
+        window.location.href = "/panel/user";
+      }
+
     } catch (err) {
       setError("Error inesperado. Inténtalo de nuevo.");
       setLoading(false);

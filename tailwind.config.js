@@ -4,38 +4,39 @@ module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
-    "./public/**/*.html"
   ],
   theme: {
     extend: {
       colors: {
+        // 🎨 Marca OMBIM
         brand: {
-          DEFAULT: "#2563eb",
-          dark: "#1e40af"
+          DEFAULT: "#2563eb", // azul principal (igual a Tailwind blue-600)
+          dark: "#1e40af",    // azul más oscuro
+          light: "#60a5fa",
         },
 
-        // 🌑 Modo oscuro premium (más claro, visible)
-        dark: {
-          bg: "#242424",
-          bgSoft: "#2e2e2e",
-          border: "#3a3a3a",
-          text: "#e6e6e6"
-        },
+        // 🎨 Fondo "Soft" personalizado (aparece mucho en tu código)
+        "light-bg": "#f3f4f6",
+        "light-bgSoft": "#f9fafb",
+        "dark-bg": "#242424",
+        "dark-bgSoft": "#1a1a1a",
 
-        // ☀️ Modo claro premium (más suave)
-        light: {
-          bg: "#f3f4f6",
-          bgSoft: "#ffffff",
-          border: "#d1d5db",
-          text: "#1f2937"
-        }
+        // Alias para compatibilidad con clases personalizadas (bg-[#f3f4f6]Soft)
+        soft: {
+          light: "#f3f4f6",
+          dark: "#1a1a1a",
+        },
       },
 
       boxShadow: {
-        soft: "0 4px 20px rgba(0,0,0,0.08)",
-        "soft-hover": "0 6px 28px rgba(0,0,0,0.12)"
-      }
-    }
+        soft: "0 2px 8px rgba(0,0,0,0.05)",
+        "soft-hover": "0 4px 12px rgba(0,0,0,0.08)",
+      },
+
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };

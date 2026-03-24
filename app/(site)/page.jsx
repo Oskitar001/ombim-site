@@ -1,8 +1,8 @@
 "use client";
 
-import AboutSection from "../components/AboutSection";
-import TrustSection from "../components/TrustSection";
-import TestimonialsSection from "../components/TestimonialsSection";
+import AboutSection from "../../components/AboutSection";
+import TrustSection from "../../components/TrustSection";
+import TestimonialsSection from "../../components/TestimonialsSection";
 
 const apps = [
   {
@@ -38,14 +38,16 @@ export default function HomePage() {
         </a>
       </div>
 
-      {/* Fondo global */}
-      <div
+      {/* FONDO GLOBAL ARREGLADO */}
+      <main
         className="
           pb-20 min-h-screen 
           bg-[#f3f4f6] dark:bg-[#242424]
           bg-gradient-to-b from-light-bgSoft to-light-bg dark:from-dark-bg dark:to-dark-bg
         "
+        role="main"
       >
+        {/* EL BORDE AHORA ESTÁ EN EL CONTENEDOR, NO EN EL MAIN */}
         <div className="container mx-auto border-t border-[#d1d5db] dark:border-[#3a3a3a]">
 
           {/* HERO */}
@@ -166,7 +168,7 @@ export default function HomePage() {
           </div>
 
         </div>
-      </div>
+      </main>
     </>
   );
 }

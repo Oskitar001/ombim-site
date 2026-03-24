@@ -1,16 +1,23 @@
+// app/api/admin/usuarios/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../_utils";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
-  const { supabase } = auth;
   const body = await req.json();
 
-  const { error } = await supabase.from("usuarios").insert(body);
+  const { error } = await supabaseAdmin
+    .from("usuarios")
+    .insert(body);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 
   return NextResponse.json({ ok: true });
 }

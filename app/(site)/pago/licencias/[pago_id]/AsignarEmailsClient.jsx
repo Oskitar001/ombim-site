@@ -1,147 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-export default function AsignarEmailsClient({ pago_id }) {
-  const [pago, setPago] = useState(null);
-  const [licencias, setLicencias] = useState([]);
-  const [mensaje, setMensaje] = useState("");
+export default function AsignarEmailsClient({ pago }) {
+  const [emails, setEmails] = useState(
+    pago.licencias.map((l) => ({
+      licencia_id: l.id,
+      email_tekla: l.email_tekla ?? "",
+    }))
+  );
+
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/pagos/detalle?pago_id=${pago_id}`, {
-      credentials: "include",
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error);
-        } else {
-          setPago(data);
-          setLicencias(
-            (data.licencias || []).map((l) => ({
-              id: l.id,
-              email_tekla: l.email_tekla || "",
-            }))
-          );
-        }
-      });
-  }, [pago_id]);
+  function actualizarEmail(i, valor) {
+    setEmails((prev) =>
+      prev.map((item, idx) =>
+        idx === i ? { ...item, email_tekla: valor } : item
+      )
+    );
+  }
 
-  const updateEmail = (i, value) => {
-    const copy = [...licencias];
-    copy[i].email_tekla = value;
-    setLicencias(copy);
-  };
-
-  const guardarEmails = async () => {
+  async function guardar() {
+    setLoading(true);
+    setMsg("");
     setError("");
-    setMensaje("");
 
     const res = await fetch("/api/pagos/guardar-emails", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({
-        pago_id,
-        emails: licencias.map((l) => ({
-          licencia_id: l.id,
-          email_tekla: l.email_tekla,
-        })),
+        pago_id: pago.id,
+        emails,
       }),
     });
 
     const data = await res.json();
+    setLoading(false);
+
     if (!res.ok) {
-      setError(data.error || "Error al guardar emails");
+      setError(data.error ?? "Error guardando emails");
       return;
     }
 
-    setMensaje("Emails guardados correctamente.");
-  };
-
-  const notificarTransferencia = async () => {
-    setError("");
-    setMensaje("");
-
-    const res = await fetch("/api/pagos/notificar-transferencia", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ pago_id }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Error al notificar transferencia");
-      return;
-    }
-
-    setMensaje("Transferencia notificada. Revisaremos tu pago en breve.");
-  };
-
-  if (!pago && !error) {
-    return <div className="pt-32 px-6">Cargando...</div>;
-  }
-
-  if (error) {
-    return <div className="pt-32 px-6 text-red-600">{error}</div>;
+    setMsg("Emails guardados correctamente.");
   }
 
   return (
-    <div className="max-w-2xl mx-auto pt-32 px-6">
-      <h1 className="text-2xl font-bold mb-4">Asignar emails de Tekla</h1>
+    <section className="max-w-3xl mx-auto py-10 space-y-4">
+      <h1 className="text-2xl font-bold mb-4">Asignar Emails Tekla</h1>
 
-      <p className="mb-4">
-        Plugin: <strong>{pago.plugin_id}</strong>
-      </p>
+      {emails.map((item, i) => (
+        <div key={item.licencia_id}>
+          <label className="block font-semibold mb-1">
+            Licencia {item.licencia_id}
+          </label>
+          <input
+            className="border p-2 w-full rounded"
+            value={item.email_tekla}
+            onChange={(e) => actualizarEmail(i, e.target.value)}
+          />
+        </div>
+      ))}
 
-      {/* 🔵 DATOS PARA TRANSFERENCIA */}
-      <div className="bg-gray-100 p-4 rounded mb-6 border">
-        <h2 className="text-xl font-semibold mb-3">Datos para realizar la transferencia</h2>
-
-        <p><strong>Titular:</strong> Oscar Martinez Alonso</p>
-        <p><strong>IBAN:</strong> ES72 2100 2737 9002 0006 4372</p>
-        <p><strong>BIC/SWIFT:</strong> CAIXESBBXXX</p>
-        <p><strong>Concepto:</strong> Pago plugin Tekla – ID: {pago_id}</p>
-        <p><strong>Importe:</strong> {pago.importe} €</p>
-
-        <p className="text-sm text-gray-600 mt-3">
-          Una vez realizada la transferencia, pulsa el botón “He realizado la transferencia”.
-        </p>
-      </div>
-
-      {/* 🔵 FORMULARIO DE EMAILS */}
-      <div className="space-y-3 mb-6">
-        {licencias.map((l, i) => (
-          <div key={l.id} className="flex gap-2">
-            <input
-              type="email"
-              value={l.email_tekla}
-              onChange={(e) => updateEmail(i, e.target.value)}
-              placeholder="Email Tekla"
-              className="border p-2 flex-1 rounded"
-            />
-          </div>
-        ))}
-      </div>
+      {error && <p className="text-red-600">{error}</p>}
+      {msg && <p className="text-green-600">{msg}</p>}
 
       <button
-        onClick={guardarEmails}
-        className="bg-blue-600 text-white px-4 py-2 rounded mr-3"
+        onClick={guardar}
+        disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
       >
-        Guardar emails
+        {loading ? "Guardando..." : "Guardar emails"}
       </button>
-
-      <button
-        onClick={notificarTransferencia}
-        className="bg-green-600 text-white px-4 py-2 rounded"
-      >
-        He realizado la transferencia
-      </button>
-
-      {mensaje && <p className="mt-4 text-green-600">{mensaje}</p>}
-      {error && <p className="mt-4 text-red-600">{error}</p>}
-    </div>
+    </section>
   );
 }

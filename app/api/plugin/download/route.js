@@ -1,3 +1,4 @@
+// app/api/plugin/download/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -10,8 +11,7 @@ export async function GET(req) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const plugin_id = searchParams.get("plugin_id");
+  const plugin_id = new URL(req.url).searchParams.get("plugin_id");
 
   if (!plugin_id) {
     return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
@@ -24,16 +24,13 @@ export async function GET(req) {
     .single();
 
   if (error || !plugin?.archivo_url) {
-    return NextResponse.json(
-      { error: "Plugin no encontrado" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
   }
 
-  await supabase.from("descargas").insert({
-    user_id: userData.user.id,
-    plugin_id,
-  });
+  // Registrar descarga
+  await supabase
+    .from("descargas")
+    .insert({ user_id: userData.user.id, plugin_id });
 
   return NextResponse.redirect(plugin.archivo_url);
 }

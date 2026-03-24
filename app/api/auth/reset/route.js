@@ -1,3 +1,4 @@
+// /app/api/auth/reset/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -9,23 +10,17 @@ export async function GET(req) {
     return NextResponse.redirect("/login?error=missing_token");
   }
 
-  const supabase = await supabaseServer();
+  const supabase = supabaseServer();
 
-  // Verificar email
-  const { data, error } = await supabase.auth.verifyOtp({
+  const { error } = await supabase.auth.verifyOtp({
     token,
     email,
-    type: "email"
+    type: "email",
   });
 
   if (error) {
-    console.error("VERIFY ERROR:", error);
     return NextResponse.redirect("/login?error=verify_failed");
   }
 
-  // Obtener sesión (si Supabase la genera)
-  const { data: sessionData } = await supabase.auth.getSession();
-
-  // Redirigir al panel
   return NextResponse.redirect("/panel");
 }

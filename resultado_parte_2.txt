@@ -1,0 +1,2000 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-datos\MisDatosClient.jsx
+============================================================
+
+// /app/panel/mis-datos/MisDatosClient.jsx
+"use client";
+
+import { useState } from "react";
+
+export default function MisDatosClient({ initialData }) {
+  const [form, setForm] = useState({
+    nombre: initialData?.nombre ?? "",
+    nif: initialData?.nif ?? "",
+    direccion: initialData?.direccion ?? "",
+    ciudad: initialData?.ciudad ?? "",
+    cp: initialData?.cp ?? "",
+    pais: initialData?.pais ?? "",
+    telefono: initialData?.telefono ?? "",
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+
+  async function submit(e) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg("");
+    setError("");
+
+    const res = await fetch("/api/facturacion/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Error guardando datos");
+    } else {
+      setMsg("Datos guardados correctamente.");
+    }
+
+    setSaving(false);
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4 max-w-lg">
+      {Object.entries({
+        nombre: "Nombre o empresa",
+        nif: "NIF / CIF",
+        direccion: "Dirección",
+        ciudad: "Ciudad",
+        cp: "Código postal",
+        pais: "País",
+        telefono: "Teléfono",
+      }).map(([key, label]) => (
+        <div key={key}>
+          <label className="block mb-1">{label}</label>
+          <input
+            type="text"
+            name={key}
+            value={form[key]}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, [key]: e.target.value }))
+            }
+            className="border p-2 rounded w-full"
+          />
+        </div>
+      ))}
+
+      <button className="bg-blue-600 text-white px-4 py-2 rounded">
+        {saving ? "Guardando…" : "Guardar datos"}
+      </button>
+
+      {msg && <p className="text-green-600">{msg}</p>}
+      {error && <p className="text-red-600">{error}</p>}
+    </form>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-datos\page.jsx
+============================================================
+
+// /app/panel/mis-datos/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+import MisDatosClient from "./MisDatosClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisDatosPage() {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return <p>Debes iniciar sesión.</p>;
+  }
+
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", userData.user.id)
+    .maybeSingle();
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Datos de facturación</h1>
+      <MisDatosClient initialData={facturacion ?? {}} />
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-descargas\page.jsx
+============================================================
+
+// /app/panel/mis-descargas/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function MisDescargas() {
+  const [user, setUser] = useState(null);
+  const [descargas, setDescargas] = useState([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.user) router.push("/login");
+        else setUser(data.user);
+      });
+
+    fetch("/api/download/history")
+      .then((res) => res.json())
+      .then((data) => setDescargas(data ?? []));
+  }, [router]);
+
+  if (!user) return <p>Cargando…</p>;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis descargas</h1>
+
+      {!descargas.length && <p>No has descargado nada todavía.</p>}
+
+      {descargas.map((d) => (
+        <div key={d.id}>
+          <p><strong>Plugin:</strong> {d.plugin_nombre}</p>
+          <p><strong>Fecha:</strong> {d.fecha}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-facturas\page.jsx
+============================================================
+
+// /app/panel/mis-facturas/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisFacturasPage() {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return <p>Debes iniciar sesión para ver tus facturas.</p>;
+  }
+
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("id, plugin_id, fecha, estado, plugins(nombre)")
+    .eq("user_id", userData.user.id)
+    .eq("estado", "aprobado")
+    .order("fecha", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis facturas</h1>
+
+      {!pagos?.length && <p>No tienes facturas todavía.</p>}
+
+      {(pagos ?? []).map((p) => (
+        <div key={p.id} className="border p-4 rounded mb-4">
+          <p>
+            <strong>Plugin:</strong> {p.plugins?.nombre ?? p.plugin_id}
+          </p>
+
+          <p>
+            <strong>Fecha:</strong>{" "}
+            {new Date(p.fecha).toLocaleString()}
+          </p>
+
+          {/* BOTÓN DESCARGAR FACTURA */}
+          <form
+            action={`/api/facturacion/pdf?pago_id=${p.id}`}
+            method="GET"
+            className="mt-2"
+          >
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
+            >
+              Descargar factura
+            </button>
+          </form>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-licencias\page.jsx
+============================================================
+
+// /app/panel/mis-licencias/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function MisLicenciasPage() {
+  const [licencias, setLicencias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/licencias/mias");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error ?? "Error cargando licencias");
+          return;
+        }
+
+        const data = await res.json();
+        setLicencias(data);
+      } catch {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    cargar();
+  }, []);
+
+  if (loading) return <p>Cargando licencias…</p>;
+  if (error) return <p>{error}</p>;
+
+  if (!licencias.length) {
+    return (
+      <div>
+        <h1 className="text-xl font-bold mb-4">Mis licencias</h1>
+        <p>No tienes licencias todavía.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis licencias</h1>
+
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th>Plugin</th>
+            <th>Email Tekla</th>
+            <th>Estado</th>
+            <th>Activaciones</th>
+            <th>Creada</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {licencias.map((l) => (
+            <tr key={l.id}>
+              <td>{l.plugin_nombre}</td>
+              <td>{l.email_tekla || "—"}</td>
+              <td>{l.estado}</td>
+              <td>{l.activaciones_usadas}/{l.max_activaciones}</td>
+              <td>{new Date(l.fecha_creacion).toLocaleDateString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\page.jsx
+============================================================
+
+// /app/panel/mis-pagos/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+import PagosClient from "./PagosClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisPagosPage() {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) return <p>No autenticado</p>;
+
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("*, plugins(nombre)")
+    .eq("user_id", userData.user.id)
+    .order("fecha", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis pagos</h1>
+      <PagosClient pagos={pagos ?? []} />
+    </div>
+  );
+}
+``
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\PagosClient.jsx
+============================================================
+
+// /app/panel/mis-pagos/PagosClient.jsx
+"use client";
+import Link from "next/link";
+
+export default function PagosClient({ pagos }) {
+  if (!pagos.length) return <p>No tienes pagos registrados.</p>;
+
+  return (
+    <div className="space-y-4">
+      {pagos.map((pago) => (
+        <div key={pago.id} className="border p-4 rounded">
+          <p><strong>Plugin:</strong> {pago.plugins?.nombre ?? pago.plugin_id}</p>
+          <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
+          <p><strong>Estado:</strong> {pago.estado}</p>
+          <p>{new Date(pago.fecha).toLocaleString()}</p>
+
+          <Link
+            href={`/panel/mis-pagos/${pago.id}`}
+            className="underline text-blue-600"
+          >
+            Ver detalles
+          </Link>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\page.jsx
+============================================================
+
+// /app/panel/mis-pagos/[id]/page.jsx
+import PagoClient from "./PagoClient";
+
+export default function PagoPage({ params }) {
+  return <PagoClient pagoId={params.id} />;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\PagoClient.jsx
+============================================================
+
+// /app/panel/mis-pagos/[id]/PagoClient.jsx
+"use client";
+import { useEffect, useState } from "react";
+
+export default function PagoClient({ pagoId }) {
+  const [pago, setPago] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error ?? "Error cargando pago");
+          return;
+        }
+
+        setPago(data);
+      } catch {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    cargar();
+  }, [pagoId]);
+
+  if (loading) return <p>Cargando pago…</p>;
+  if (error) return <p>{error}</p>;
+  if (!pago) return <p>Pago no encontrado.</p>;
+
+  const { licencias = [], facturacion } = pago;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Detalle del pago</h1>
+
+      <p><strong>ID:</strong> {pago.id}</p>
+      <p><strong>Estado:</strong> {pago.estado}</p>
+      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
+      {pago.fecha && (
+        <p><strong>Fecha:</strong> {new Date(pago.fecha).toLocaleString()}</p>
+      )}
+
+      <h3 className="mt-6 font-bold">Licencias</h3>
+      {!licencias.length ? (
+        <p>No hay licencias asociadas.</p>
+      ) : (
+        <ul>
+          {licencias.map((l) => (
+            <li key={l.id}>
+              Email Tekla: {l.email_tekla ?? "—"} — Estado: {l.estado}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="mt-6 font-bold">Datos de facturación</h3>
+      {!facturacion ? (
+        <p>No hay datos guardados.</p>
+      ) : (
+        <div>
+          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
+          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
+          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
+          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
+          <p><strong>País:</strong> {facturacion.pais}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-plugins\page.jsx
+============================================================
+
+// /app/panel/mis-plugins/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisPluginsPage() {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) return <p>Debes iniciar sesión para ver tus plugins.</p>;
+
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("id, plugin_id, estado, fecha, cantidad_licencias, plugins(nombre, descripcion)")
+    .eq("user_id", userData.user.id)
+    .neq("estado", "pendiente");
+
+  const pluginIds = [...new Set((pagos ?? []).map((p) => p.plugin_id))];
+
+  const { data: licencias } = await supabase
+    .from("licencias")
+    .select("*")
+    .in("plugin_id", pluginIds.length ? pluginIds : ["00000000"]);
+
+  const licByPlugin = (licencias ?? []).reduce((acc, l) => {
+    acc[l.plugin_id] = acc[l.plugin_id] || [];
+    acc[l.plugin_id].push(l);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis plugins</h1>
+
+      {!pagos?.length && <p>No has comprado plugins todavía.</p>}
+
+      {(pagos ?? []).map((p) => {
+        const plugin = p.plugins;
+        const lic = licByPlugin[p.plugin_id] ?? [];
+
+        return (
+          <div key={p.id} className="border p-4 mb-4 rounded">
+            <h2 className="text-lg font-bold">{plugin?.nombre ?? "Plugin"}</h2>
+
+            <p>{plugin?.descripcion}</p>
+            <p>Compra: {new Date(p.fecha).toLocaleString()}</p>
+            <p>Estado: {p.estado}</p>
+
+            <h3 className="font-bold mt-4">Licencias asociadas</h3>
+            {!lic.length ? (
+              <p>No hay licencias asociadas todavía.</p>
+            ) : (
+              <ul>
+                {lic.map((l) => (
+                  <li key={l.id}>
+                    {l.email_tekla} — {l.estado} — {l.activaciones_usadas}/{l.max_activaciones}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\page.jsx
+============================================================
+
+export const dynamic = "force-dynamic";
+
+export default function PanelHome() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">Bienvenido al panel</h1>
+      <p>Selecciona una sección del menú.</p>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\panel-auth.jsx
+============================================================
+
+"use server";
+
+import { supabaseServer } from "@/lib/supabaseServer";
+import { redirect } from "next/navigation";
+
+export default async function PanelAuth({ children }) {
+  const supabase = supabaseServer();
+  const { data } = await supabase.auth.getUser();
+
+  if (!data?.user) {
+    redirect("/login");
+  }
+
+  return <>{children}</>;
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
+============================================================
+
+import { requireUser } from "@/lib/requireUser";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+
+export default async function UserLayout({ children }) {
+  const auth = await requireUser();
+  if (!auth.ok) return null;
+
+  return (
+    <div className="flex min-h-screen">
+      <aside className="w-64 bg-gray-100 dark:bg-gray-900 p-6 space-y-4">
+        <h2 className="text-xl font-bold mb-4">Mi panel</h2>
+
+        <nav className="space-y-2 flex flex-col">
+
+          <Link href="/panel/user">Inicio</Link>
+          <Link href="/panel/mis-licencias">Mis licencias</Link>
+          <Link href="/panel/mis-plugins">Mis plugins</Link>
+          <Link href="/panel/mis-descargas">Mis descargas</Link>
+          <Link href="/panel/mis-pagos">Mis pagos</Link>
+          <Link href="/panel/mis-facturas">Mis facturas</Link>
+          <Link href="/panel/mis-datos">Datos de facturación</Link>
+
+        </nav>
+      </aside>
+
+      <main className="flex-1 p-8">{children}</main>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\page.jsx
+============================================================
+
+// /app/panel/user/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export const dynamic = "force-dynamic";
+
+export default async function PanelUsuarioPage() {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return <p>Debes iniciar sesión.</p>;
+  }
+
+  const user = userData.user;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Panel de usuario</h1>
+
+      <p><strong>Nombre:</strong> {user.user_metadata?.nombre ?? user.email}</p>
+      <p><strong>Email:</strong> {user.email}</p>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
+============================================================
+
+
+"use client";
+
+export default function AboutSection() {
+  return (
+    <section className='py-20 max-w-5xl mx-auto px-6'>
+      <h2 className='text-3xl font-bold mb-6 text-center'>Sobre mí</h2>
+      <p className='text-gray-700 dark:text-gray-300 leading-relaxed mb-4'>Soy Óscar Martínez…</p>
+      <p className='text-gray-700 dark:text-gray-300 leading-relaxed'>Actualmente desarrollo plugins…</p>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
+  const [tipo, setTipo] = useState(tipoActual);
+  const [loading, setLoading] = useState(false);
+
+  async function guardar() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/tipo", {
+      method: "POST",
+      body: JSON.stringify({ id, tipo_id: tipo }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-bold mb-2">Tipo de licencia</h3>
+
+      <select
+        className="border p-2 w-full"
+        value={tipo}
+        onChange={(e) => setTipo(e.target.value)}
+      >
+        {tipos.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.nombre}
+          </option>
+        ))}
+      </select>
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+        onClick={guardar}
+        disabled={loading}
+      >
+        Guardar tipo
+      </button>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CrearLicenciaModal.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function CrearLicenciaModal({ onClose, onCreated }) {
+  const [email, setEmail] = useState("");
+  const [plugin, setPlugin] = useState("");
+  const [notas, setNotas] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function crear() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/crear", {
+      method: "POST",
+      body: JSON.stringify({
+        email_tekla: email,
+        plugin_id: plugin,
+        notas,
+      }),
+    });
+
+    const data = await res.json();
+
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onCreated();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+      <div className="bg-[#f3f4f6]Soft p-6 rounded shadow w-96">
+        <h2 className="text-xl font-bold mb-4">Crear licencia</h2>
+
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="Email Tekla"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="Plugin ID"
+          value={plugin}
+          onChange={(e) => setPlugin(e.target.value)}
+        />
+
+        <textarea
+          className="border p-2 w-full mb-2"
+          placeholder="Notas"
+          value={notas}
+          onChange={(e) => setNotas(e.target.value)}
+        />
+
+        <div className="flex justify-end gap-2">
+          <button className="px-4 py-2" onClick={onClose}>
+            Cancelar
+          </button>
+
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={crear}
+            disabled={loading}
+          >
+            {loading ? "Creando..." : "Crear"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\EditarNotas.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function EditarNotas({ id, notasIniciales, onUpdated }) {
+  const [notas, setNotas] = useState(notasIniciales);
+  const [loading, setLoading] = useState(false);
+
+  async function guardar() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/notas", {
+      method: "POST",
+      body: JSON.stringify({ id, notas }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-bold mb-2">Notas</h3>
+
+      <textarea
+        className="border p-2 w-full h-32"
+        value={notas}
+        onChange={(e) => setNotas(e.target.value)}
+      />
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+        onClick={guardar}
+        disabled={loading}
+      >
+        Guardar notas
+      </button>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaAcciones.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function LicenciaAcciones({ id, onUpdated }) {
+  const [loading, setLoading] = useState(false);
+
+  async function call(endpoint, body = {}) {
+    setLoading(true);
+
+    const res = await fetch(`/api/admin/licencias/${endpoint}`, {
+      method: "POST",
+      body: JSON.stringify({ id, ...body }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6 flex flex-wrap gap-3">
+      <button
+        className="bg-red-600 text-white px-4 py-2 rounded"
+        onClick={() => call("bloquear")}
+        disabled={loading}
+      >
+        Bloquear
+      </button>
+
+      <button
+        className="bg-yellow-600 text-white px-4 py-2 rounded"
+        onClick={() => call("trial")}
+        disabled={loading}
+      >
+        Activar Trial
+      </button>
+
+      <button
+        className="bg-green-600 text-white px-4 py-2 rounded"
+        onClick={() => call("ampliar")}
+        disabled={loading}
+      >
+        Ampliar 30 días
+      </button>
+
+      <button
+        className="bg-purple-600 text-white px-4 py-2 rounded"
+        onClick={() => call("reset-activaciones")}
+        disabled={loading}
+      >
+        Reset Activaciones
+      </button>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaDetalle.jsx
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciasTable.jsx
+============================================================
+
+export default function LicenciasTable({ licencias }) {
+  return (
+    <table className="w-full bg-[#f3f4f6]Soft shadow rounded">
+      <thead>
+        <tr className="bg-[#f3f4f6]Soft text-left">
+          <th className="p-2">Email Tekla</th>
+          <th className="p-2">Plugin</th>
+          <th className="p-2">Estado</th>
+          <th className="p-2">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {licencias.map((l) => (
+          <tr key={l.id} className="border-t">
+            <td className="p-2">{l.email_tekla}</td>
+            <td className="p-2">{l.plugin_id}</td>
+            <td className="p-2">{l.estado}</td>
+            <td className="p-2">
+              <a
+                href={`/admin/licencias/${l.id}`}
+                className="text-blue-600 underline"
+              >
+                Ver
+              </a>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\StatsCard.jsx
+============================================================
+
+export default function StatsCard({ title, value }) {
+  return (
+    <div className="bg-[#f3f4f6]Soft shadow rounded p-4">
+      <h4 className="text-[#1f2937] text-sm">{title}</h4>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Contact.jsx
+============================================================
+
+export default function Contact() {
+  return (
+    <section id="contacto" className="py-24 max-w-4xl mx-auto">
+      <h2 className="text-4xl font-bold text-center mb-10">Contacto</h2>
+
+      <p className="text-center text-[#1f2937] mb-10">
+        ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?  
+        Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
+      </p>
+
+      <form method="POST" action="/api/contact" className="grid gap-6">
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre"
+          className="p-3 border rounded-lg"
+          required
+        />
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          className="p-3 border rounded-lg"
+          required
+        />
+
+        <textarea
+          name="mensaje"
+          placeholder="Mensaje"
+          rows="5"
+          className="p-3 border rounded-lg"
+          required
+        ></textarea>
+
+        <button
+          type="submit"
+          className="px-6 py-3 bg-blue-600 text-black rounded-lg font-semibold hover:bg-blue-700 transition"
+        >
+          Enviar mensaje
+        </button>
+      </form>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Demos.jsx
+============================================================
+
+// components/Demos.jsx
+
+"use client";
+
+export default function Demos() {
+  const demos = [
+    { title: "Automatización #1", file: "/videos/demo1.mp4" },
+    { title: "Generador de Perfiles", file: "/videos/demo2.mp4" },
+    { title: "Plugin para Tekla Structures", file: "/videos/demo3.mp4" },
+  ];
+
+  return (
+    <section id="demos" className="py-20 bg-[#f3f4f6]">
+      <div className="container mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12">
+          Demos de mis aplicaciones
+        </h2>
+        <p className="text-center text-[#1f2937] max-w-2xl mx-auto mb-12">
+          Estas son algunas de las automatizaciones y herramientas desarrolladas para optimizar el uso de Tekla Structures.
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-10">
+          {demos.map((d, i) => (
+            <div key={i} className="p-5 bg-[#f3f4f6]Soft rounded-2xl shadow">
+              <video
+                className="w-full rounded-xl mb-4"
+                autoPlay
+                loop
+                muted
+                playsInline
+              >
+                <source src={d.file} type="video/mp4" />
+              </video>
+              <h3 className="text-xl font-semibold text-center">{d.title}</h3>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Footer.jsx
+============================================================
+
+import Link from "next/link";
+
+export default function Footer() {
+  return (
+    <footer
+      className="
+        mt-32 py-14
+        bg-[#f3f4f6]Soft text-[#1f2937]
+        dark:bg-[#242424] dark:text-[#e6e6e6]
+        border-t border-[#d1d5db] dark:border-[#3a3a3a]
+      "
+    >
+      <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-10">
+
+        {/* LOGO + DESCRIPCIÓN */}
+        <div>
+          <h3 className="text-2xl font-bold mb-3 text-[#1f2937] dark:text-[#e6e6e6]">
+            OMBIM
+          </h3>
+          <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed">
+            Modelado 3D, automatizaciones, plugins y software a medida para Tekla Structures.
+            Aceleramos tu flujo BIM con soluciones profesionales.
+          </p>
+        </div>
+
+        {/* ENLACES RÁPIDOS */}
+        <div>
+          <h4 className="text-lg font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+            Navegación
+          </h4>
+          <ul className="space-y-2">
+            <li><Link href="/" className="hover:text-brand transition">Inicio</Link></li>
+            <li><Link href="/sobre-mi" className="hover:text-brand transition">Sobre mí</Link></li>
+            <li><Link href="/servicios" className="hover:text-brand transition">Servicios</Link></li>
+            <li><Link href="/plugins" className="hover:text-brand transition">Plugins</Link></li>
+            <li><Link href="/demos" className="hover:text-brand transition">Demos</Link></li>
+            <li><Link href="/contacto" className="hover:text-brand transition">Contacto</Link></li>
+          </ul>
+        </div>
+
+        {/* CONTACTO */}
+        <div>
+          <h4 className="text-lg font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+            Contacto
+          </h4>
+          <ul className="space-y-2">
+            <li>
+              <a
+                href="mailto:o.martinez@ombim.com"
+                className="text-[#1f2937] dark:text-[#e6e6e6] hover:text-brand transition"
+              >
+                📧 o.martinez@ombim.com
+              </a>
+            </li>
+            <li className="text-[#1f2937] dark:text-[#e6e6e6]">📍 España</li>
+          </ul>
+
+          {/* REDES SOCIALES */}
+          <div className="flex gap-5 mt-5">
+
+            {/* LinkedIn */}
+            <a
+              href="https://www.linkedin.com/in/oscar-martinez-alonso-481065146"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="transition text-[#1f2937] dark:text-[#e6e6e6] hover:text-[#0A66C2]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4V24h-4V8zm7.5 0h3.8v2.2h.1c.5-1 1.8-2.2 3.8-2.2 4 0 4.7 2.6 4.7 6V24h-4v-8.2c0-2 0-4.5-2.8-4.5s-3.2 2.2-3.2 4.3V24h-4V8z"/>
+              </svg>
+            </a>
+
+            {/* WhatsApp */}
+            <a
+              href="https://wa.me/34682288465"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              className="transition text-[#1f2937] dark:text-[#e6e6e6] hover:text-[#25D366]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.52 3.48A11.86 11.86 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.17 1.6 5.98L0 24l6.2-1.63A12 12 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.48-8.52zM12 22c-1.8 0-3.55-.48-5.08-1.38l-.36-.21-3.68.97.98-3.59-.24-.37A9.94 9.94 0 0 1 2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm5.2-7.3c-.28-.14-1.65-.82-1.9-.91-.25-.1-.43-.14-.62.14-.18.28-.71.91-.87 1.1-.16.18-.32.2-.6.07-.28-.14-1.18-.43-2.25-1.38-.83-.74-1.38-1.65-1.54-1.93-.16-.28-.02-.43.12-.57.12-.12.28-.32.42-.48.14-.16.18-.28.28-.46.1-.18.05-.34-.02-.48-.07-.14-.62-1.5-.85-2.06-.22-.53-.45-.46-.62-.46h-.53c-.18 0-.48.07-.73.34-.25.28-.96.94-.96 2.28 0 1.34.98 2.63 1.12 2.81.14.18 1.93 2.95 4.68 4.14 2.75 1.18 2.75.79 3.25.74.5-.05 1.65-.67 1.88-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/>
+              </svg>
+            </a>
+
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center text-gray-500 dark:text-gray-400 text-sm mt-10 border-t border-[#d1d5db] dark:border-[#3a3a3a] pt-6">
+        © {new Date().getFullYear()} OMBIM — Todos los derechos reservados.
+      </div>
+    </footer>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
+============================================================
+
+export default function Hero() {
+  return (
+    <section className="py-32 text-center max-w-4xl mx-auto">
+      <h1 className="text-4xl md:text-5xl font-bold mb-6">
+        Especialista en Tekla Structures con más de 23 años de experiencia real
+      </h1>
+
+      <p className="text-[#1f2937] text-lg mb-8">
+        Ayudo a ingenierías, constructoras y oficinas técnicas a modelar, documentar y optimizar sus proyectos mediante automatizaciones y plugins personalizados.
+      </p>
+
+      <p className="text-xl font-semibold mb-10">
+        Experiencia real de obra + desarrollo avanzado para Tekla.
+      </p>
+
+      <div className="flex justify-center gap-4">
+        <a
+          href="#contacto"
+          className="px-6 py-3 bg-blue-600 text-black rounded-lg font-semibold hover:bg-blue-700 transition"
+        >
+          Contactar
+        </a>
+
+        <a
+          href="#servicios"
+          className="px-6 py-3 border border-gray-400 rounded-lg font-semibold hover:bg-[#f3f4f6] transition"
+        >
+          Ver servicios
+        </a>
+      </div>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
+============================================================
+
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+
+export default function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
+
+  const [theme, setTheme] = useState("light");
+
+  const menuRef = useRef(null);
+
+  // Cargar usuario
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        setUser(data.user);
+        setReady(true);
+      })
+      .catch(() => setReady(true));
+  }, []);
+
+  // Cargar tema
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") || "light";
+    setTheme(saved);
+    document.documentElement.classList.toggle("dark", saved === "dark");
+  }, []);
+
+  // Cambiar tema
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Cerrar menús al navegar
+  useEffect(() => {
+    setOpen(false);
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // Bloquear scroll en móvil
+  useEffect(() => {
+    document.body.classList.toggle("overflow-hidden", open);
+  }, [open]);
+
+  // Logout
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setMenuOpen(false);
+    setOpen(false);
+    router.push("/");
+  };
+
+  if (!ready) return null;
+
+  // Nombre
+  const nombre = user?.user_metadata?.nombre;
+
+  // Avatar
+  const avatar = nombre
+    ? nombre.charAt(0).toUpperCase()
+    : user?.email?.charAt(0).toUpperCase();
+
+  return (
+    <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] shadow-soft dark:shadow-none border-b border-[#d1d5db] dark:border-[#3a3a3a] fixed top-0 left-0 z-50">
+      <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
+
+        {/* LOGO */}
+        <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
+          <img
+            src="/logo-ombim.png"
+            alt="OMBIM Logo"
+            className="h-10 w-auto md:h-16 block dark:hidden"
+          />
+          <img
+            src="/logo-ombim-dark.png"
+            alt="OMBIM Logo Dark"
+            className="h-10 w-auto md:h-16 hidden dark:block"
+          />
+          <span className="text-xl md:text-3xl font-bold whitespace-nowrap text-[#1f2937] dark:text-[#e6e6e6]">
+            OMBIM
+          </span>
+        </Link>
+
+        {/* HAMBURGUESA */}
+        <button
+          className="md:hidden relative w-8 h-8 flex items-center justify-center"
+          onClick={() => setOpen(!open)}
+          aria-label="Abrir menú"
+        >
+          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-6 rotate-45 translate-y-0" : "w-7 -translate-y-2"}`}></span>
+          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-0 opacity-0" : "w-7 opacity-100"}`}></span>
+          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-6 -rotate-45 translate-y-0" : "w-7 translate-y-2"}`}></span>
+        </button>
+
+        {/* MENÚ ESCRITORIO */}
+        <div className="hidden md:flex gap-6 text-lg items-center text-[#1f2937] dark:text-[#e6e6e6]">
+          <Link href="/" className="hover:text-brand transition">Inicio</Link>
+          <Link href="/sobre-mi" className="hover:text-brand transition">Sobre mí</Link>
+          <Link href="/servicios" className="hover:text-brand transition">Servicios</Link>
+          <Link href="/plugins" className="hover:text-brand transition">Plugins</Link>
+          <Link href="/demos" className="hover:text-brand transition">Demos</Link>
+          <Link href="/contacto" className="hover:text-brand transition">Contacto</Link>
+
+          {/* Tema */}
+          <button
+            onClick={toggleTheme}
+            className="px-3 py-2 rounded-lg bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
+          >
+            {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
+          </button>
+
+          {/* Usuario */}
+          {user ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2 hover:text-brand transition"
+              >
+                <div className="w-9 h-9 bg-brand text-white rounded-full flex items-center justify-center font-bold">
+                  {avatar}
+                </div>
+                <span>{user.user_metadata?.nombre}</span>
+              </button>
+
+              <div
+                className={`
+                  absolute right-0 mt-2 bg-[#ffffff] dark:bg-[#2e2e2e]
+                  border border-[#d1d5db] dark:border-[#3a3a3a]
+                  shadow-soft rounded-lg p-3 w-40 z-50
+                  transition-all duration-200 origin-top-right
+                  ${menuOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
+                `}
+              >
+                <Link
+                  href="/panel"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 hover:bg-[#f3f4f6] dark:hover:bg-[#3a3a3a] rounded"
+                >
+                  Panel
+                </Link>
+
+                <button
+                  onClick={logout}
+                  className="block w-full text-left px-3 py-2 hover:bg-[#f3f4f6] dark:hover:bg-[#3a3a3a] rounded"
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] px-4 py-2 rounded-lg font-medium hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
+            >
+              Inicia sesión o regístrate
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* MENÚ MÓVIL */}
+      {open && (
+        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#2e2e2e] shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6] border-t border-[#d1d5db] dark:border-[#3a3a3a]">
+          <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
+          <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
+          <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
+          <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
+          <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
+          <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
+
+          <button onClick={() => { toggleTheme(); setOpen(false); }}>
+            {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
+          </button>
+
+          {user ? (
+            <>
+              <Link href="/panel" onClick={() => setOpen(false)}>Panel</Link>
+              <button onClick={logout}>Cerrar sesión</button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] px-4 py-2 rounded-lg font-medium hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
+            >
+              Inicia sesión o regístrate
+            </Link>
+          )}
+        </div>
+      )}
+    </nav>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Projects.jsx
+============================================================
+
+const items = [
+  { title: 'Proyecto 1', desc: 'Descripción breve del proyecto realizado.' },
+  { title: 'Proyecto 2', desc: 'Descripción breve del proyecto realizado.' },
+  { title: 'Proyecto 3', desc: 'Descripción breve del proyecto realizado.' },
+]
+export default function Projects() {
+  return (
+    <section id="proyectos" className="bg-[#f3f4f6] py-20">
+      <div className="container mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12">Proyectos</h2>
+        <div className="grid md:grid-cols-3 gap-8">
+          {items.map((p, i) => (
+            <div key={i} className="p-6 rounded-2xl border bg-[#f3f4f6]Soft shadow-sm text-center">
+              <h4 className="font-semibold mb-2">{p.title}</h4>
+              <p className="text-[#1f2937]">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\RevealObserver.jsx
+============================================================
+
+"use client";
+
+import { useEffect } from "react";
+
+export default function RevealObserver() {
+  useEffect(() => {
+    const revealElements = document.querySelectorAll(".reveal");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.15,       // % visible antes de activar
+        rootMargin: "0px 0px -50px 0px", // para que aparezca un poco antes
+      }
+    );
+
+    revealElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
+  return null;
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Services.jsx
+============================================================
+
+export default function Services() {
+  return (
+    <section id="servicios" className="py-24 bg-[#f3f4f6]">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12">Servicios</h2>
+
+        <div className="grid md:grid-cols-2 gap-10">
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Modelado BIM en Tekla Structures</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Modelado de estructuras metálicas y de hormigón</li>
+              <li>• Detallado constructivo</li>
+              <li>• Gestión de revisiones</li>
+              <li>• Coordinación con ingeniería y obra</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Planos y documentación técnica</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Planos de fabricación</li>
+              <li>• Planos de montaje</li>
+              <li>• Listados y planillas de producción</li>
+              <li>• Cuadros de materiales</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Automatizaciones y plugins para Tekla</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Desarrollo de plugins a medida</li>
+              <li>• Automatización de tareas repetitivas</li>
+              <li>• Generación automática de planos y listados</li>
+              <li>• Herramientas internas para ingenierías y constructoras</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Colaboración externa</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Refuerzo de equipos técnicos</li>
+              <li>• Soporte en picos de trabajo</li>
+              <li>• Trabajo por proyecto o por horas</li>
+              <li>• Comunicación directa y flexible</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
+============================================================
+
+
+"use client";
+
+export default function TestimonialsSection() {
+  return (
+    <section className='reveal max-w-3xl mx-auto text-center mb-24 px-6'>
+      <h2 className='text-3xl font-bold mb-6'>Lo que dicen nuestros clientes</h2>
+      <blockquote className='bg-[#f3f4f6] dark:bg-[#1a1a1a] p-6 rounded-xl border'>
+        <p className='italic'>“Las automatizaciones de OMBIM nos han ahorrado decenas de horas…”</p>
+        <footer className='mt-4 text-gray-600 dark:text-gray-400'>— Responsable BIM</footer>
+      </blockquote>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
+============================================================
+
+
+"use client";
+
+export default function TrustSection() {
+  return (
+    <section className='reveal max-w-4xl mx-auto grid md:grid-cols-3 gap-10 text-center mb-24 px-6'>
+      <div><h3 className='text-xl font-semibold mb-2'>+10 años de experiencia</h3><p>Desarrollando soluciones BIM…</p></div>
+      <div><h3 className='text-xl font-semibold mb-2'>Software usado por empresas reales</h3><p>Más de 40 empresas usan…</p></div>
+      <div><h3 className='text-xl font-semibold mb-2'>Soluciones a medida</h3><p>Automatizaciones personalizadas…</p></div>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Button.jsx
+============================================================
+
+export default function Button({ children, className = "", ...props }) {
+  return (
+    <button
+      {...props}
+      className={`
+        px-4 py-2.5 rounded-xl font-medium
+        bg-brand text-white
+        hover:bg-brand-dark
+        shadow-soft hover:shadow-soft-hover
+        transition-all
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Input.jsx
+============================================================
+
+export default function Input({ className = "", ...props }) {
+  return (
+    <input
+      {...props}
+      className={`
+        w-full px-3 py-2 rounded-lg
+        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        text-[#1f2937] dark:text-[#e6e6e6]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
+        focus:outline-none focus:ring-2 focus:ring-brand
+        transition
+        ${className}
+      `}
+    />
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Select.jsx
+============================================================
+
+export default function Select({ children, className = "", ...props }) {
+  return (
+    <select
+      {...props}
+      className={`
+        w-full px-4 py-2.5 rounded-xl
+        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        text-[#1f2937] dark:text-[#e6e6e6]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
+        shadow-sm
+        hover:border-brand
+        focus:outline-none focus:ring-2 focus:ring-brand
+        transition-all
+        ${className}
+      `}
+    >
+      {children}
+    </select>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useAccionesLicencia.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useCrearLicencia.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useLicencias.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useUser.js
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function useUser() {
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchUser() {
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include", // ⭐ NECESARIO PARA LEER LA COOKIE
+      });
+
+      const data = await res.json();
+
+      if (data?.user) {
+        setUser(data.user);
+        setRole(data.role);
+      } else {
+        setUser(null);
+        setRole(null);
+      }
+    } catch (err) {
+      setUser(null);
+      setRole(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  return { user, role, loading, refresh: fetchUser };
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\checkAdmin.js
+============================================================
+
+// lib/checkAdmin.js
+// Validación segura para administradores SSR
+
+import { supabaseServer } from "./supabaseServer";
+
+export async function requireAdmin() {
+  const supabase = supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    return { ok: false, redirect: "/login" };
+  }
+
+  const role = data.user.user_metadata?.role ?? "user";
+
+  if (role !== "admin") {
+    return { ok: false, redirect: "/panel/user" };
+  }
+
+  return { ok: true, user: data.user };
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
+============================================================
+
+// lib/email.js
+// Envío profesional de emails con Resend
+
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function enviarEmail(to, subject, html) {
+  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) {
+    console.error("❌ RESEND no está configurado correctamente");
+    return false;
+  }
+
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM,
+      to,
+      subject,
+      html,
+    });
+
+    return true;
+  } catch (err) {
+    console.error("❌ Error enviando email:", err);
+    return false;
+  }
+}
+
+export function plantillaTransferenciaNotificada(usuario, pago) {
+  const totalLicencias = pago.licencias?.length ?? 0;
+  const licenciasAsignadas = pago.licencias?.filter(l => l.email_tekla)?.length ?? 0;
+  const licenciasPendientes = totalLicencias - licenciasAsignadas;
+
+  return `
+    <h2>Transferencia notificada</h2>
+    <p>El usuario ${usuario} ha notificado una transferencia.</p>
+
+    <h3>Datos del pago</h3>
+    <p>ID del pago: ${pago.id}</p>
+    <p>Plugin: ${pago.plugin_id}</p>
+    <p>Importe: ${pago.importe ?? "—"} €</p>
+    <p>Fecha: ${new Date(pago.created_at).toLocaleString()}</p>
+
+    <h3>Licencias</h3>
+    <p>Total: ${totalLicencias}</p>
+    <p>Asignadas: ${licenciasAsignadas}</p>
+    <p>Pendientes: ${licenciasPendientes}</p>
+
+    <p><a href="https://ombim.com/admin/pagos/${pago.id}">Validar pago</a></p>
+  `;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
+============================================================
+
+// lib/logAdmin.js
+// Logging interno de acciones administrativas
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+export async function logAdminAction({ tipo, mensaje, user_id }) {
+  try {
+    await supabaseAdmin.from("admin_logs").insert([
+      {
+        tipo,
+        mensaje,
+        user_id,
+        fecha: new Date().toISOString(),
+      },
+    ]);
+  } catch (err) {
+    console.error("❌ Error guardando log admin:", err);
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\requireUser.js
+============================================================
+
+// lib/requireUser.js
+// Verifica que haya usuario logueado desde SSR
+
+import { supabaseServer } from "./supabaseServer";
+
+export async function requireUser() {
+  const supabase = supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    return { ok: false, redirect: "/login" };
+  }
+
+  return { ok: true, user: data.user };
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseAdmin.js
+============================================================
+
+// lib/supabaseAdmin.js
+// Cliente administrativo con validación y manejo de errores seguro.
+
+import { createClient } from "@supabase/supabase-js";
+
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  console.error("❌ Falta NEXT_PUBLIC_SUPABASE_URL en variables de entorno");
+}
+
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("❌ Falta SUPABASE_SERVICE_ROLE_KEY en variables de entorno");
+}
+
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseRoute.js
+============================================================
+
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export function supabaseRoute() {
+  const cookieStore = cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => cookieStore.get(name)?.value,
+        set: (name, value, options) =>
+          cookieStore.set(name, value, { ...options }),
+        remove: (name, options) =>
+          cookieStore.set(name, "", { ...options, maxAge: 0 }),
+      },
+    }
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseServer.js
+============================================================
+
+// lib/supabaseServer.js
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+
+export function supabaseServer() {
+  const cookieStore = cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          const cookie = cookieStore.get(name);
+          return cookie?.value;
+        },
+
+        set(name, value, options) {
+          try {
+            cookieStore.set({
+              name,
+              value,
+              httpOnly: true,
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+              path: "/",
+              ...options,
+            });
+          } catch (_) {
+            // Ignorado en Server Components (está permitido)
+          }
+        },
+
+        remove(name, options) {
+          try {
+            cookieStore.set({
+              name,
+              value: "",
+              maxAge: 0,
+              path: "/",
+              ...options,
+            });
+          } catch (_) {}
+        },
+      },
+    }
+  );
+}
+

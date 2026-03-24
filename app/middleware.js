@@ -1,53 +1,66 @@
+// middleware.js — versión compatible con Next.js 16
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
-  const { pathname } = request.nextUrl;
-  const cleaned = pathname.replace(/\/+/g, "/");
+  const url = request.nextUrl;
+  const { pathname } = url;
 
-  const hasSession =
-    request.cookies.get("sb-access-token") ||
-    request.cookies.get("supabase-auth-token");
-
+  // Cookies (Next 16 API)
+  const access = request.cookies.get("sb-access-token")?.value;
+  const refresh = request.cookies.get("supabase-auth-token")?.value;
   const role = request.cookies.get("sb-user-role")?.value;
 
-  // 🔒 Rutas protegidas (deben tener sesión)
-  const protectedRoutes = ["/panel", "/usuario", "/plugins", "/api/download"];
-  if (protectedRoutes.some((r) => cleaned.startsWith(r))) {
-    if (!hasSession) {
-      const url = new URL("/login", request.url);
+  const logged = access || refresh;
+
+  // Rutas protegidas para usuarios normales
+  const userProtected = [
+    "/panel",
+    "/panel/user",
+    "/panel/mis-",
+    "/pago",
+  ];
+
+  if (userProtected.some((r) => pathname.startsWith(r))) {
+    if (!logged) {
+      url.pathname = "/login";
       return NextResponse.redirect(url);
     }
   }
 
-  // 👑 Redirección automática de /panel según rol
-  if (cleaned === "/panel") {
-    if (role === "admin") {
-      return NextResponse.redirect(new URL("/panel/admin", request.url));
-    } else {
-      return NextResponse.redirect(new URL("/panel/user", request.url));
-    }
-  }
+  // Rutas solo para admin
+  const adminProtected = [
+    "/panel/admin",
+    "/api/admin",
+  ];
 
-  // 🔒 Solo admin
-  const adminRoutes = ["/admin", "/api/admin"];
-  if (adminRoutes.some((r) => cleaned.startsWith(r))) {
+  if (adminProtected.some((r) => pathname.startsWith(r))) {
     if (role !== "admin") {
-      const url = new URL("/panel", request.url);
+      url.pathname = "/panel/user";
       return NextResponse.redirect(url);
     }
+  }
+
+  // Redirección automática /panel según rol
+  if (pathname === "/panel") {
+    if (!logged) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    url.pathname = role === "admin"
+      ? "/panel/admin"
+      : "/panel/user";
+
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-// Rutas que activan este middleware
 export const config = {
   matcher: [
     "/panel/:path*",
-    "/usuario/:path*",
-    "/plugins/:path*",
-    "/api/download/:path*",
-    "/admin/:path*",
+    "/pago/:path*",
     "/api/admin/:path*",
   ],
 };

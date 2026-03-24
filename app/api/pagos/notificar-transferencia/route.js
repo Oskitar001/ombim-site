@@ -1,3 +1,4 @@
+// app/api/pagos/notificar-transferencia/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { enviarEmail, plantillaTransferenciaNotificada } from "@/lib/email";
@@ -10,54 +11,32 @@ export async function POST(req) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { pago_id } = body;
+  const { pago_id } = await req.json();
 
   if (!pago_id) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  const { data: pago, error: pagoError } = await supabase
+  const { data: pago } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
     .eq("id", pago_id)
     .single();
 
-  if (pagoError || !pago) {
-    return NextResponse.json(
-      { error: "No se encontró el pago" },
-      { status: 404 }
-    );
+  if (!pago) {
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
+  // Actualizar estado del pago
   await supabase
     .from("pagos")
     .update({ estado: "transferencia_notificada" })
     .eq("id", pago_id);
 
-  try {
-    const html = plantillaTransferenciaNotificada(userData.user.email, pago);
+  // Email al admin
+  const html = plantillaTransferenciaNotificada(userData.user.email, pago);
 
-    if (!process.env.ADMIN_EMAIL) {
-      console.error("ERROR: ADMIN_EMAIL no está definido en .env");
-      return NextResponse.json(
-        { error: "ADMIN_EMAIL no configurado" },
-        { status: 500 }
-      );
-    }
+  await enviarEmail(process.env.ADMIN_EMAIL, "Transferencia notificada", html);
 
-    await enviarEmail(
-      process.env.ADMIN_EMAIL,
-      "Transferencia notificada",
-      html
-    );
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("ERROR ENVIANDO EMAIL:", err);
-    return NextResponse.json(
-      { error: "Error enviando email", detalle: err.message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ ok: true });
 }

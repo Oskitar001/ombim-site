@@ -1,13 +1,15 @@
+// app/api/admin/usuarios/[id]/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../../_utils";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, { params }) {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+export async function GET(_, { params }) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
-  const { supabase } = auth;
-
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from("usuarios")
     .select("*, licencias(*), pagos(*)")
     .eq("id", params.id)
@@ -17,18 +19,21 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
-  const { supabase } = auth;
   const body = await req.json();
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("usuarios")
     .update(body)
     .eq("id", params.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 
   return NextResponse.json({ ok: true });
 }

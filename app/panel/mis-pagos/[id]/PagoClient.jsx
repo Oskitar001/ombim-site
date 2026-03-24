@@ -1,5 +1,5 @@
+// /app/panel/mis-pagos/[id]/PagoClient.jsx
 "use client";
-
 import { useEffect, useState } from "react";
 
 export default function PagoClient({ pagoId }) {
@@ -8,84 +8,69 @@ export default function PagoClient({ pagoId }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const cargar = async () => {
+    async function cargar() {
       try {
-        const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
+        const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`);
+        const data = await res.json();
 
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error || "Error cargando el pago");
-          setLoading(false);
+          setError(data.error ?? "Error cargando pago");
           return;
         }
 
-        const data = await res.json();
         setPago(data);
-      } catch (e) {
+      } catch {
         setError("Error de conexión");
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    if (pagoId) cargar();
+    cargar();
   }, [pagoId]);
 
-  if (loading) return <div className="p-4">Cargando pago...</div>;
-  if (error) return <div className="p-4 text-red-600">{error}</div>;
-  if (!pago) return <div className="p-4">Pago no encontrado.</div>;
+  if (loading) return <p>Cargando pago…</p>;
+  if (error) return <p>{error}</p>;
+  if (!pago) return <p>Pago no encontrado.</p>;
 
   const { licencias = [], facturacion } = pago;
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-semibold">Detalle del pago</h1>
+    <div>
+      <h1 className="text-xl font-bold mb-4">Detalle del pago</h1>
 
-      <div className="border rounded-lg p-3">
-        <p><strong>ID:</strong> {pago.id}</p>
-        <p><strong>Estado:</strong> {pago.estado}</p>
-        <p><strong>Cantidad de licencias:</strong> {pago.cantidad_licencias}</p>
-        {pago.fecha && (
-          <p>
-            <strong>Fecha:</strong>{" "}
-            {new Date(pago.fecha).toLocaleString()}
-          </p>
-        )}
-      </div>
+      <p><strong>ID:</strong> {pago.id}</p>
+      <p><strong>Estado:</strong> {pago.estado}</p>
+      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
+      {pago.fecha && (
+        <p><strong>Fecha:</strong> {new Date(pago.fecha).toLocaleString()}</p>
+      )}
 
-      <div className="border rounded-lg p-3">
-        <h2 className="font-semibold mb-2">Licencias</h2>
-        {licencias.length === 0 ? (
-          <p>No hay licencias asociadas.</p>
-        ) : (
-          <ul className="space-y-1">
-            {licencias.map((l) => (
-              <li key={l.id} className="border-b pb-1 last:border-b-0">
-                <div><strong>Email Tekla:</strong> {l.email_tekla || "—"}</div>
-                <div><strong>Estado:</strong> {l.estado}</div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <h3 className="mt-6 font-bold">Licencias</h3>
+      {!licencias.length ? (
+        <p>No hay licencias asociadas.</p>
+      ) : (
+        <ul>
+          {licencias.map((l) => (
+            <li key={l.id}>
+              Email Tekla: {l.email_tekla ?? "—"} — Estado: {l.estado}
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <div className="border rounded-lg p-3">
-        <h2 className="font-semibold mb-2">Datos de facturación</h2>
-        {!facturacion ? (
-          <p>No hay datos de facturación guardados.</p>
-        ) : (
-          <div className="space-y-1">
-            <p><strong>Nombre:</strong> {facturacion.nombre || "—"}</p>
-            <p><strong>NIF/CIF:</strong> {facturacion.nif || "—"}</p>
-            <p><strong>Dirección:</strong> {facturacion.direccion || "—"}</p>
-            <p><strong>Ciudad:</strong> {facturacion.ciudad || "—"}</p>
-            <p><strong>País:</strong> {facturacion.pais || "—"}</p>
-          </div>
-        )}
-      </div>
+      <h3 className="mt-6 font-bold">Datos de facturación</h3>
+      {!facturacion ? (
+        <p>No hay datos guardados.</p>
+      ) : (
+        <div>
+          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
+          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
+          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
+          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
+          <p><strong>País:</strong> {facturacion.pais}</p>
+        </div>
+      )}
     </div>
   );
 }

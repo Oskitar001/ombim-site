@@ -1,8 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import PluginClient from "./PluginClient";
 
-export default async function PluginPage(props) {
-  const { id } = await props.params; // ← ESTA ES LA CLAVE
+export default async function PluginPage({ params }) {
+  const { id } = params;
 
   const { data: plugin, error } = await supabaseAdmin
     .from("plugins")
@@ -11,12 +11,7 @@ export default async function PluginPage(props) {
     .single();
 
   if (error || !plugin) {
-    console.error("PLUGIN ERROR:", error);
-    return (
-      <div className="pt-32 px-6 text-red-600">
-        Plugin no encontrado
-      </div>
-    );
+    return <p className="p-6 text-center">Plugin no encontrado.</p>;
   }
 
   return <PluginClient plugin={plugin} pluginId={id} />;

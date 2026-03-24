@@ -1,14 +1,16 @@
-export const dynamic = "force-dynamic"; // ⬅️ ESTO ES LO QUE EVITA EL ERROR
-
+// /app/panel/facturacion/page.jsx
 import { supabaseServer } from "@/lib/supabaseServer";
 import FacturacionClient from "./FacturacionClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
   const supabase = await supabaseServer();
+
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData?.user) {
-    return <div className="pt-32 px-6">No autenticado</div>;
+    return <p>No autenticado</p>;
   }
 
   const { data: facturacion } = await supabase
@@ -18,13 +20,9 @@ export default async function Page() {
     .single();
 
   return (
-    <div className="max-w-2xl mx-auto pt-32 px-6">
-      <h1 className="text-2xl font-bold mb-6">Datos de facturación</h1>
-
-      <FacturacionClient
-        user_id={userData.user.id}
-        datosIniciales={facturacion}
-      />
+    <div>
+      <h2>Datos de facturación</h2>
+      <FacturacionClient user_id={userData.user.id} datosIniciales={facturacion} />
     </div>
   );
 }

@@ -1,16 +1,18 @@
+// app/api/admin/logs/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../_utils";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
-  const { supabase } = auth;
-
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from("logs_uso")
     .select("*")
     .order("fecha", { ascending: false });
 
-  return NextResponse.json(data);
+  return NextResponse.json(data ?? []);
 }

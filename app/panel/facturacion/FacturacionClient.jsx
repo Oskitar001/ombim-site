@@ -1,27 +1,24 @@
+// /app/panel/facturacion/FacturacionClient.jsx
 "use client";
 
 import { useState } from "react";
 
 export default function FacturacionClient({ user_id, datosIniciales }) {
   const [form, setForm] = useState({
-    nombre: datosIniciales?.nombre || "",
-    nif: datosIniciales?.nif || "",
-    direccion: datosIniciales?.direccion || "",
-    ciudad: datosIniciales?.ciudad || "",
-    cp: datosIniciales?.cp || "",
-    pais: datosIniciales?.pais || "",
-    telefono: datosIniciales?.telefono || "",
+    nombre: datosIniciales?.nombre ?? "",
+    nif: datosIniciales?.nif ?? "",
+    direccion: datosIniciales?.direccion ?? "",
+    ciudad: datosIniciales?.ciudad ?? "",
+    cp: datosIniciales?.cp ?? "",
+    pais: datosIniciales?.pais ?? "",
+    telefono: datosIniciales?.telefono ?? "",
   });
 
-  const [mensaje, setMensaje] = useState("");
+  const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
-  const update = (campo, valor) => {
-    setForm({ ...form, [campo]: valor });
-  };
-
-  const guardar = async () => {
-    setMensaje("");
+  async function guardar() {
+    setMsg("");
     setError("");
 
     const res = await fetch("/api/facturacion/guardar", {
@@ -33,30 +30,31 @@ export default function FacturacionClient({ user_id, datosIniciales }) {
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error || "Error guardando datos");
-      return;
+      setError(data.error ?? "Error guardando datos");
+    } else {
+      setMsg("Datos guardados correctamente.");
     }
-
-    setMensaje("Datos guardados correctamente.");
-  };
+  }
 
   return (
-    <div className="space-y-4">
-      {[
-        ["nombre", "Nombre o empresa"],
-        ["nif", "NIF / CIF"],
-        ["direccion", "Dirección"],
-        ["ciudad", "Ciudad"],
-        ["cp", "Código postal"],
-        ["pais", "País"],
-        ["telefono", "Teléfono"],
-      ].map(([campo, label]) => (
-        <div key={campo}>
-          <label className="block mb-1 font-medium">{label}</label>
+    <div className="space-y-4 max-w-lg">
+      {Object.entries({
+        nombre: "Nombre o empresa",
+        nif: "NIF / CIF",
+        direccion: "Dirección",
+        ciudad: "Ciudad",
+        cp: "Código postal",
+        pais: "País",
+        telefono: "Teléfono",
+      }).map(([key, label]) => (
+        <div key={key}>
+          <label className="block mb-1">{label}</label>
           <input
             type="text"
-            value={form[campo]}
-            onChange={(e) => update(campo, e.target.value)}
+            value={form[key]}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, [key]: e.target.value }))
+            }
             className="border p-2 rounded w-full"
           />
         </div>
@@ -69,8 +67,8 @@ export default function FacturacionClient({ user_id, datosIniciales }) {
         Guardar datos
       </button>
 
-      {mensaje && <p className="text-green-600 mt-3">{mensaje}</p>}
-      {error && <p className="text-red-600 mt-3">{error}</p>}
+      {msg && <p className="text-green-600">{msg}</p>}
+      {error && <p className="text-red-600">{error}</p>}
     </div>
   );
 }

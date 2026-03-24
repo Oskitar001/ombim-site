@@ -1,3 +1,4 @@
+// app/api/download/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -16,13 +17,15 @@ export async function GET() {
     .order("fecha", { ascending: false });
 
   if (error) {
-    console.error("Error obteniendo descargas:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error obteniendo descargas" },
+      { status: 500 }
+    );
   }
 
-  const resultado = (data || []).map((d) => ({
+  const resultado = (data ?? []).map((d) => ({
     id: d.id,
-    plugin_nombre: d.plugins?.nombre || "",
+    plugin_nombre: d.plugins?.nombre ?? "",
     fecha: d.fecha,
   }));
 

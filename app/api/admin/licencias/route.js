@@ -1,14 +1,17 @@
+// app/api/admin/licencias/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../_utils";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
 
-  const { supabase } = auth;
-  const q = req.nextUrl.searchParams.get("q") || "";
+  const q = req.nextUrl.searchParams.get("q") ?? "";
 
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from("licencias")
     .select("*, plugins(nombre)")
     .ilike("email_tekla", `%${q}%`)

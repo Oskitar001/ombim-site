@@ -1,3 +1,4 @@
+// /app/api/auth/register/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -16,30 +17,20 @@ export async function POST(req) {
       email,
       password,
       email_confirm: false,
-      user_metadata: {
-        nombre,
-        role: "user",
-      },
+      user_metadata: { nombre, role: "user" },
     });
 
     if (error) {
-      console.error("SUPABASE REGISTER ERROR:", error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const user = {
-      ...data.user,
-      nombre: data.user?.user_metadata?.nombre || null,
-    };
-
     return NextResponse.json({
       ok: true,
-      user,
+      user: data.user,
       message:
-        "Registro completado. Revisa tu email para confirmar tu cuenta (correo de OMBIM configurado en Supabase).",
+        "Registro completado. Revisa tu email para confirmar tu cuenta.",
     });
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

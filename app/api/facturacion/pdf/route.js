@@ -1,3 +1,4 @@
+// app/api/facturacion/pdf/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import chromium from "@sparticuz/chromium";
@@ -12,7 +13,6 @@ export async function GET(req) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  // Obtener pago + licencias
   const { data: pago } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
@@ -23,15 +23,13 @@ export async function GET(req) {
     return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
-  // Validar número de factura
   if (!pago.numero_factura) {
     return NextResponse.json(
-      { error: "No se puede generar la factura: falta número de factura" },
+      { error: "Falta número de factura" },
       { status: 400 }
     );
   }
 
-  // Obtener datos de facturación del cliente
   const { data: facturacion } = await supabase
     .from("facturacion")
     .select("*")
@@ -40,12 +38,11 @@ export async function GET(req) {
 
   if (!facturacion) {
     return NextResponse.json(
-      { error: "El usuario no tiene datos de facturación" },
+      { error: "No hay datos de facturación" },
       { status: 400 }
     );
   }
 
-  // Obtener datos de la empresa (tú)
   const { data: empresa } = await supabase
     .from("empresa")
     .select("*")
@@ -54,114 +51,46 @@ export async function GET(req) {
 
   if (!empresa) {
     return NextResponse.json(
-      { error: "No hay datos de empresa configurados" },
+      { error: "Datos fiscales no configurados" },
       { status: 500 }
     );
   }
 
-  // Calcular IVA
   const base = pago.importe;
   const iva = (base * 0.21).toFixed(2);
   const total = (base * 1.21).toFixed(2);
 
-  // Determinar si el cliente usa NIF o CIF
-  const identificadorCliente = facturacion.cif || facturacion.nif || "";
+  const html = `
+  <h2>Factura #${pago.numero_factura}</h2>
+  <p>Fecha: ${new Date().toLocaleDateString()}</p>
 
-  // HTML profesional
-  let html = `
-  <html>
-    <head>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .logo { width: 160px; }
-        .section-title { font-size: 20px; margin-top: 30px; margin-bottom: 10px; font-weight: bold; }
-        .box { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        table th, table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        table th { background: #f5f5f5; }
-        .total { text-align: right; font-size: 18px; margin-top: 20px; font-weight: bold; }
-        .footer { margin-top: 60px; font-size: 12px; text-align: center; color: #777; }
-        .firma { margin-top: 40px; text-align: right; font-size: 14px; }
-        .qr { margin-top: 20px; text-align: right; }
-        .qr img { width: 120px; }
-      </style>
-    </head>
+  <h3>Cliente</h3>
+  ${facturacion.nombre}<br>
+  ${facturacion.direccion}<br>
+  ${facturacion.cp} ${facturacion.ciudad}<br>
 
-    <body>
+  <h3>Detalle</h3>
+  <table border="1">
+    <tr><th>Concepto</th><th>Cant</th><th>Base</th><th>IVA</th><th>Total</th></tr>
+    <tr>
+      <td>${pago.plugin_id}</td>
+      <td>${pago.cantidad_licencias}</td>
+      <td>${base} €</td>
+      <td>${iva} €</td>
+      <td>${total} €</td>
+    </tr>
+  </table>
 
-      <div class="header">
-        <img src="${empresa.logo_url}" class="logo" />
-        <div>
-          <h1>Factura #${pago.numero_factura}</h1>
-          <strong>Fecha:</strong> ${new Date().toLocaleDateString()}
-        </div>
-      </div>
+  <h3>Licencias</h3>
+  ${pago.licencias.map((l) => `Email Tekla: ${l.email_tekla}`).join("<br>")}
 
-      <div class="section-title">Datos del cliente</div>
-      <div class="box">
-        <p><strong>Nombre:</strong> ${facturacion.nombre}</p>
-        <p><strong>NIF/CIF:</strong> ${identificadorCliente}</p>
-        <p><strong>Dirección:</strong> ${facturacion.direccion}</p>
-        <p><strong>Ciudad:</strong> ${facturacion.ciudad}</p>
-        <p><strong>CP:</strong> ${facturacion.cp}</p>
-        <p><strong>País:</strong> ${facturacion.pais}</p>
-        <p><strong>Teléfono:</strong> ${facturacion.telefono}</p>
-      </div>
+  <h3>Total: ${total} €</h3>
 
-      <div class="section-title">Detalle del pedido</div>
-      <table>
-        <tr>
-          <th>Concepto</th>
-          <th>Cantidad</th>
-          <th>Base</th>
-          <th>IVA (21%)</th>
-          <th>Total</th>
-        </tr>
-        <tr>
-          <td>${pago.plugin_id}</td>
-          <td>${pago.cantidad_licencias}</td>
-          <td>${base} €</td>
-          <td>${iva} €</td>
-          <td>${total} €</td>
-        </tr>
-      </table>
-
-      <div class="section-title">Licencias</div>
-      <div class="box">
-        ${pago.licencias
-          .map(
-            (l) => `
-            <p><strong>Email Tekla:</strong> ${l.email_tekla || "(sin asignar)"}</p>
-          `
-          )
-          .join("")}
-      </div>
-
-      <div class="total">
-        Total con IVA: ${total} €
-      </div>
-
-      <div class="firma">
-        <p>Firmado digitalmente por:</p>
-        <p><strong>${empresa.nombre}</strong></p>
-        <p>CIF/NIF: ${empresa.cif}</p>
-      </div>
-
-      <div class="qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://ombim.com/factura/${pago.id}" />
-      </div>
-
-      <div class="footer">
-        ${empresa.nombre} — CIF/NIF: ${empresa.cif} — ${empresa.email} — ${empresa.telefono}<br/>
-        ${empresa.direccion}, ${empresa.cp} ${empresa.ciudad} (${empresa.pais})
-      </div>
-
-    </body>
-  </html>
+  <h4>${empresa.nombre}</h4>
+  ${empresa.cif}<br>
+  ${empresa.direccion}
   `;
 
-  // Lanzar Chromium compatible con Vercel
   const browser = await puppeteer.launch({
     args: chromium.args,
     defaultViewport: chromium.defaultViewport,
@@ -172,11 +101,7 @@ export async function GET(req) {
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle0" });
 
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-  });
-
+  const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
   await browser.close();
 
   return new NextResponse(pdfBuffer, {

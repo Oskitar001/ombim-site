@@ -1,8 +1,9 @@
+// app/api/admin/_utils.js (corregido)
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function requireAdmin() {
-  const cookieStore = await cookies(); // ← IMPORTANTE
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -10,18 +11,17 @@ export async function requireAdmin() {
     {
       cookies: {
         get(name) {
-          const cookie = cookieStore.get(name);
-          return cookie?.value;
+          return cookieStore.get(name)?.value;
         },
         set() {},
-        remove() {}
-      }
+        remove() {},
+      },
     }
   );
 
   const {
     data: { user },
-    error
+    error,
   } = await supabase.auth.getUser();
 
   if (error || !user) {

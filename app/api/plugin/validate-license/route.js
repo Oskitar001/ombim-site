@@ -1,9 +1,9 @@
+// app/api/plugin/validate-license/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-  const body = await req.json();
-  const { email_tekla, plugin_id, maquina_id } = body;
+  const { email_tekla, plugin_id, maquina_id } = await req.json();
 
   if (!email_tekla || !plugin_id) {
     return NextResponse.json(
@@ -29,17 +29,25 @@ export async function POST(req) {
     return NextResponse.json({ estado: "bloqueada" });
   }
 
-  if (lic.fecha_expiracion && new Date(lic.fecha_expiracion) < new Date()) {
-    return NextResponse.json({ estado: "expirada" });
+  // Trial expirado
+  if (lic.fecha_expiracion) {
+    if (new Date(lic.fecha_expiracion) < new Date()) {
+      return NextResponse.json({ estado: "expirada" });
+    }
   }
 
+  // Límite de activaciones
   if (lic.activaciones_usadas >= lic.max_activaciones) {
     return NextResponse.json({ estado: "sin_activaciones" });
   }
 
+  // Registrar nueva activación
   await supabaseAdmin
     .from("licencias")
-    .update({ activaciones_usadas: lic.activaciones_usadas + 1 })
+    .update({
+      activaciones_usadas: lic.activaciones_usadas + 1,
+      maquina_id: maquina_id ?? lic.maquina_id,
+    })
     .eq("id", lic.id);
 
   return NextResponse.json({

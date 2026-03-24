@@ -1,13 +1,31 @@
+import { supabaseServer } from "@/lib/supabaseServer";
 import CompraLicencias from "./CompraLicencias";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page({ params }) {
-  const { plugin_id } = await params;
+  const supabase = supabaseServer();
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/plugin/${plugin_id}`, {
-    cache: "no-store",
-  });
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return <p className="p-6">Debes iniciar sesión para continuar.</p>;
+  }
 
-  const plugin = await res.json();
+  const { plugin_id } = params;
 
-  return <CompraLicencias plugin={plugin} plugin_id={plugin_id} />;
+  const { data: plugin, error } = await supabase
+    .from("plugins")
+    .select("*")
+    .eq("id", plugin_id)
+    .single();
+
+  if (error || !plugin) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Plugin no encontrado</h1>
+      </div>
+    );
+  }
+
+  return <CompraLicencias plugin={plugin} user={userData.user} />;
 }

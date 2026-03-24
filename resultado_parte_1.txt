@@ -1,0 +1,3402 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\contacto\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Contacto | Óscar Martínez",
+  description:
+    "Contacta con Óscar Martínez para colaboraciones en Tekla Structures.",
+};
+
+export default function ContactoPage() {
+  return (
+    <section className="max-w-4xl mx-auto px-6 mt-20 mb-32 bg-[#f3f4f6] dark:bg-[#242424]">
+      {/* Encabezado */}
+      <div className="text-center mb-16">
+        <div className="relative inline-block">
+          <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full" />
+
+          <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
+            Contacto
+          </h1>
+        </div>
+
+        <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10" />
+
+        <p className="text-center text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
+          ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
+          Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
+        </p>
+      </div>
+
+      {/* Formulario */}
+      <form
+        method="POST"
+        action="/api/contact"
+        className="grid gap-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] p-10 rounded-2xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]"
+      >
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre"
+          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        />
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        />
+
+        <textarea
+          name="mensaje"
+          placeholder="Mensaje"
+          rows="5"
+          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          required
+        />
+
+        <button
+          type="submit"
+          className="px-6 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95"
+        >
+          Enviar mensaje
+        </button>
+      </form>
+
+      {/* Separador inferior */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent mt-20" />
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\demos\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Demos | Óscar Martínez",
+  description:
+    "Ejemplos de automatizaciones, plugins y trabajos realizados en Tekla Structures.",
+};
+
+export default function DemosPage() {
+  return (
+    <section className="py-24 max-w-5xl mx-auto px-6 bg-[#f3f4f6] dark:bg-[#242424]">
+      
+      <h1 className="text-4xl font-bold text-center mb-12 text-[#1f2937] dark:text-[#e6e6e6]">
+        Demos y Automatizaciones
+      </h1>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] text-center mb-16 max-w-3xl mx-auto">
+        Aquí puedes ver algunos ejemplos de las automatizaciones, plugins y herramientas que he desarrollado para Tekla Structures. 
+        Cada una de ellas está pensada para reducir tiempos, evitar errores y mejorar el flujo de trabajo en proyectos reales.
+      </p>
+
+      <div className="grid md:grid-cols-2 gap-12">
+
+        {/* EJEMPLO 1 */}
+        <div className="bg-white dark:bg-[#1a1a1a] shadow rounded-xl p-6 border border-[#d1d5db] dark:border-[#3a3a3a]">
+          <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+            Plugin: Uniones automáticas de elementos
+          </h2>
+
+          <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
+            Herramientas que generan uniones de forma automática según criterios definidos por el cliente.
+          </p>
+
+          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+            https://www.youtube.com/embed/VIDEO_ID
+          </div>
+        </div>
+
+        {/* EJEMPLO 2 */}
+        <div className="bg-white dark:bg-[#1a1a1a] shadow rounded-xl p-6 border border-[#d1d5db] dark:border-[#3a3a3a]">
+          <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+            Automatización: Listados de producción
+          </h2>
+
+          <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
+            Script que genera planillas de producción en segundos, evitando errores manuales.
+          </p>
+
+          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+            https://www.youtube.com/embed/VIDEO_ID
+          </div>
+        </div>
+
+      </div>
+
+      {/* ESTA ES LA PARTE QUE TENÍAS MAL */}
+      <p className="text-center text-[#1f2937] dark:text-[#e6e6e6] mt-16">
+        ¿Quieres ver una demo personalizada o necesitas una herramienta a medida?{" "}
+        <a
+          href="/contacto"
+          className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+        >
+          Contáctame aquí
+        </a>.
+      </p>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\login\page.jsx
+============================================================
+
+"use client";
+import { useState } from "react";
+
+export default function Page() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error ?? "Error al iniciar sesión");
+      return;
+    }
+
+    const role = data.user?.user_metadata?.role;
+
+    window.location.href =
+      role === "admin" ? "/panel/admin" : "/panel/user";
+  }
+
+  return (
+    <div className="max-w-md mx-auto py-10">
+      <h1 className="text-xl font-bold mb-6">Iniciar sesión</h1>
+
+      <form onSubmit={handleLogin} className="space-y-4">
+        <input
+          required
+          type="email"
+          placeholder="Email"
+          className="border p-2 w-full rounded"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          required
+          type="password"
+          placeholder="Contraseña"
+          className="border p-2 w-full rounded"
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        {error && <p className="text-red-600">{error}</p>}
+
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          disabled={loading}
+        >
+          {loading ? "Cargando..." : "Entrar"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\page.jsx
+============================================================
+
+
+// app/(site)/page.jsx
+"use client";
+
+import AboutSection from "../../components/AboutSection";
+import TrustSection from "../../components/TrustSection";
+import TestimonialsSection from "../../components/TestimonialsSection";
+
+const apps = [
+  {
+    title: "Modelado 3D con automatización",
+    description: "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
+    video: "https://www.youtube.com/embed/gQp1t5xRz5Q",
+  },
+  {
+    title: "Aplicaciones Tekla Structures",
+    description: "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
+    video: "https://www.youtube.com/embed/MBL7E9rF2HU",
+  },
+  {
+    title: "Plugin Tekla Structures",
+    description: "Mejora tu productividad con herramientas integradas directamente en Tekla. Flujo de trabajo más ágil y profesional.",
+    video: "https://www.youtube.com/embed/9HiQz_x9UCU",
+  },
+];
+
+export default function HomePage() {
+  return (
+    <>
+      <div className='fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50'>
+        <a href='/contacto' className='bg-blue-600 text-black dark:text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all'>
+          Solicitar demo
+        </a>
+      </div>
+
+      <div className='pb-20 min-h-screen bg-[#f3f4f6] dark:bg-[#242424] bg-gradient-to-b from-light-bgSoft to-light-bg dark:from-dark-bg dark:to-dark-bg'>
+        <div className='container mx-auto border-t border-[#d1d5db] dark:border-[#3a3a3a]'>
+          <section className='reveal text-center max-w-4xl mx-auto mt-20 mb-24 px-6'>
+            <div className='relative inline-block'>
+              <span className='absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full'></span>
+              <h1 className='relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]'>
+                Modelado 3D & Software para Tekla Structures
+              </h1>
+            </div>
+            <div className='w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10'></div>
+            <p className='text-[#1f2937] dark:text-[#e6e6e6] text-xl md:text-2xl leading-relaxed mb-6'>Más de <strong>20 años de experiencia</strong>…</p>
+            <p className='text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed mb-10'>Además, más de <strong>100 proyectos</strong>…</p>
+            <a href='/contacto' className='inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-8 py-4 rounded-xl text-lg font-medium hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95'>Solicitar demo personalizada <span className='text-2xl'>→</span></a>
+          </section>
+
+          <div className='grid md:grid-cols-3 gap-10'>
+            {apps.map((app, index) => (
+              <div key={index} className='reveal bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-soft hover:-translate-y-2 border border-gray-100 dark:border-[#3a3a3a]'>
+                <div className='rounded-xl overflow-hidden mb-4'>
+                  <iframe className='w-full aspect-video' src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1`} allow='autoplay; encrypted-media' allowFullScreen></iframe>
+                </div>
+                <h3 className='text-xl font-semibold mb-2'>{app.title}</h3>
+                <p className='text-[#1f2937] dark:text-[#e6e6e6] mb-4'>{app.description}</p>
+                <a href='/contacto' className='group inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95'>Solicitar demo ahora <span className='text-base group-hover:translate-x-1 transition'>→</span></a>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>Respuesta en menos de 24h</p>
+              </div>
+            ))}
+          </div>
+
+          <AboutSection />
+          <TrustSection />
+          <TestimonialsSection />
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\pago\licencias\[pago_id]\AsignarEmailsClient.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function AsignarEmailsClient({ pago }) {
+  const [emails, setEmails] = useState(
+    pago.licencias.map((l) => ({
+      licencia_id: l.id,
+      email_tekla: l.email_tekla ?? "",
+    }))
+  );
+
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+
+  function actualizarEmail(i, valor) {
+    setEmails((prev) =>
+      prev.map((item, idx) =>
+        idx === i ? { ...item, email_tekla: valor } : item
+      )
+    );
+  }
+
+  async function guardar() {
+    setLoading(true);
+    setMsg("");
+    setError("");
+
+    const res = await fetch("/api/pagos/guardar-emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        pago_id: pago.id,
+        emails,
+      }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error ?? "Error guardando emails");
+      return;
+    }
+
+    setMsg("Emails guardados correctamente.");
+  }
+
+  return (
+    <section className="max-w-3xl mx-auto py-10 space-y-4">
+      <h1 className="text-2xl font-bold mb-4">Asignar Emails Tekla</h1>
+
+      {emails.map((item, i) => (
+        <div key={item.licencia_id}>
+          <label className="block font-semibold mb-1">
+            Licencia {item.licencia_id}
+          </label>
+          <input
+            className="border p-2 w-full rounded"
+            value={item.email_tekla}
+            onChange={(e) => actualizarEmail(i, e.target.value)}
+          />
+        </div>
+      ))}
+
+      {error && <p className="text-red-600">{error}</p>}
+      {msg && <p className="text-green-600">{msg}</p>}
+
+      <button
+        onClick={guardar}
+        disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        {loading ? "Guardando..." : "Guardar emails"}
+      </button>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\pago\licencias\[pago_id]\page.jsx
+============================================================
+
+import { supabaseServer } from "@/lib/supabaseServer";
+import AsignarEmailsClient from "./AsignarEmailsClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page({ params }) {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return <p className="p-6">Debes iniciar sesión.</p>;
+  }
+
+  const { pago_id } = params;
+
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*, licencias(*)")
+    .eq("id", pago_id)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (!pago) {
+    return <p className="p-6">Pago no encontrado.</p>;
+  }
+
+  return <AsignarEmailsClient pago={pago} />;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\pago\[plugin_id]\CompraLicencias.jsx
+============================================================
+
+import { supabaseServer } from "@/lib/supabaseServer";
+import CompraLicencias from "./CompraLicencias";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page({ params }) {
+  const supabase = supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return <p className="p-6">Debes iniciar sesión para continuar.</p>;
+  }
+
+  const { plugin_id } = params;
+
+  const { data: plugin, error } = await supabase
+    .from("plugins")
+    .select("*")
+    .eq("id", plugin_id)
+    .single();
+
+  if (error || !plugin) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Plugin no encontrado</h1>
+      </div>
+    );
+  }
+
+  return <CompraLicencias plugin={plugin} user={userData.user} />;
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\pago\[plugin_id]\page.jsx
+============================================================
+
+import { supabaseServer } from "@/lib/supabaseServer";
+import CompraLicencias from "./CompraLicencias";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page({ params }) {
+  const supabase = supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return <p className="p-6">Debes iniciar sesión para continuar.</p>;
+  }
+
+  const { plugin_id } = params;
+
+  const { data: plugin, error } = await supabase
+    .from("plugins")
+    .select("*")
+    .eq("id", plugin_id)
+    .single();
+
+  if (error || !plugin) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Plugin no encontrado</h1>
+      </div>
+    );
+  }
+
+  return <CompraLicencias plugin={plugin} user={userData.user} />;
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\page.jsx
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+
+export default async function PluginsPage() {
+  const { data: plugins } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return (
+    <section className="max-w-5xl mx-auto py-20 px-6">
+      <h1 className="text-4xl font-bold mb-10 text-center">Plugins</h1>
+
+      {!plugins?.length && <p>No hay plugins disponibles todavía.</p>}
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {plugins?.map((p) => (
+          <Link key={p.id} href={`/plugins/${p.id}`} className="block">
+            <div className="border rounded-xl p-6 bg-white dark:bg-[#1a1a1a] shadow hover:shadow-lg transition">
+              <h2 className="text-2xl font-semibold mb-2">{p.nombre}</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-2">{p.descripcion}</p>
+              <p className="font-bold text-blue-600 dark:text-blue-400">
+                {p.precio > 0 ? `${p.precio} €` : "Gratis"}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\[id]\DescargarBoton.jsx
+============================================================
+
+"use client";
+
+export default function DescargarBoton({ pluginId }) {
+  const handleDownload = () => {
+    if (!pluginId) return;
+    window.location.href = `/api/plugin/download?plugin_id=${pluginId}`;
+  };
+
+  return (
+    <button
+      onClick={handleDownload}
+      className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+    >
+      Descargar plugin
+    </button>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\[id]\page.jsx
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import PluginClient from "./PluginClient";
+
+export default async function PluginPage({ params }) {
+  const { id } = params;
+
+  const { data: plugin, error } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !plugin) {
+    return <p className="p-6 text-center">Plugin no encontrado.</p>;
+  }
+
+  return <PluginClient plugin={plugin} pluginId={id} />;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\[id]\PluginClient.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import DescargarBoton from "./DescargarBoton";
+
+export default function PluginClient({ plugin, pluginId }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => setUser(d.user ?? null));
+  }, []);
+
+  return (
+    <section className="max-w-4xl mx-auto py-20 px-6">
+      <h1 className="text-4xl font-bold mb-6">{plugin.nombre}</h1>
+
+      <p className="text-lg mb-6">{plugin.descripcion}</p>
+
+      {plugin.precio > 0 ? (
+        <p className="text-2xl font-bold text-blue-600 mb-6">
+          {plugin.precio} €
+        </p>
+      ) : (
+        <p className="text-2xl font-bold text-green-600 mb-6">Gratis</p>
+      )}
+
+      {/* VIDEO */}
+      {plugin.video_url && (
+        <div className="aspect-video mb-8">
+          <iframe
+            src={plugin.video_url}
+            className="w-full h-full rounded-xl"
+            allowFullScreen
+          />
+        </div>
+      )}
+
+      {/* ARCHIVO */}
+      {plugin.archivo_url && (
+        <p className="mb-4 text-gray-600 dark:text-gray-400">
+          Archivo disponible para descarga.
+        </p>
+      )}
+
+      {/* ACCIONES */}
+      {user ? (
+        <>
+          {/* Descarga si es gratis */}
+          {plugin.precio === 0 && <DescargarBoton pluginId={pluginId} />}
+
+          {/* Compra */}
+          {plugin.precio > 0 && (
+            <Link href={`/pago/${pluginId}`}>
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                Comprar licencias
+              </button>
+            </Link>
+          )}
+        </>
+      ) : (
+        <Link href="/login">
+          <p className="mt-6 underline text-blue-600">
+            Inicia sesión para descargar o comprar
+          </p>
+        </Link>
+      )}
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\register\page.jsx
+============================================================
+
+"use client";
+import { useState } from "react";
+
+export default function RegisterPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    setError("");
+    setOk("");
+
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, nombre }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Error al registrarse");
+      return;
+    }
+
+    setOk(
+      "Registro completado. Revisa tu email para confirmar tu cuenta."
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto py-10 space-y-4">
+      <h1 className="text-xl font-bold">Crear cuenta</h1>
+
+      <form onSubmit={handleRegister} className="space-y-4">
+        <input
+          required
+          placeholder="Nombre"
+          onChange={(e) => setNombre(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
+
+        <input
+          required
+          type="email"
+          placeholder="Email"
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
+
+        <input
+          required
+          type="password"
+          placeholder="Contraseña"
+          onChange={(e) => setPassword(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
+
+        <button className="bg-blue-600 text-white px-4 py-2 rounded w-full">
+          Registrarse
+        </button>
+      </form>
+
+      {error && <p className="text-red-600">{error}</p>}
+      {ok && <p className="text-green-600">{ok}</p>}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\reset\loading.jsx
+============================================================
+
+export default function Loading() {
+  return null;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\reset\page.jsx
+============================================================
+
+"use client";
+
+export default function Page() {
+  return (
+    <div className="text-center py-10">
+      <h1 className="text-xl font-bold">Reset Password</h1>
+      <p>Aquí irá tu formulario.</p>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\reset-request\page.jsx
+============================================================
+
+"use client";
+import { useState } from "react";
+
+export default function ResetRequestPage() {
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setMsg("");
+
+    const res = await fetch("/api/auth/reset-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+    setMsg(data.message);
+  }
+
+  return (
+    <div className="max-w-md mx-auto py-10">
+      <h1 className="text-xl font-bold mb-4">Recuperar contraseña</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          required
+          type="email"
+          placeholder="Tu email"
+          className="border p-2 rounded w-full"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <button className="bg-blue-600 text-white px-4 py-2 rounded">
+          Enviar enlace
+        </button>
+      </form>
+
+      {msg && <p className="mt-4">{msg}</p>}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\servicios\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Servicios | Óscar Martínez",
+  description:
+    "Servicios de modelado en Tekla, planos, producción y automatizaciones.",
+};
+
+export default function ServiciosPage() {
+  return (
+    <section className="py-24 bg-[#f3f4f6] dark:bg-[#242424] px-6">
+      <div className="max-w-5xl mx-auto">
+        
+        <h1 className="text-4xl font-bold text-center mb-12 text-[#1f2937] dark:text-[#e6e6e6]">
+          Servicios
+        </h1>
+
+        <div className="grid md:grid-cols-2 gap-10">
+
+          {/* BLOQUE 1 */}
+          <div className="p-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Modelado BIM en Tekla Structures
+            </h2>
+
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Modelado de estructuras metálicas y de hormigón</li>
+              <li>• Detallado constructivo</li>
+              <li>• Colaboración con Trimble Connect y Tekla Model Sharing</li>
+              <li>• Exportación de planos y modelo a PDF, CAD e IFC</li>
+            </ul>
+          </div>
+
+          {/* BLOQUE 2 */}
+          <div className="p-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Planos y documentación técnica
+            </h2>
+
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Planos de fabricación</li>
+              <li>• Planos de montaje</li>
+              <li>• Listados y planillas de producción</li>
+              <li>• Cuadros de materiales</li>
+            </ul>
+          </div>
+
+          {/* BLOQUE 3 */}
+          <div className="p-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Automatizaciones y plugins para Tekla
+            </h2>
+
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Desarrollo de plugins a medida</li>
+              <li>• Automatización de tareas repetitivas</li>
+              <li>• Generación automática de planos y listados</li>
+              <li>• Herramientas internas para prefabricadores e ingenierías</li>
+            </ul>
+          </div>
+
+          {/* BLOQUE 4 */}
+          <div className="p-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
+            <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
+              Colaboración externa
+            </h2>
+
+            <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
+              <li>• Refuerzo de equipos técnicos</li>
+              <li>• Soporte en picos de trabajo</li>
+              <li>• Trabajo por proyecto o por horas</li>
+              <li>• Comunicación directa y flexible</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\sobre-mi\page.jsx
+============================================================
+
+export const metadata = {
+  title: "Sobre mí | Óscar Martínez",
+  description:
+    "Especialista en Tekla Structures con más de 23 años de experiencia.",
+};
+
+export default function SobreMiPage() {
+  return (
+    <section className="py-24 max-w-4xl mx-auto px-6 bg-[#f3f4f6] dark:bg-[#242424]">
+      
+      <h1 className="text-4xl font-bold mb-10 text-center text-[#1f2937] dark:text-[#e6e6e6]">
+        Sobre mí
+      </h1>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
+        Soy <strong>Óscar Martínez</strong>, técnico especialista en Tekla Structures.
+        Durante <strong>23 años</strong> trabajé en
+        <strong> PACADAR (Buñol, Valencia)</strong>, una empresa referente en
+        prefabricado y estructuras. Allí participé en proyectos reales de
+        fabricación, montaje y producción, lo que me dio una visión completa del
+        proceso constructivo.
+      </p>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
+        Esa experiencia me permite entender no solo el modelo, sino también las
+        necesidades reales de taller y obra.
+      </p>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
+        Desde hace un año trabajo como <strong>autónomo</strong>, colaborando con
+        empresas que necesitan apoyo técnico fiable, rápido y con experiencia
+        real. Además, me especialicé en <strong>programación para Tekla</strong>,
+        creando plugins y automatizaciones que ahorran horas de trabajo y reducen
+        errores.
+      </p>
+
+      <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed">
+        Mi objetivo es sencillo:{" "}
+        <strong>hacer el trabajo más fácil, más rápido y más preciso</strong>.
+      </p>
+
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\dashboard\route.js
+============================================================
+
+// app/api/admin/dashboard/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
+
+  const [
+    licencias,
+    activas,
+    bloqueadas,
+    pagos,
+    activaciones,
+    aprobados
+  ] = await Promise.all([
+    supabaseAdmin.from("licencias").select("*", { count: "exact" }),
+    supabaseAdmin.from("licencias").select("*", { count: "exact" }).eq("estado", "activa"),
+    supabaseAdmin.from("licencias").select("*", { count: "exact" }).eq("estado", "bloqueada"),
+    supabaseAdmin.from("pagos").select("*", { count: "exact" }),
+    supabaseAdmin.from("licencias").select("activaciones_usadas"),
+    supabaseAdmin.from("pagos").select("importe").eq("estado", "aprobado")
+  ]);
+
+  const activacionesTotales = (activaciones.data ?? []).reduce(
+    (sum, l) => sum + (l.activaciones_usadas ?? 0),
+    0
+  );
+
+  const ingresosTotales = (aprobados.data ?? []).reduce(
+    (sum, p) => sum + (p.importe ?? 0),
+    0
+  );
+
+  return NextResponse.json({
+    totalLicencias: licencias.count,
+    licenciasActivas: activas.count,
+    licenciasBloqueadas: bloqueadas.count,
+    totalPagos: pagos.count,
+    activacionesTotales,
+    ingresosTotales,
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\route.js
+============================================================
+
+// app/api/admin/licencias/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
+
+  const q = req.nextUrl.searchParams.get("q") ?? "";
+
+  const { data } = await supabaseAdmin
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .ilike("email_tekla", `%${q}%`)
+    .order("fecha_creacion", { ascending: false });
+
+  return NextResponse.json({ licencias: data });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\[id]\route.js
+============================================================
+
+// app/api/admin/licencias/[id]/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(_req, { params }) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: admin.status || 403 });
+  }
+
+  const { data: licencia } = await supabaseAdmin
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .eq("id", params.id)
+    .single();
+
+  const { data: activaciones } = await supabaseAdmin
+    .from("activaciones")
+    .select("*")
+    .eq("licencia_id", params.id);
+
+  return NextResponse.json({ licencia, activaciones });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\logs\route.js
+============================================================
+
+// app/api/admin/logs/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { data } = await supabaseAdmin
+    .from("logs_uso")
+    .select("*")
+    .order("fecha", { ascending: false });
+
+  return NextResponse.json(data ?? []);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\route.js
+============================================================
+
+// app/api/admin/pagos/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
+
+  const { data } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .order("fecha", { ascending: false });
+
+  return NextResponse.json(data);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\[id]\route.js
+============================================================
+
+// app/api/admin/pagos/[id]/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(_req, { params }) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
+
+  const { data } = await supabaseAdmin
+    .from("pagos")
+    .select("*, licencias(*), facturacion(*)")
+    .eq("id", params.id)
+    .single();
+
+  return NextResponse.json({ pago: data });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\borrar\route.js
+============================================================
+
+// app/api/admin/plugins/borrar/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { id } = await req.json();
+
+  if (!id) {
+    return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin.from("plugins").delete().eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\route.js
+============================================================
+
+// app/api/admin/plugins/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data ?? []);
+}
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const body = await req.json();
+  const { nombre, descripcion, precio, archivo_url, video_url } = body;
+
+  if (!nombre) {
+    return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .insert({
+      nombre,
+      descripcion,
+      precio,
+      archivo_url,
+      video_url,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ id: data.id });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\route.js
+============================================================
+
+// app/api/admin/usuarios/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const body = await req.json();
+  const { error } = await supabaseAdmin.from("usuarios").insert(body);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\[id]\route.js
+============================================================
+
+// app/api/admin/usuarios/[id]/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req, { params }) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { data } = await supabaseAdmin
+    .from("usuarios")
+    .select("*, licencias(*), pagos(*)")
+    .eq("id", params.id)
+    .single();
+
+  return NextResponse.json(data);
+}
+
+export async function PUT(req, { params }) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const body = await req.json();
+
+  const { error } = await supabaseAdmin
+    .from("usuarios")
+    .update(body)
+    .eq("id", params.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\_utils.js
+============================================================
+
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export async function requireAdmin() {
+  const cookieStore = await cookies(); // ← IMPORTANTE
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          const cookie = cookieStore.get(name);
+          return cookie?.value;
+        },
+        set() {},
+        remove() {}
+      }
+    }
+  );
+
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return { error: "NO_AUTH", status: 401 };
+  }
+
+  if (user.user_metadata?.role !== "admin") {
+    return { error: "NO_ADMIN", status: 403 };
+  }
+
+  return { supabase, user };
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
+============================================================
+
+// /app/api/auth/login/route.js
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export async function POST(req) {
+  const { email, password } = await req.json();
+
+  // Respuesta inicial donde se escribirán las cookies
+  const response = NextResponse.json({ ok: true });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => req.cookies.get(name)?.value,
+        set: (name, value, options) =>
+          response.cookies.set(name, value, {
+            ...options,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+          }),
+        remove: (name, options) =>
+          response.cookies.set(name, "", {
+            ...options,
+            maxAge: 0,
+            path: "/",
+          }),
+      },
+    }
+  );
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  // Guardamos el rol visible (no sensible)
+  const role = data.user.user_metadata?.role ?? "user";
+
+  response.cookies.set("sb-user-role", role, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  return response;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\logout\route.js
+============================================================
+
+// /app/api/auth/logout/route.js
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  const res = NextResponse.json({ ok: true });
+
+  const cookieOptions = {
+    maxAge: 0,
+    path: "/",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  };
+
+  res.cookies.set("sb-access-token", "", cookieOptions);
+  res.cookies.set("sb-refresh-token", "", cookieOptions);
+  res.cookies.set("supabase-auth-token", "", cookieOptions);
+
+  // cookie visible para interfaz
+  res.cookies.set("sb-user-role", "", { maxAge: 0, path: "/" });
+
+  return res;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\me\route.js
+============================================================
+
+// /app/api/auth/me/route.js
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export async function GET(req) {
+  const response = NextResponse.json({});
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => req.cookies.get(name)?.value,
+        set: (name, value, options) =>
+          response.cookies.set(name, value, options),
+        remove: (name, options) =>
+          response.cookies.set(name, "", { ...options, maxAge: 0 }),
+      },
+    }
+  );
+
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    return NextResponse.json({ user: null });
+  }
+
+  return NextResponse.json({
+    user: data.user,
+    role: data.user.user_metadata?.role ?? "user",
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\register\route.js
+============================================================
+
+// /app/api/auth/register/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  try {
+    const { nombre, email, password } = await req.json();
+
+    if (!nombre || !email || !password) {
+      return NextResponse.json(
+        { error: "Faltan campos obligatorios" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false,
+      user_metadata: { nombre, role: "user" },
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      user: data.user,
+      message:
+        "Registro completado. Revisa tu email para confirmar tu cuenta.",
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset\route.js
+============================================================
+
+// /app/api/auth/reset/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function GET(req) {
+  const token = req.nextUrl.searchParams.get("token");
+  const email = req.nextUrl.searchParams.get("email");
+
+  if (!token || !email) {
+    return NextResponse.redirect("/login?error=missing_token");
+  }
+
+  const supabase = supabaseServer();
+
+  const { error } = await supabase.auth.verifyOtp({
+    token,
+    email,
+    type: "email",
+  });
+
+  if (error) {
+    return NextResponse.redirect("/login?error=verify_failed");
+  }
+
+  return NextResponse.redirect("/panel");
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-request\route.js
+============================================================
+
+// /app/api/auth/reset-request/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function POST(req) {
+  const { email } = await req.json();
+
+  if (!email) {
+    return NextResponse.json({ error: "Falta email" }, { status: 400 });
+  }
+
+  const supabase = supabaseServer();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({
+    message: "Enlace enviado. Revisa tu correo.",
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\download\route.js
+============================================================
+
+// app/api/download/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function GET() {
+  const supabase = await supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("descargas")
+    .select("id, fecha, plugins(nombre)")
+    .eq("user_id", userData.user.id)
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Error obteniendo descargas" },
+      { status: 500 }
+    );
+  }
+
+  const resultado = (data ?? []).map((d) => ({
+    id: d.id,
+    plugin_nombre: d.plugins?.nombre ?? "",
+    fecha: d.fecha,
+  }));
+
+  return NextResponse.json(resultado);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar\route.js
+============================================================
+
+// app/api/facturacion/guardar/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function POST(req) {
+  const supabase = await supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  const user_id = userData.user.id;
+  const body = await req.json();
+
+  const { error } = await supabase
+    .from("facturacion")
+    .upsert({
+      user_id,
+      ...body,
+      updated_at: new Date(),
+    }, { onConflict: "user_id" });
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Error guardando datos", detalle: error.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
+============================================================
+
+// app/api/facturacion/guardar-numero/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { pago_id, numero_factura } = await req.json();
+
+  if (!pago_id || !numero_factura) {
+    return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin
+    .from("pagos")
+    .update({ numero_factura })
+    .eq("id", pago_id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\pdf\route.js
+============================================================
+
+// app/api/facturacion/pdf/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
+
+export async function GET(req) {
+  const supabase = await supabaseServer();
+
+  const { searchParams } = new URL(req.url);
+  const pago_id = searchParams.get("pago_id");
+
+  if (!pago_id) {
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  }
+
+  // Obtener pago y licencias
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*, licencias(*)")
+    .eq("id", pago_id)
+    .single();
+
+  if (!pago) {
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  if (!pago.numero_factura) {
+    return NextResponse.json(
+      { error: "Falta número de factura" },
+      { status: 400 }
+    );
+  }
+
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", pago.user_id)
+    .single();
+
+  if (!facturacion) {
+    return NextResponse.json(
+      { error: "No hay datos de facturación" },
+      { status: 400 }
+    );
+  }
+
+  const { data: empresa } = await supabase
+    .from("empresa")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (!empresa) {
+    return NextResponse.json(
+      { error: "Datos fiscales del negocio no configurados" },
+      { status: 500 }
+    );
+  }
+
+  const base = pago.importe;
+  const iva = (base * 0.21).toFixed(2);
+  const total = (base * 1.21).toFixed(2);
+
+  const html = `
+    <h1>Factura #${pago.numero_factura}</h1>
+    <p>Fecha: ${new Date().toLocaleDateString()}</p>
+
+    <h3>Cliente</h3>
+    <p>${facturacion.nombre}</p>
+    <p>${facturacion.direccion}</p>
+    <p>${facturacion.cp} ${facturacion.ciudad}</p>
+
+    <h3>Detalle</h3>
+    <table>
+      <tr><th>Concepto</th><th>Cant</th><th>Base</th><th>IVA</th><th>Total</th></tr>
+      <tr>
+        <td>${pago.plugin_id}</td>
+        <td>${pago.cantidad_licencias}</td>
+        <td>${base} €</td>
+        <td>${iva} €</td>
+        <td>${total} €</td>
+      </tr>
+    </table>
+
+    <h3>Licencias</h3>
+    ${pago.licencias.map(l => `Email Tekla: ${l.email_tekla}`).join("<br>")}
+
+    <h3>Total factura: ${total} €</h3>
+
+    <p><strong>${empresa.nombre}</strong></p>
+    <p>${empresa.cif}</p>
+    <p>${empresa.direccion}</p>
+  `;
+
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless
+  });
+
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: "networkidle0" });
+
+  const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
+
+  await browser.close();
+
+  return new NextResponse(pdfBuffer, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename=factura-${pago.numero_factura}.pdf`
+    }
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar-factura\route.js
+============================================================
+
+// app/api/facturacion/solicitar-factura/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { enviarEmail } from "@/lib/email";
+
+export async function POST(req) {
+  const supabase = await supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  const { pago_id } = await req.json();
+
+  if (!pago_id) {
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  }
+
+  // Validar propiedad del pago
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*, licencias(*)")
+    .eq("id", pago_id)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (!pago) {
+    return NextResponse.json(
+      { error: "Pago no encontrado o no pertenece al usuario" },
+      { status: 404 }
+    );
+  }
+
+  // Validar datos de facturación
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (!facturacion) {
+    return NextResponse.json(
+      { error: "Debes completar tus datos de facturación" },
+      { status: 400 }
+    );
+  }
+
+  const html = `
+    <h3>Solicitud de factura</h3>
+    <p>El usuario ${userData.user.email} solicita factura.</p>
+    <p>Pago ID: ${pago.id}</p>
+    <p>Importe: ${pago.importe ?? "—"} €</p>
+    <p>Nombre: ${facturacion.nombre}</p>
+  `;
+
+  await enviarEmail(process.env.ADMIN_EMAIL, "Solicitud de factura", html);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\activar\route.js
+============================================================
+
+// /app/api/licencias/activar/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { licencia_id } = await req.json();
+  if (!licencia_id) {
+    return NextResponse.json(
+      { error: "Falta licencia_id" },
+      { status: 400 }
+    );
+  }
+
+  // Comprobar que existe
+  const { data: lic } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("id", licencia_id)
+    .single();
+
+  if (!lic) {
+    return NextResponse.json(
+      { error: "Licencia no encontrada" },
+      { status: 404 }
+    );
+  }
+
+  // Activar licencia
+  await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "activa" })
+    .eq("id", licencia_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\bloquear\route.js
+============================================================
+
+// /app/api/licencias/bloquear/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { licencia_id } = await req.json();
+  if (!licencia_id) {
+    return NextResponse.json(
+      { error: "Falta licencia_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: lic } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("id", licencia_id)
+    .single();
+
+  if (!lic) {
+    return NextResponse.json(
+      { error: "Licencia no encontrada" },
+      { status: 404 }
+    );
+  }
+
+  await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "bloqueada" })
+    .eq("id", licencia_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\mias\route.js
+============================================================
+
+// /app/api/licencias/mias/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function GET() {
+  try {
+    const supabase = supabaseServer();
+
+    const { data: userData, error: userError } =
+      await supabase.auth.getUser();
+
+    if (userError || !userData?.user) {
+      return NextResponse.json(
+        { error: "NO_LOGIN" },
+        { status: 401 }
+      );
+    }
+
+    const { data, error } = await supabase
+      .from("licencias")
+      .select("*, plugins(nombre)")
+      .eq("user_id", userData.user.id)
+      .order("fecha_creacion", { ascending: false });
+
+    if (error) {
+      return NextResponse.json(
+        { error: "ERROR_DB" },
+        { status: 500 }
+      );
+    }
+
+    const licencias = data.map((l) => ({
+      id: l.id,
+      email_tekla: l.email_tekla,
+      plugin_nombre: l.plugins?.nombre ?? "—",
+      estado: l.estado,
+      activaciones_usadas: l.activaciones_usadas,
+      max_activaciones: l.max_activaciones,
+      fecha_creacion: l.fecha_creacion,
+    }));
+
+    return NextResponse.json(licencias);
+  } catch (err) {
+    return NextResponse.json(
+      { error: "ERROR_INTERNO" },
+      { status: 500 }
+    );
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\reset-activaciones\route.js
+============================================================
+
+// /app/api/licencias/reset-activaciones/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { licencia_id } = await req.json();
+  if (!licencia_id) {
+    return NextResponse.json(
+      { error: "Falta licencia_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: lic } = await supabaseAdmin
+    .from("licencias")
+    .select("activaciones_usadas")
+    .eq("id", licencia_id)
+    .single();
+
+  if (!lic) {
+    return NextResponse.json(
+      { error: "Licencia no encontrada" },
+      { status: 404 }
+    );
+  }
+
+  await supabaseAdmin
+    .from("licencias")
+    .update({ activaciones_usadas: 0 })
+    .eq("id", licencia_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\todas\route.js
+============================================================
+
+// /app/api/licencias/todas/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function GET(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) {
+    return NextResponse.json(
+      { error: "Falta id" },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json(
+      { error: "Licencia no encontrada" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ licencia: data });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
+============================================================
+
+// /app/api/licencias/trial/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { licencia_id } = await req.json();
+
+  if (!licencia_id) {
+    return NextResponse.json(
+      { error: "Falta licencia_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: lic } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("id", licencia_id)
+    .single();
+
+  if (!lic) {
+    return NextResponse.json(
+      { error: "Licencia no encontrada" },
+      { status: 404 }
+    );
+  }
+
+  await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "trial" })
+    .eq("id", licencia_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\aprobar\route.js
+============================================================
+
+// /app/api/pagos/aprobar/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { enviarEmail } from "@/lib/email";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(
+      { error: "No autorizado" },
+      { status: 403 }
+    );
+  }
+
+  const { pago_id } = await req.json();
+
+  if (!pago_id) {
+    return NextResponse.json(
+      { error: "Falta pago_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: pago, error } = await supabaseAdmin
+    .from("pagos")
+    .select("*, licencias(*)")
+    .eq("id", pago_id)
+    .single();
+
+  if (error || !pago) {
+    return NextResponse.json(
+      { error: "No se encontró el pago" },
+      { status: 404 }
+    );
+  }
+
+  // Aprobar
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "aprobado" })
+    .eq("id", pago_id);
+
+  // Activar licencias
+  await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "activa" })
+    .eq("pago_id", pago_id);
+
+  // Email al usuario
+  const { data: userRes } =
+    await supabaseAdmin.auth.admin.getUserById(
+      pago.user_id
+    );
+
+  const emailsTekla = pago.licencias.map(
+    (l) => l.email_tekla
+  );
+
+  const html = `
+    <h2>Tus licencias han sido activadas</h2>
+    <p>Se han activado las siguientes licencias:</p>
+    <ul>
+      ${emailsTekla.map((e) => `<li>${e}</li>`).join("")}
+    </ul>
+  `;
+
+  if (userRes?.user?.email) {
+    await enviarEmail(
+      userRes.user.email,
+      "Licencias activadas",
+      html
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
+============================================================
+
+// /app/api/pagos/crear/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function POST(req) {
+  const supabase = supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json(
+      { error: "No autenticado" },
+      { status: 401 }
+    );
+  }
+
+  const body = await req.json();
+  const { plugin_id, licencias } = body;
+
+  if (!plugin_id || !licencias?.length) {
+    return NextResponse.json(
+      { error: "Datos incompletos" },
+      { status: 400 }
+    );
+  }
+
+  const cantidad = licencias.length;
+
+  // Verificar plugin
+  const { data: plugin } = await supabase
+    .from("plugins")
+    .select("id, precio")
+    .eq("id", plugin_id)
+    .single();
+
+  if (!plugin) {
+    return NextResponse.json(
+      { error: "Plugin no encontrado" },
+      { status: 400 }
+    );
+  }
+
+  // Crear pago
+  const { data: pago, error: pagoError } = await supabase
+    .from("pagos")
+    .insert({
+      user_id: userData.user.id,
+      plugin_id,
+      cantidad_licencias: cantidad,
+      estado: "pendiente",
+      importe: plugin.precio * cantidad,
+    })
+    .select("id")
+    .single();
+
+  if (pagoError) {
+    return NextResponse.json(
+      { error: pagoError.message },
+      { status: 500 }
+    );
+  }
+
+  // Crear licencias
+  const licenciaRows = licencias.map((l) => ({
+    pago_id: pago.id,
+    plugin_id,
+    user_id: userData.user.id,
+    email_tekla: l.email_tekla ?? "",
+    estado: "trial",
+  }));
+
+  const { error: licError } = await supabase
+    .from("licencias")
+    .insert(licenciaRows);
+
+  if (licError) {
+    return NextResponse.json(
+      { error: licError.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ pago_id: pago.id });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\detalle\route.js
+============================================================
+
+// /app/api/pagos/detalle/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function GET(req) {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return NextResponse.json(
+      { error: "No autenticado" },
+      { status: 401 }
+    );
+  }
+
+  const pago_id = new URL(req.url).searchParams.get("pago_id");
+
+  if (!pago_id) {
+    return NextResponse.json(
+      { error: "Falta pago_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: pago, error } = await supabase
+    .from("pagos")
+    .select("*, licencias(*)")
+    .eq("id", pago_id)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (error || !pago) {
+    return NextResponse.json(
+      { error: "Pago no encontrado" },
+      { status: 404 }
+    );
+  }
+
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", pago.user_id)
+    .single();
+
+  return NextResponse.json({
+    ...pago,
+    facturacion: facturacion ?? null,
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
+============================================================
+
+// /app/api/pagos/guardar-emails/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function POST(req) {
+  const supabase = supabaseServer();
+  const body = await req.json();
+
+  const { pago_id, emails } = body;
+
+  if (!pago_id || !emails?.length) {
+    return NextResponse.json(
+      { error: "Datos incompletos" },
+      { status: 400 }
+    );
+  }
+
+  for (const entry of emails) {
+    await supabase
+      .from("licencias")
+      .update({ email_tekla: entry.email_tekla })
+      .eq("id", entry.licencia_id)
+      .eq("pago_id", pago_id);
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
+============================================================
+
+// /app/api/pagos/notificar-transferencia/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { enviarEmail, plantillaTransferenciaNotificada } from "@/lib/email";
+
+export async function POST(req) {
+  const supabase = supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json(
+      { error: "No autenticado" },
+      { status: 401 }
+    );
+  }
+
+  const { pago_id } = await req.json();
+
+  if (!pago_id) {
+    return NextResponse.json(
+      { error: "Falta pago_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: pago } = await supabase
+    .from("pagos")
+    .select("*, licencias(*)")
+    .eq("id", pago_id)
+    .single();
+
+  if (!pago) {
+    return NextResponse.json(
+      { error: "Pago no encontrado" },
+      { status: 404 }
+    );
+  }
+
+  await supabase
+    .from("pagos")
+    .update({ estado: "transferencia_notificada" })
+    .eq("id", pago_id);
+
+  const html = plantillaTransferenciaNotificada(
+    userData.user.email,
+    pago
+  );
+
+  await enviarEmail(
+    process.env.ADMIN_EMAIL,
+    "Transferencia notificada",
+    html
+  );
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
+============================================================
+
+// /app/api/plugin/download/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req) {
+  const supabase = supabaseServer();
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return NextResponse.json(
+      { error: "No autenticado" },
+      { status: 401 }
+    );
+  }
+
+  const plugin_id = new URL(req.url).searchParams.get("plugin_id");
+
+  if (!plugin_id) {
+    return NextResponse.json(
+      { error: "Falta plugin_id" },
+      { status: 400 }
+    );
+  }
+
+  const { data: plugin, error } = await supabaseAdmin
+    .from("plugins")
+    .select("archivo_url")
+    .eq("id", plugin_id)
+    .single();
+
+  if (error || !plugin?.archivo_url) {
+    return NextResponse.json(
+      { error: "Plugin no encontrado" },
+      { status: 404 }
+    );
+  }
+
+  // Registrar descarga
+  await supabase
+    .from("descargas")
+    .insert({
+      user_id: userData.user.id,
+      plugin_id,
+    });
+
+  return NextResponse.redirect(plugin.archivo_url);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\route.js
+============================================================
+
+// /app/api/plugin/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json(
+      { error: "No se pudieron obtener los plugins" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(data ?? []);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
+============================================================
+
+// /app/api/plugin/validate-license/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const { email_tekla, plugin_id, maquina_id } = await req.json();
+
+  if (!email_tekla || !plugin_id) {
+    return NextResponse.json(
+      { estado: "error", mensaje: "Datos incompletos" },
+      { status: 400 }
+    );
+  }
+
+  // Buscar licencia más reciente
+  const { data: lic, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("email_tekla", email_tekla)
+    .eq("plugin_id", plugin_id)
+    .order("fecha_creacion", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !lic) {
+    return NextResponse.json({ estado: "sin_licencia" });
+  }
+
+  // Estado de licencia
+  if (lic.estado === "bloqueada") {
+    return NextResponse.json({ estado: "bloqueada" });
+  }
+
+  // Trial expirado
+  if (lic.fecha_expiracion) {
+    if (new Date(lic.fecha_expiracion) < new Date()) {
+      return NextResponse.json({ estado: "expirada" });
+    }
+  }
+
+  // Límite de activaciones
+  if (lic.activaciones_usadas >= lic.max_activaciones) {
+    return NextResponse.json({ estado: "sin_activaciones" });
+  }
+
+  // Registrar activación
+  await supabaseAdmin
+    .from("licencias")
+    .update({
+      activaciones_usadas: lic.activaciones_usadas + 1,
+      maquina_id: maquina_id ?? lic.maquina_id,
+    })
+    .eq("id", lic.id);
+
+  return NextResponse.json({
+    estado: lic.estado,
+    activaciones_restantes:
+      lic.max_activaciones - (lic.activaciones_usadas + 1),
+    fecha_expiracion: lic.fecha_expiracion,
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\[id]\route.js
+============================================================
+
+// /app/api/plugin/[id]/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(_, props) {
+  const { id } = props.params;
+
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json(
+      { error: "Plugin no encontrado" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json(data);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
+============================================================
+
+
+// app/layout.jsx
+import "./globals.css";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+
+export const metadata = {
+  title: "OMBIM",
+  description: "Modelado 3D y software para Tekla Structures",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang='es'>
+      <body className='min-h-screen bg-[#f3f4f6] dark:bg-[#242424]'>
+        <Navbar />
+        <div className='max-w-7xl mx-auto w-full px-6 pt-[88px]'>
+          {children}
+        </div>
+        <Footer />
+      </body>
+    </html>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\middleware.js
+============================================================
+
+// middleware.js — versión compatible con Next.js 16
+import { NextResponse } from "next/server";
+
+export function middleware(request) {
+  const url = request.nextUrl;
+  const { pathname } = url;
+
+  // Cookies (Next 16 API)
+  const access = request.cookies.get("sb-access-token")?.value;
+  const refresh = request.cookies.get("supabase-auth-token")?.value;
+  const role = request.cookies.get("sb-user-role")?.value;
+
+  const logged = access || refresh;
+
+  // Rutas protegidas para usuarios normales
+  const userProtected = [
+    "/panel",
+    "/panel/user",
+    "/panel/mis-",
+    "/pago",
+  ];
+
+  if (userProtected.some((r) => pathname.startsWith(r))) {
+    if (!logged) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Rutas solo para admin
+  const adminProtected = [
+    "/panel/admin",
+    "/api/admin",
+  ];
+
+  if (adminProtected.some((r) => pathname.startsWith(r))) {
+    if (role !== "admin") {
+      url.pathname = "/panel/user";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Redirección automática /panel según rol
+  if (pathname === "/panel") {
+    if (!logged) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    url.pathname = role === "admin"
+      ? "/panel/admin"
+      : "/panel/user";
+
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    "/panel/:path*",
+    "/pago/:path*",
+    "/api/admin/:path*",
+  ],
+};
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\dashboard\page.jsx
+============================================================
+
+// /app/panel/admin/dashboard/page.jsx
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/dashboard`, {
+    cache: "no-store",
+  });
+
+  const stats = await res.json();
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-6">Dashboard</h1>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded">
+          <h3>Total licencias</h3>
+          <p>{stats.totalLicencias}</p>
+        </div>
+
+        <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded">
+          <h3>Pagos</h3>
+          <p>{stats.totalPagos}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
+============================================================
+
+// /app/panel/admin/layout.jsx
+import { requireAdmin } from "@/lib/checkAdmin";
+import Link from "next/link";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLayout({ children }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null; // requireAdmin ya redirige
+
+  return (
+    <div className="flex min-h-screen">
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-gray-100 dark:bg-gray-900 p-6 space-y-4">
+        <h2 className="text-xl font-bold mb-4">Admin</h2>
+
+        <nav className="space-y-2">
+          <Link href="/panel/admin/dashboard">Dashboard</Link>
+          <Link href="/panel/admin/licencias">Licencias</Link>
+          <Link href="/panel/admin/licencias-tipos">Tipos de licencia</Link>
+          <Link href="/panel/admin/plugins">Plugins</Link>
+          <Link href="/panel/admin/usuarios">Usuarios</Link>
+          <Link href="/panel/admin/pagos">Pagos</Link>
+          <Link href="/panel/admin/logs">Logs</Link>
+        </nav>
+      </aside>
+
+      {/* CONTENIDO */}
+      <main className="flex-1 p-8">{children}</main>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
+============================================================
+
+// /app/panel/admin/licencias/page.jsx
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLicenciasPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data: licencias } = await supabaseAdmin
+    .from("licencias")
+    .select("id, plugin_id, email_tekla, estado, fecha_creacion")
+    .order("fecha_creacion", { ascending: false })
+    .limit(100);
+
+  return (
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Licencias</h1>
+
+      {!licencias?.length && <p>No hay licencias todavía.</p>}
+
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Plugin</th>
+            <th>Email Tekla</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {licencias?.map((l) => (
+            <tr key={l.id}>
+              <td>{l.id}</td>
+              <td>{l.plugin_id}</td>
+              <td>{l.email_tekla}</td>
+              <td>{l.estado}</td>
+              <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
+              <td>
+                <a href={`/panel/admin/licencias/${l.id}`} className="underline">
+                  Ver / Editar
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\[id]\page.jsx
+============================================================
+
+// /app/panel/admin/licencias/[id]/page.jsx
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLicenciaDetallePage({ params }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/licencias/${params.id}`,
+    { cache: "no-store" }
+  );
+
+  const data = await res.json();
+  if (!data?.licencia) return <p>Licencia no encontrada</p>;
+
+  const l = data.licencia;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Licencia {l.id}</h1>
+
+      <p><strong>Plugin:</strong> {l.plugin_id}</p>
+      <p><strong>Email Tekla:</strong> {l.email_tekla}</p>
+      <p><strong>Estado:</strong> {l.estado}</p>
+      <p><strong>Activaciones:</strong> {l.activaciones_usadas} / {l.max_activaciones}</p>
+
+      <div className="flex flex-col gap-4 mt-6 max-w-xs">
+
+        {/* ACTIVAR */}
+        <form action="/api/licencias/activar" method="POST">
+          <input type="hidden" name="licencia_id" value={l.id} />
+          <button className="bg-green-600 text-white px-4 py-2 rounded w-full">
+            Activar
+          </button>
+        </form>
+
+        {/* TRIAL */}
+        <form action="/api/licencias/trial" method="POST">
+          <input type="hidden" name="licencia_id" value={l.id} />
+          <button className="bg-yellow-600 text-white px-4 py-2 rounded w-full">
+            Poner en Trial
+          </button>
+        </form>
+
+        {/* BLOQUEAR */}
+        <form action="/api/licencias/bloquear" method="POST">
+          <input type="hidden" name="licencia_id" value={l.id} />
+          <button className="bg-red-600 text-white px-4 py-2 rounded w-full">
+            Bloquear
+          </button>
+        </form>
+
+        {/* RESET ACTIVACIONES */}
+        <form action="/api/licencias/reset-activaciones" method="POST">
+          <input type="hidden" name="licencia_id" value={l.id} />
+          <button className="bg-purple-600 text-white px-4 py-2 rounded w-full">
+            Reset Activaciones
+          </button>
+        </form>
+
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias-tipos\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLicenciasTiposPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data: tipos } = await supabaseAdmin
+    .from("licencias_tipos")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Tipos de licencia</h1>
+
+      {!tipos?.length && <p>No hay tipos de licencia.</p>}
+
+      <table>
+        {/* ... */}
+      </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLogsPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data: logs } = await supabaseAdmin
+    .from("admin_logs")
+    .select("*")
+    .order("fecha", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Logs admin</h1>
+
+      {!logs?.length && <p>No hay logs.</p>}
+
+      {logs.map((l) => (
+        <p key={l.id}>
+          <strong>{l.tipo}</strong> — {l.mensaje}  
+          <br />
+          {new Date(l.fecha).toLocaleString()}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\page.jsx
+============================================================
+
+// /app/panel/admin/page.jsx
+export const dynamic = "force-dynamic";
+
+export default function AdminHome() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">Panel de administración</h1>
+      <p className="mt-2">Selecciona una sección del menú para comenzar.</p>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminPagosPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data: pagos } = await supabaseAdmin
+    .from("pagos")
+    .select("id, user_id, plugin_id, cantidad_licencias, estado, fecha")
+    .order("fecha", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Pagos</h1>
+
+      {!pagos?.length && <p>No hay pagos aún.</p>}
+
+      <table> {/* … */} </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminPagoDetallePage({ params }) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/pagos/${params.id}`,
+    { cache: "no-store" }
+  );
+
+  const { pago } = await res.json();
+  if (!pago) return <p>Pago no encontrado</p>;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Pago {pago.id}</h1>
+      {/* … resto idéntico pero seguro */}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
+============================================================
+
+// /app/panel/admin/plugins/nuevo/page.jsx
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function NuevoPluginPage() {
+  const router = useRouter();
+
+  const [nombre, setNombre] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [precio, setPrecio] = useState(0);
+  const [archivoUrl, setArchivoUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const res = await fetch("/api/admin/plugins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        nombre,
+        descripcion,
+        precio: Number(precio),
+        archivo_url: archivoUrl,
+        video_url: videoUrl,
+      }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error || "Error al crear plugin");
+      return;
+    }
+
+    router.push("/panel/admin/plugins");
+  }
+
+  return (
+    <div className="max-w-xl">
+      <h1 className="text-xl font-bold mb-4">Nuevo plugin</h1>
+
+      <form onSubmit={submit} className="space-y-4">
+
+        <div>
+          <label className="block mb-1">Nombre</label>
+          <input
+            type="text"
+            required
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Descripción</label>
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            className="border p-2 rounded w-full h-28"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Precio (€)</label>
+          <input
+            type="number"
+            value={precio}
+            min={0}
+            step={0.01}
+            onChange={(e) => setPrecio(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Archivo URL (descarga)</label>
+          <input
+            type="text"
+            value={archivoUrl}
+            onChange={(e) => setArchivoUrl(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Video URL (opcional)</label>
+          <input
+            type="text"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          {loading ? "Guardando..." : "Guardar"}
+        </button>
+
+        {error && (
+          <p className="text-red-600 mt-2">{error}</p>
+        )}
+      </form>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminPluginsPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data: plugins } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Plugins</h1>
+
+      <a href="/panel/admin/plugins/nuevo" className="underline block mb-4">
+        Nuevo plugin
+      </a>
+
+      {!plugins?.length && <p>No hay plugins.</p>}
+      {/* … */}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminUsuariosPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data } = await supabaseAdmin.auth.admin.listUsers();
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Usuarios</h1>
+
+      {!data?.users?.length && <p>No hay usuarios.</p>}
+
+      <table> {/* … */} </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\FacturacionClient.jsx
+============================================================
+
+// /app/panel/facturacion/FacturacionClient.jsx
+"use client";
+
+import { useState } from "react";
+
+export default function FacturacionClient({ user_id, datosIniciales }) {
+  const [form, setForm] = useState({
+    nombre: datosIniciales?.nombre ?? "",
+    nif: datosIniciales?.nif ?? "",
+    direccion: datosIniciales?.direccion ?? "",
+    ciudad: datosIniciales?.ciudad ?? "",
+    cp: datosIniciales?.cp ?? "",
+    pais: datosIniciales?.pais ?? "",
+    telefono: datosIniciales?.telefono ?? "",
+  });
+
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+
+  async function guardar() {
+    setMsg("");
+    setError("");
+
+    const res = await fetch("/api/facturacion/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id, ...form }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Error guardando datos");
+    } else {
+      setMsg("Datos guardados correctamente.");
+    }
+  }
+
+  return (
+    <div className="space-y-4 max-w-lg">
+      {Object.entries({
+        nombre: "Nombre o empresa",
+        nif: "NIF / CIF",
+        direccion: "Dirección",
+        ciudad: "Ciudad",
+        cp: "Código postal",
+        pais: "País",
+        telefono: "Teléfono",
+      }).map(([key, label]) => (
+        <div key={key}>
+          <label className="block mb-1">{label}</label>
+          <input
+            type="text"
+            value={form[key]}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+            className="border p-2 rounded w-full"
+          />
+        </div>
+      ))}
+
+      <button
+        onClick={guardar}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Guardar datos
+      </button>
+
+      {msg && <p className="text-green-600">{msg}</p>}
+      {error && <p className="text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
+============================================================
+
+// /app/panel/facturacion/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+import FacturacionClient from "./FacturacionClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
+  const supabase = supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return <p>No autenticado</p>;
+  }
+
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", userData.user.id)
+    .single();
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Datos de facturación</h1>
+      <FacturacionClient user_id={userData.user.id} datosIniciales={facturacion ?? {}} />
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\layout.jsx
+============================================================
+
+import PanelAuth from "./panel-auth";
+
+export default function PanelLayout({ children }) {
+  return (
+    <PanelAuth>
+      <div className="pt-[88px] px-6">
+        {children}
+      </div>
+    </PanelAuth>
+  );
+}
+
+

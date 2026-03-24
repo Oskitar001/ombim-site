@@ -1,16 +1,17 @@
+// /app/panel/mis-facturas/page.jsx
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
 export default async function MisFacturasPage() {
   const supabase = await supabaseServer();
+
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData?.user) {
-    return <div className="text-center mt-20">Debes iniciar sesión para ver tus facturas.</div>;
+    return <p>Debes iniciar sesión para ver tus facturas.</p>;
   }
 
-  // Usamos pagos aprobados como base de facturas
   const { data: pagos } = await supabase
     .from("pagos")
     .select("id, plugin_id, fecha, estado, plugins(nombre)")
@@ -19,38 +20,25 @@ export default async function MisFacturasPage() {
     .order("fecha", { ascending: false });
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">Mis facturas</h1>
+    <div>
+      <h2>Mis facturas</h2>
 
-      {!(pagos || []).length && <p>No tienes facturas todavía.</p>}
+      {!pagos?.length && <p>No tienes facturas todavía.</p>}
 
-      <div className="space-y-4">
-        {(pagos || []).map((pago) => (
-          <div
-            key={pago.id}
-            className="bg-white shadow border border-gray-200 rounded p-4 flex justify-between items-center"
+      {pagos?.map((p) => (
+        <div key={p.id}>
+          <p>Plugin: {p.plugins?.nombre ?? p.plugin_id}</p>
+          <p>Fecha: {new Date(p.fecha).toLocaleString()}</p>
+
+          <a
+            href={`/api/facturacion/pdf?pago_id=${p.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <div>
-              <p>
-                <span className="font-semibold">Plugin:</span>{" "}
-                {pago.plugins?.nombre || pago.plugin_id}
-              </p>
-              <p className="text-sm text-gray-500">
-                Fecha: {new Date(pago.fecha).toLocaleString()}
-              </p>
-            </div>
-
-            <button
-              onClick={() =>
-                window.open(`/api/facturacion/pdf?pago_id=${pago.id}`, "_blank")
-              }
-              className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-            >
-              Descargar factura
-            </button>
-          </div>
-        ))}
-      </div>
+            Descargar factura
+          </a>
+        </div>
+      ))}
     </div>
   );
 }

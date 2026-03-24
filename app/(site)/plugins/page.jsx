@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -9,19 +10,24 @@ export default async function PluginsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="max-w-4xl mx-auto pt-32 px-6">
-      <h1 className="text-3xl font-bold mb-8">Plugins</h1>
-      {plugins?.map((p) => (
-        <div key={p.id} className="mb-6 border p-4 rounded">
-          <a href={`/plugins/${p.id}`} className="text-xl font-semibold text-blue-600">
-            {p.nombre}
-          </a>
-          <p>{p.descripcion}</p>
-          <p className="mt-2 font-semibold">
-            {p.precio > 0 ? `${p.precio} €` : "Gratis"}
-          </p>
-        </div>
-      ))}
-    </div>
+    <section className="max-w-5xl mx-auto py-20 px-6">
+      <h1 className="text-4xl font-bold mb-10 text-center">Plugins</h1>
+
+      {!plugins?.length && <p>No hay plugins disponibles todavía.</p>}
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {plugins?.map((p) => (
+          <Link key={p.id} href={`/plugins/${p.id}`} className="block">
+            <div className="border rounded-xl p-6 bg-white dark:bg-[#1a1a1a] shadow hover:shadow-lg transition">
+              <h2 className="text-2xl font-semibold mb-2">{p.nombre}</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-2">{p.descripcion}</p>
+              <p className="font-bold text-blue-600 dark:text-blue-400">
+                {p.precio > 0 ? `${p.precio} €` : "Gratis"}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

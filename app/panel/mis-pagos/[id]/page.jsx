@@ -1,7 +1,6 @@
+// /app/panel/mis-pagos/[id]/page.jsx
 import PagoClient from "./PagoClient";
 
 export default function PagoPage({ params }) {
-  const { id } = params;
-
-  return <PagoClient pagoId={id} />;
+  return <PagoClient pagoId={params.id} />;
 }

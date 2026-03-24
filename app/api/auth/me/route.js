@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function GET(req) {
-  const response = NextResponse.next();
+  const response = NextResponse.json({});
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -11,7 +11,7 @@ export async function GET(req) {
       cookies: {
         get: (name) => req.cookies.get(name)?.value,
         set: (name, value, options) =>
-          response.cookies.set(name, value, options),
+          response.cookies.set(name, value, { ...options }),
         remove: (name, options) =>
           response.cookies.set(name, "", { ...options, maxAge: 0 }),
       },
@@ -26,6 +26,6 @@ export async function GET(req) {
 
   return NextResponse.json({
     user: data.user,
-    role: data.user.user_metadata?.role || "user",
+    role: data.user.user_metadata?.role ?? "user",
   });
 }

@@ -12,47 +12,44 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
-
   const [theme, setTheme] = useState("light");
 
   const menuRef = useRef(null);
 
-  // Cargar usuario
+  // Obtener usuario
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        setUser(data.user);
+      .then((res) => res.json())
+      .then((data) => {
+        setUser(data.user ?? null);
         setReady(true);
       })
       .catch(() => setReady(true));
   }, []);
 
-  // Cargar tema
+  // Cargar tema desde localStorage
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
     setTheme(saved);
     document.documentElement.classList.toggle("dark", saved === "dark");
   }, []);
 
-  // Cambiar tema
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
+    setTheme(newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  // Cerrar menú al hacer clic fuera
+  // Cerrar menú usuario al hacer clic fuera
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
       }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   // Cerrar menús al navegar
@@ -61,7 +58,7 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [pathname]);
 
-  // Bloquear scroll en móvil
+  // Evitar scroll cuando menú móvil está abierto
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", open);
   }, [open]);
@@ -70,105 +67,109 @@ export default function Navbar() {
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
-    setMenuOpen(false);
-    setOpen(false);
     router.push("/");
   };
 
   if (!ready) return null;
 
-  // ⭐ Obtener nombre real desde user_metadata
   const nombre = user?.user_metadata?.nombre;
-
-  // ⭐ Avatar: inicial del nombre o inicial del email
-  const avatar = nombre
-    ? nombre.charAt(0).toUpperCase()
-    : user?.email?.charAt(0).toUpperCase();
+  const avatar =
+    nombre?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase();
 
   return (
-    <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] shadow-soft dark:shadow-none border-b border-[#d1d5db] dark:border-[#3a3a3a] fixed top-0 left-0 z-50">
+    <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] border-b border-gray-300 dark:border-gray-700 fixed top-0 left-0 z-50 shadow-sm">
       <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
 
         {/* LOGO */}
-        <Link href="/" prefetch={false} className="flex items-center gap-3 shrink-0">
+        <Link href="/" className="flex items-center gap-3 shrink-0">
           <img
             src="/logo-ombim.png"
             alt="OMBIM Logo"
-            className="h-10 w-auto md:h-16 block dark:hidden"
+            className="h-10 w-auto md:h-14 block dark:hidden"
           />
           <img
             src="/logo-ombim-dark.png"
             alt="OMBIM Logo Dark"
-            className="h-10 w-auto md:h-16 hidden dark:block"
+            className="h-10 w-auto md:h-14 hidden dark:block"
           />
-          <span className="text-xl md:text-3xl font-bold whitespace-nowrap text-[#1f2937] dark:text-[#e6e6e6]">
+          <span className="text-xl md:text-3xl font-bold text-[#1f2937] dark:text-[#e6e6e6]">
             OMBIM
           </span>
         </Link>
 
-        {/* HAMBURGUESA */}
+        {/* BOTÓN HAMBURGUESA */}
         <button
           className="md:hidden relative w-8 h-8 flex items-center justify-center"
           onClick={() => setOpen(!open)}
           aria-label="Abrir menú"
         >
-          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-6 rotate-45 translate-y-0" : "w-7 -translate-y-2"}`}></span>
-          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-0 opacity-0" : "w-7 opacity-100"}`}></span>
-          <span className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all duration-300 ${open ? "w-6 -rotate-45 translate-y-0" : "w-7 translate-y-2"}`}></span>
+          <span
+            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
+              open ? "w-6 rotate-45" : "w-7 -translate-y-2"
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
+              open ? "opacity-0" : "opacity-100 w-7"
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
+              open ? "w-6 -rotate-45" : "w-7 translate-y-2"
+            }`}
+          />
         </button>
 
-        {/* MENÚ ESCRITORIO */}
-        <div className="hidden md:flex gap-6 text-lg items-center text-[#1f2937] dark:text-[#e6e6e6]">
-          <Link href="/" className="hover:text-brand transition">Inicio</Link>
-          <Link href="/sobre-mi" className="hover:text-brand transition">Sobre mí</Link>
-          <Link href="/servicios" className="hover:text-brand transition">Servicios</Link>
-          <Link href="/plugins" className="hover:text-brand transition">Plugins</Link>
-          <Link href="/demos" className="hover:text-brand transition">Demos</Link>
-          <Link href="/contacto" className="hover:text-brand transition">Contacto</Link>
+        {/* MENÚ DESKTOP */}
+        <div className="hidden md:flex gap-6 items-center text-lg text-[#1f2937] dark:text-[#e6e6e6]">
 
-          {/* SWITCH TEMA */}
+          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
+          <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
+          <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
+          <Link href="/plugins" className="hover:text-blue-600 transition">Plugins</Link>
+          <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
+          <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
+
+          {/* CAMBIAR TEMA */}
           <button
             onClick={toggleTheme}
-            className="px-3 py-2 rounded-lg bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
+            className="px-3 py-2 rounded-lg border bg-white dark:bg-[#2e2e2e] hover:bg-gray-200 dark:hover:bg-[#3a3a3a] transition"
           >
             {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
           </button>
 
-          {/* ⭐ USUARIO */}
+          {/* MENÚ USUARIO DESKTOP */}
           {user ? (
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 hover:text-brand transition"
+                className="flex items-center gap-2 hover:text-blue-600 transition"
               >
-                <div className="w-9 h-9 bg-brand text-white rounded-full flex items-center justify-center font-bold">
+                <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                   {avatar}
                 </div>
-
-                {/* ⭐ Mostrar nombre */}
-                <span>{user.user_metadata?.nombre}</span>
+                <span>{nombre}</span>
               </button>
 
               <div
-                className={`
-                  absolute right-0 mt-2 bg-[#ffffff] dark:bg-[#2e2e2e]
-                  border border-[#d1d5db] dark:border-[#3a3a3a]
-                  shadow-soft rounded-lg p-3 w-40 z-50
-                  transition-all duration-200 origin-top-right
-                  ${menuOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
-                `}
+                className={`absolute right-0 mt-2 bg-white dark:bg-[#2e2e2e] border border-gray-200 dark:border-gray-600 rounded-lg p-3 w-40 shadow-lg transition-all origin-top-right ${
+                  menuOpen
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-95 pointer-events-none"
+                }`}
               >
                 <Link
                   href="/panel"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 hover:bg-[#f3f4f6] dark:hover:bg-[#3a3a3a] rounded"
+                  className="block px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
                 >
                   Panel
                 </Link>
 
                 <button
                   onClick={logout}
-                  className="block w-full text-left px-3 py-2 hover:bg-[#f3f4f6] dark:hover:bg-[#3a3a3a] rounded"
+                  className="block w-full text-left px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
                 >
                   Cerrar sesión
                 </button>
@@ -177,9 +178,9 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] px-4 py-2 rounded-lg font-medium hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
+              className="border px-4 py-2 rounded-lg bg-white dark:bg-[#2e2e2e] hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
             >
-              Inicia sesión o regístrate
+              Iniciar sesión
             </Link>
           )}
         </div>
@@ -187,37 +188,26 @@ export default function Navbar() {
 
       {/* MENÚ MÓVIL */}
       {open && (
-        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#2e2e2e] shadow-lg px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6] border-t border-[#d1d5db] dark:border-[#3a3a3a]">
-          <Link href="/" onClick={() => setOpen(false)} className="hover:text-brand transition">Inicio</Link>
-          <Link href="/sobre-mi" onClick={() => setOpen(false)} className="hover:text-brand transition">Sobre mí</Link>
-          <Link href="/servicios" onClick={() => setOpen(false)} className="hover:text-brand transition">Servicios</Link>
-          <Link href="/plugins" onClick={() => setOpen(false)} className="hover:text-brand transition">Plugins</Link>
-          <Link href="/demos" onClick={() => setOpen(false)} className="hover:text-brand transition">Demos</Link>
-          <Link href="/contacto" onClick={() => setOpen(false)} className="hover:text-brand transition">Contacto</Link>
+        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#2e2e2e] border-t px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6]">
 
-          {/* SWITCH TEMA */}
-          <button
-            onClick={() => { toggleTheme(); setOpen(false); }}
-            className="hover:text-brand transition"
-          >
+          <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
+          <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
+          <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
+          <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
+          <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
+          <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
+
+          <button onClick={() => { toggleTheme(); setOpen(false); }}>
             {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
           </button>
 
           {user ? (
             <>
-              <Link href="/panel" onClick={() => setOpen(false)} className="hover:text-brand transition">Panel</Link>
-              <button onClick={logout} className="text-left hover:text-brand transition">
-                Cerrar sesión
-              </button>
+              <Link href="/panel" onClick={() => setOpen(false)}>Panel</Link>
+              <button onClick={logout}>Cerrar sesión</button>
             </>
           ) : (
-            <Link
-              href="/login"
-              onClick={() => setOpen(false)}
-              className="bg-[#ffffff] dark:bg-[#2e2e2e] border border-[#d1d5db] dark:border-[#3a3a3a] px-4 py-2 rounded-lg font-medium hover:bg-[#e5e7eb] dark:hover:bg-[#3a3a3a] transition"
-            >
-              Inicia sesión o regístrate
-            </Link>
+            <Link href="/login" onClick={() => setOpen(false)}>Iniciar sesión</Link>
           )}
         </div>
       )}

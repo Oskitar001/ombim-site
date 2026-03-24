@@ -1,33 +1,32 @@
-"use client";
+// /app/panel/admin/dashboard/page.jsx
+import { requireAdmin } from "@/lib/checkAdmin";
 
-import { useEffect, useState } from "react";
-import StatsCard from "@/components/admin/StatsCard";
+export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState(null);
+export default async function DashboardPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
 
-  useEffect(() => {
-    async function cargar() {
-      const res = await fetch("/api/admin/dashboard");
-      const data = await res.json();
-      setStats(data);
-    }
-    cargar();
-  }, []);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/dashboard`, {
+    cache: "no-store",
+  });
 
-  if (!stats) return <p>Cargando...</p>;
+  const stats = await res.json();
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
+      <h1 className="text-xl font-bold mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatsCard title="Licencias totales" value={stats.totalLicencias} />
-        <StatsCard title="Licencias activas" value={stats.licenciasActivas} />
-        <StatsCard title="Licencias bloqueadas" value={stats.licenciasBloqueadas} />
-        <StatsCard title="Activaciones totales" value={stats.activacionesTotales} />
-        <StatsCard title="Pagos totales" value={stats.totalPagos} />
-        <StatsCard title="Ingresos totales (€)" value={stats.ingresosTotales} />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded">
+          <h3>Total licencias</h3>
+          <p>{stats.totalLicencias}</p>
+        </div>
+
+        <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded">
+          <h3>Pagos</h3>
+          <p>{stats.totalPagos}</p>
+        </div>
       </div>
     </div>
   );

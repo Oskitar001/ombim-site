@@ -1,14 +1,16 @@
-export const dynamic = "force-dynamic";
-
+// /app/panel/mis-datos/page.jsx
 import { supabaseServer } from "@/lib/supabaseServer";
 import MisDatosClient from "./MisDatosClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function MisDatosPage() {
   const supabase = await supabaseServer();
+
   const { data: userData } = await supabase.auth.getUser();
 
   if (!userData?.user) {
-    return <div className="text-center mt-20">Debes iniciar sesión.</div>;
+    return <p>Debes iniciar sesión.</p>;
   }
 
   const { data: facturacion } = await supabase
@@ -18,8 +20,8 @@ export default async function MisDatosPage() {
     .maybeSingle();
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">Datos de facturación</h1>
+    <div>
+      <h2>Datos de facturación</h2>
       <MisDatosClient initialData={facturacion} />
     </div>
   );

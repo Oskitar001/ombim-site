@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 
 export default function ResetRequestPage() {
@@ -13,7 +12,7 @@ export default function ResetRequestPage() {
     const res = await fetch("/api/auth/reset-request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email }),
     });
 
     const data = await res.json();
@@ -21,28 +20,24 @@ export default function ResetRequestPage() {
   }
 
   return (
-    <div className="pt-32 flex flex-col items-center px-6 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Recuperar contraseña</h1>
+    <div className="max-w-md mx-auto py-10">
+      <h1 className="text-xl font-bold mb-4">Recuperar contraseña</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-sm p-6 rounded-lg shadow border"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
-          type="email"
-          placeholder="Tu correo"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
           required
-          className="border p-2 rounded"
+          type="email"
+          placeholder="Tu email"
+          className="border p-2 rounded w-full"
+          onChange={(e) => setEmail(e.target.value)}
         />
 
-        <button className="bg-blue-600 text-white py-2 rounded">
+        <button className="bg-blue-600 text-white px-4 py-2 rounded">
           Enviar enlace
         </button>
-
-        {msg && <p className="text-center">{msg}</p>}
       </form>
+
+      {msg && <p className="mt-4">{msg}</p>}
     </div>
   );
 }

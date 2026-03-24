@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import DescargarBoton from "./DescargarBoton";
 
 export default function PluginClient({ plugin, pluginId }) {
@@ -9,66 +10,63 @@ export default function PluginClient({ plugin, pluginId }) {
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then((r) => r.json())
-      .then((d) => setUser(d.user || null));
+      .then((d) => setUser(d.user ?? null));
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto pt-32 px-6">
-      <h1 className="text-3xl font-bold mb-2">{plugin.nombre}</h1>
-      <p className="mb-4">{plugin.descripcion}</p>
+    <section className="max-w-4xl mx-auto py-20 px-6">
+      <h1 className="text-4xl font-bold mb-6">{plugin.nombre}</h1>
+
+      <p className="text-lg mb-6">{plugin.descripcion}</p>
 
       {plugin.precio > 0 ? (
-        <p className="text-lg font-semibold mb-4">{plugin.precio} €</p>
+        <p className="text-2xl font-bold text-blue-600 mb-6">
+          {plugin.precio} €
+        </p>
       ) : (
-        <p className="text-lg font-semibold mb-4 text-green-600">Gratis</p>
+        <p className="text-2xl font-bold text-green-600 mb-6">Gratis</p>
       )}
 
-      {/* ⭐ VIDEO DEL PLUGIN */}
+      {/* VIDEO */}
       {plugin.video_url && (
-        <div
-          className="relative w-full mt-6"
-          style={{ paddingBottom: "56.25%" }}
-        >
+        <div className="aspect-video mb-8">
           <iframe
             src={plugin.video_url}
-            title="Video del plugin"
+            className="w-full h-full rounded-xl"
             allowFullScreen
-            className="absolute top-0 left-0 w-full h-full rounded border"
           />
         </div>
       )}
 
-      {/* ⭐ ARCHIVO / IMAGEN */}
+      {/* ARCHIVO */}
       {plugin.archivo_url && (
-        <img
-          src={plugin.archivo_url}
-          alt={plugin.nombre}
-          className="w-full rounded border mt-6"
-        />
+        <p className="mb-4 text-gray-600 dark:text-gray-400">
+          Archivo disponible para descarga.
+        </p>
       )}
 
-      {/* ⭐ BOTONES */}
+      {/* ACCIONES */}
       {user ? (
         <>
-          <DescargarBoton pluginId={pluginId} />
+          {/* Descarga si es gratis */}
+          {plugin.precio === 0 && <DescargarBoton pluginId={pluginId} />}
 
+          {/* Compra */}
           {plugin.precio > 0 && (
-            <a
-              href={`/pago/${pluginId}`}
-              className="inline-block mt-4 bg-purple-600 text-white px-4 py-2 rounded"
-            >
-              Comprar licencias
-            </a>
+            <Link href={`/pago/${pluginId}`}>
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                Comprar licencias
+              </button>
+            </Link>
           )}
         </>
       ) : (
-        <a
-          href="/login"
-          className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Inicia sesión para descargar o comprar
-        </a>
+        <Link href="/login">
+          <p className="mt-6 underline text-blue-600">
+            Inicia sesión para descargar o comprar
+          </p>
+        </Link>
       )}
-    </div>
+    </section>
   );
 }

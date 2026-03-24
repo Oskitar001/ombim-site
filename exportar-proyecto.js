@@ -21,7 +21,7 @@ const binarios = [
 
 // Límites
 const MAX_LINEAS = 5000;
-const MAX_CARACTERES = 10000;
+const MAX_CARACTERES = 100000;
 
 let parte = 1;
 let buffer = "";

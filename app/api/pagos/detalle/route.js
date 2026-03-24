@@ -1,10 +1,16 @@
+// app/api/pagos/detalle/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET(req) {
   const supabase = await supabaseServer();
-  const { searchParams } = new URL(req.url);
-  const pago_id = searchParams.get("pago_id");
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  const pago_id = new URL(req.url).searchParams.get("pago_id");
 
   if (!pago_id) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
@@ -14,6 +20,7 @@ export async function GET(req) {
     .from("pagos")
     .select("*, licencias(*)")
     .eq("id", pago_id)
+    .eq("user_id", userData.user.id)
     .single();
 
   if (error || !pago) {
@@ -26,8 +33,5 @@ export async function GET(req) {
     .eq("user_id", pago.user_id)
     .single();
 
-  return NextResponse.json({
-    ...pago,
-    facturacion: facturacion || null,
-  });
+  return NextResponse.json({ ...pago, facturacion: facturacion ?? null });
 }

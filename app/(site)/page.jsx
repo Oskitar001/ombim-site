@@ -3,61 +3,57 @@
 import AboutSection from "../../components/AboutSection";
 import TrustSection from "../../components/TrustSection";
 import TestimonialsSection from "../../components/TestimonialsSection";
+import RevealObserver from "../../components/RevealObserver";
 
 const apps = [
   {
     title: "Modelado 3D con automatización",
     description:
       "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
-    video: "https://www.youtube.com/embed/gQp1t5xRz5Q"
+    video: "https://www.youtube.com/embed/gQp1t5xRz5Q",
   },
   {
     title: "Aplicaciones Tekla Structures",
     description:
       "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
-    video: "https://www.youtube.com/embed/MBL7E9rF2HU"
+    video: "https://www.youtube.com/embed/MBL7E9rF2HU",
   },
   {
     title: "Plugin Tekla Structures",
     description:
       "Mejora tu productividad con herramientas integradas directamente en Tekla. Flujo de trabajo más ágil y profesional.",
-    video: "https://www.youtube.com/embed/9HiQz_x9UCU"
-  }
+    video: "https://www.youtube.com/embed/9HiQz_x9UCU",
+  },
 ];
 
 export default function HomePage() {
   return (
     <>
+      <RevealObserver />
+
       {/* CTA móvil */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
         <a
           href="/contacto"
-          className="bg-blue-600 text-black dark:text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
+          className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
         >
           Solicitar demo
         </a>
       </div>
 
-      {/* FONDO GLOBAL ARREGLADO */}
-      <main
-        className="
-          pb-20 min-h-screen 
-          bg-[#f3f4f6] dark:bg-[#242424]
-          bg-gradient-to-b from-light-bgSoft to-light-bg dark:from-dark-bg dark:to-dark-bg
-        "
-        role="main"
-      >
-        {/* EL BORDE AHORA ESTÁ EN EL CONTENEDOR, NO EN EL MAIN */}
-        <div className="container mx-auto border-t border-[#d1d5db] dark:border-[#3a3a3a]">
+      {/* Fondo global */}
+      <div className="pb-20 min-h-screen bg-[#f3f4f6] dark:bg-[#242424]">
+
+        {/* CONTENEDOR PRINCIPAL */}
+        <div className="container mx-auto border-t border-gray-300 dark:border-gray-700">
 
           {/* HERO */}
           <section className="reveal text-center max-w-4xl mx-auto mt-20 mb-24 px-6">
-
             <div className="relative inline-block">
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
+              <span className="absolute inset-0 bg-gradient-to-r from-blue-300/30 via-transparent to-blue-300/30 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
 
               <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-                Modelado 3D & Software para Tekla Structures
+                Modelado 3D y Software para Tekla Structures
               </h1>
             </div>
 
@@ -69,35 +65,29 @@ export default function HomePage() {
             </p>
 
             <p className="text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed mb-10">
-              Además, más de <strong>100 proyectos</strong> han sido optimizados con
-              <strong> software propio</strong>: plugins, automatizaciones, macros y herramientas avanzadas
-              que aceleran el flujo BIM y reducen errores.
+              Más de <strong>100 proyectos reales</strong> optimizados con <strong>software propio</strong>:
+              plugins, automatizaciones y herramientas internas que aceleran tu flujo BIM y reducen errores.
             </p>
 
             <a
               href="/contacto"
-              className="inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
             >
-              Solicitar demo personalizada
-              <span className="text-2xl">→</span>
+              Solicitar demo personalizada <span className="text-2xl">→</span>
             </a>
-
           </section>
 
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent my-20"></div>
-
           {/* CARDS */}
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-3 gap-10 px-6">
             {apps.map((app, index) => (
               <div
                 key={index}
-                role="article"
-                className="reveal bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-soft shadow-soft-hover transition-all duration-500 hover:-translate-y-2 border border-gray-100 dark:border-[#3a3a3a]"
+                className="reveal bg-[#ffffff] dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border border-gray-200 dark:border-gray-700"
               >
                 <div className="rounded-xl overflow-hidden mb-4">
                   <iframe
                     className="w-full aspect-video"
-                    src={`${app.video}?rel=0&modestbranding=1&controls=0&autoplay=1&mute=1&loop=1&playlist=${app.video.split("/").pop()}`}
+                    src={`${app.video}?rel=0&modestbranding=1&controls=1&autoplay=0&mute=0`}
                     title={app.title}
                     frameBorder="0"
                     allow="autoplay; encrypted-media"
@@ -109,47 +99,34 @@ export default function HomePage() {
                   {app.title}
                 </h3>
 
-                <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">{app.description}</p>
+                <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
+                  {app.description}
+                </p>
 
                 <a
                   href="/contacto"
-                  className="group inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 active:scale-95 transition-all"
                 >
                   Solicitar demo ahora
-                  <span className="text-base transform transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
+                  <span className="text-base">→</span>
                 </a>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Respuesta en menos de 24h</p>
-
-                <a
-                  href="/contacto"
-                  className="block mt-3 text-blue-600 dark:text-blue-400 text-sm font-medium underline hover:opacity-80"
-                >
-                  Ver más detalles →
-                </a>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Respuesta en menos de 24h
+                </p>
               </div>
             ))}
           </div>
 
-          <p className="reveal text-[#1f2937] dark:text-[#e6e6e6] text-center mt-24 mb-4">
-            ¿Quieres ver ejemplos reales aplicados a proyectos como el tuyo?
-          </p>
-
-          <div className="bg-[#f3f4f6] dark:bg-[#242424]">
+          {/* ABOUT + TRUST + TESTIMONIALS */}
+          <div className="mt-32">
             <AboutSection />
-          </div>
-
-          <div className="bg-[#f3f4f6] dark:bg-[#242424]">
             <TrustSection />
-          </div>
-
-          <div className="bg-[#f3f4f6] dark:bg-[#242424]">
             <TestimonialsSection />
           </div>
 
-          <div className="reveal text-center mt-32">
+          {/* CTA FINAL */}
+          <div className="reveal text-center mt-32 px-6">
             <h2 className="text-3xl font-bold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
               ¿Quieres ver cómo funciona en tu proyecto?
             </h2>
@@ -160,15 +137,14 @@ export default function HomePage() {
 
             <a
               href="/contacto"
-              className="inline-flex items-center gap-2 bg-blue-600 text-black dark:text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg active:scale-95"
             >
-              Solicitar demo personalizada
-              <span className="text-xl">→</span>
+              Solicitar demo personalizada <span className="text-xl">→</span>
             </a>
           </div>
 
         </div>
-      </main>
+      </div>
     </>
   );
 }

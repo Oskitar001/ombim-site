@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 
 export default function RegisterPage() {
@@ -17,90 +16,56 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, nombre })
+      body: JSON.stringify({ email, password, nombre }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error || "Error al registrarse");
+      setError(data.error ?? "Error al registrarse");
       return;
     }
 
-    setOk("Registro completado. Revisa tu email para confirmar tu cuenta.");
+    setOk(
+      "Registro completado. Revisa tu email para confirmar tu cuenta."
+    );
   }
 
   return (
-    <div className="pt-32 flex flex-col items-center px-6 bg-[#f3f4f6]Soft dark:bg-[#242424] min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-        Crear cuenta
-      </h1>
+    <div className="max-w-md mx-auto py-10 space-y-4">
+      <h1 className="text-xl font-bold">Crear cuenta</h1>
 
-      <form
-        onSubmit={handleRegister}
-        className="flex flex-col gap-4 w-full max-w-sm bg-[#f3f4f6]Soft dark:bg-[#1a1a1a] p-6 rounded-lg shadow border border-[#d1d5db] dark:border-[#3a3a3a]"
-      >
+      <form onSubmit={handleRegister} className="space-y-4">
         <input
-          type="text"
+          required
           placeholder="Nombre"
-          value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          required
-          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border p-2 rounded w-full"
         />
 
         <input
+          required
           type="email"
-          placeholder="Correo"
-          value={email}
+          placeholder="Email"
           onChange={(e) => setEmail(e.target.value)}
-          required
-          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border p-2 rounded w-full"
         />
 
         <input
+          required
           type="password"
           placeholder="Contraseña"
-          value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
-          className="border border-[#d1d5db] dark:border-gray-600 bg-[#f3f4f6]Soft dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+          className="border p-2 rounded w-full"
         />
 
-        <button
-          type="submit"
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition active:scale-95"
-        >
+        <button className="bg-blue-600 text-white px-4 py-2 rounded w-full">
           Registrarse
         </button>
-
-        <button
-          type="button"
-          onClick={() => window.location.href = "/"}
-          className="bg-gray-300 dark:bg-gray-700 text-black dark:text-white py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition active:scale-95"
-        >
-          Cancelar
-        </button>
-
-        {error && (
-          <p className="text-red-600 dark:text-red-400 text-center">
-            {error}
-          </p>
-        )}
-
-        {ok && (
-          <p className="text-green-600 dark:text-green-400 text-center">
-            {ok}
-          </p>
-        )}
       </form>
 
-      <p className="mt-4 text-[#1f2937] dark:text-[#e6e6e6]">
-        ¿Ya tienes cuenta?{" "}
-        <a href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-          Inicia sesión aquí
-        </a>
-      </p>
+      {error && <p className="text-red-600">{error}</p>}
+      {ok && <p className="text-green-600">{ok}</p>}
     </div>
   );
 }

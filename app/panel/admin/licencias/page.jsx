@@ -1,13 +1,12 @@
+// /app/panel/admin/licencias/page.jsx
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLicenciasPage() {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return <div className="pt-32 px-6">Acceso denegado.</div>;
-  }
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
 
   const { data: licencias } = await supabaseAdmin
     .from("licencias")
@@ -16,40 +15,34 @@ export default async function AdminLicenciasPage() {
     .limit(100);
 
   return (
-    <div className="max-w-5xl mx-auto pt-32 px-6">
-      <h1 className="text-2xl font-bold mb-4">Licencias</h1>
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Licencias</h1>
 
       {!licencias?.length && <p>No hay licencias todavía.</p>}
 
-      <table className="w-full border text-sm">
+      <table className="w-full">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">ID</th>
-            <th className="p-2 border">Plugin</th>
-            <th className="p-2 border">Email Tekla</th>
-            <th className="p-2 border">Estado</th>
-            <th className="p-2 border">Fecha</th>
-            <th className="p-2 border">Acciones</th>
+          <tr>
+            <th>ID</th>
+            <th>Plugin</th>
+            <th>Email Tekla</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th></th>
           </tr>
         </thead>
+
         <tbody>
           {licencias?.map((l) => (
             <tr key={l.id}>
-              <td className="p-2 border">{l.id}</td>
-              <td className="p-2 border">{l.plugin_id}</td>
-              <td className="p-2 border">{l.email_tekla}</td>
-              <td className="p-2 border">{l.estado}</td>
-              <td className="p-2 border">
-                {l.fecha_creacion
-                  ? new Date(l.fecha_creacion).toLocaleString()
-                  : "-"}
-              </td>
-              <td className="p-2 border">
-                <a
-                  href={`/panel/admin/licencias/${l.id}`}
-                  className="text-blue-600 underline"
-                >
-                  Ver / editar
+              <td>{l.id}</td>
+              <td>{l.plugin_id}</td>
+              <td>{l.email_tekla}</td>
+              <td>{l.estado}</td>
+              <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
+              <td>
+                <a href={`/panel/admin/licencias/${l.id}`} className="underline">
+                  Ver / Editar
                 </a>
               </td>
             </tr>

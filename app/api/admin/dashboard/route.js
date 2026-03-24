@@ -1,28 +1,37 @@
+// app/api/admin/dashboard/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../_utils.js";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
-  const auth = await requireAdmin();
-  if (auth.error) return NextResponse.json(auth, { status: auth.status });
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
 
-  const { supabase } = auth;
+  const [
+    licencias,
+    activas,
+    bloqueadas,
+    pagos,
+    activaciones,
+    aprobados
+  ] = await Promise.all([
+    supabaseAdmin.from("licencias").select("*", { count: "exact" }),
+    supabaseAdmin.from("licencias").select("*", { count: "exact" }).eq("estado", "activa"),
+    supabaseAdmin.from("licencias").select("*", { count: "exact" }).eq("estado", "bloqueada"),
+    supabaseAdmin.from("pagos").select("*", { count: "exact" }),
+    supabaseAdmin.from("licencias").select("activaciones_usadas"),
+    supabaseAdmin.from("pagos").select("importe").eq("estado", "aprobado")
+  ]);
 
-  const [licencias, activas, bloqueadas, pagos, activaciones, aprobados] =
-    await Promise.all([
-      supabase.from("licencias").select("*", { count: "exact" }),
-      supabase.from("licencias").select("*", { count: "exact" }).eq("estado", "activa"),
-      supabase.from("licencias").select("*", { count: "exact" }).eq("estado", "bloqueada"),
-      supabase.from("pagos").select("*", { count: "exact" }),
-      supabase.from("licencias").select("activaciones_usadas"),
-      supabase.from("pagos").select("importe").eq("estado", "aprobado"),
-    ]);
-
-  const activacionesTotales = (activaciones.data || []).reduce(
-    (sum, l) => sum + (l.activaciones_usadas || 0),
+  const activacionesTotales = (activaciones.data ?? []).reduce(
+    (sum, l) => sum + (l.activaciones_usadas ?? 0),
     0
   );
-  const ingresosTotales = (aprobados.data || []).reduce(
-    (sum, p) => sum + (p.importe || 0),
+
+  const ingresosTotales = (aprobados.data ?? []).reduce(
+    (sum, p) => sum + (p.importe ?? 0),
     0
   );
 

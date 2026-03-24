@@ -1,15 +1,15 @@
-export const dynamic = "force-dynamic";
-
+// /app/panel/mis-pagos/page.jsx
 import { supabaseServer } from "@/lib/supabaseServer";
 import PagosClient from "./PagosClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function MisPagosPage() {
   const supabase = await supabaseServer();
+
   const { data: userData } = await supabase.auth.getUser();
 
-  if (!userData?.user) {
-    return <div className="text-center mt-20">No autenticado</div>;
-  }
+  if (!userData?.user) return <p>No autenticado</p>;
 
   const { data: pagos } = await supabase
     .from("pagos")
@@ -18,9 +18,9 @@ export default async function MisPagosPage() {
     .order("fecha", { ascending: false });
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">Mis pagos</h1>
-      <PagosClient pagos={pagos || []} />
+    <div>
+      <h2>Mis pagos</h2>
+      <PagosClient pagos={pagos ?? []} />
     </div>
   );
 }

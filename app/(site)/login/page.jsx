@@ -1,4 +1,3 @@
-// app/(site)/login/page.jsx
 "use client";
 
 import { useState } from "react";
@@ -18,7 +17,7 @@ export default function Page() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
@@ -29,19 +28,13 @@ export default function Page() {
       return;
     }
 
-    // 🔥 REFRESCAMOS USUARIO PARA LEER METADATA REAL
+    // REFRESCAMOS SESIÓN PARA LEER ROL CORRECTO
     const refresh = await fetch("/api/auth/me", { credentials: "include" });
     const me = await refresh.json();
-
     const role = me?.user?.user_metadata?.role ?? "user";
 
-    // 🔥 REDIRECCIÓN PERFECTA
-    if (role === "admin") {
-      window.location.href = "/panel/admin";
-      return;
-    }
-
-    window.location.href = "/panel/user";
+    window.location.href =
+      role === "admin" ? "/panel/admin" : "/panel/user";
   }
 
   return (

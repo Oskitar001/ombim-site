@@ -8,20 +8,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // 🎨 Marca OMBIM
+        // 🎨 OMBIM BRAND — Menos azul fosforito
         brand: {
-          DEFAULT: "#2563eb", // azul principal (igual a Tailwind blue-600)
-          dark: "#1e40af",    // azul más oscuro
-          light: "#60a5fa",
+          DEFAULT: "#1f4fd8",  // azul elegante, NO fosforito
+          dark: "#1a3ca0",
+          light: "#7295ff",
         },
 
-        // 🎨 Fondo "Soft" personalizado (aparece mucho en tu código)
+        // 🎨 Fondos
         "light-bg": "#f3f4f6",
         "light-bgSoft": "#f9fafb",
-        "dark-bg": "#242424",
-        "dark-bgSoft": "#1a1a1a",
+        "dark-bg": "#1f1f1f",
+        "dark-bgSoft": "#131313",
 
-        // Alias para compatibilidad con clases personalizadas (bg-[#f3f4f6]Soft)
         soft: {
           light: "#f3f4f6",
           dark: "#1a1a1a",

@@ -152,6 +152,7 @@ export default function DemosPage() {
 ============================================================
 
 "use client";
+
 import { useState } from "react";
 
 export default function Page() {
@@ -180,38 +181,48 @@ export default function Page() {
       return;
     }
 
-    const role = data.user?.user_metadata?.role;
+    // REFRESCAMOS SESIÓN PARA LEER ROL CORRECTO
+    const refresh = await fetch("/api/auth/me", { credentials: "include" });
+    const me = await refresh.json();
+    const role = me?.user?.user_metadata?.role ?? "user";
 
     window.location.href =
       role === "admin" ? "/panel/admin" : "/panel/user";
   }
 
   return (
-    <div className="max-w-md mx-auto py-10">
-      <h1 className="text-xl font-bold mb-6">Iniciar sesión</h1>
+    <div className="max-w-md mx-auto mt-24 p-6 bg-white dark:bg-[#1f1f1f] rounded shadow">
+      <h1 className="text-2xl font-bold mb-4">Iniciar sesión</h1>
 
       <form onSubmit={handleLogin} className="space-y-4">
-        <input
-          required
-          type="email"
-          placeholder="Email"
-          className="border p-2 w-full rounded"
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div>
+          <label>Email</label>
+          <input
+            type="email"
+            className="border p-2 rounded w-full dark:bg-[#333]"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-        <input
-          required
-          type="password"
-          placeholder="Contraseña"
-          className="border p-2 w-full rounded"
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div>
+          <label>Contraseña</label>
+          <input
+            type="password"
+            className="border p-2 rounded w-full dark:bg-[#333]"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
 
-        {error && <p className="text-red-600">{error}</p>}
+        {error && <p className="text-red-500">{error}</p>}
 
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          type="submit"
           disabled={loading}
+          className="w-full bg-blue-600 text-white p-2 rounded mt-2"
         >
           {loading ? "Cargando..." : "Entrar"}
         </button>
@@ -1156,6 +1167,38 @@ export async function GET() {
 
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\crear\route.js
+============================================================
+
+import { supabaseRoute } from "@/lib/supabaseRoute";
+
+export async function POST(req) {
+  const supabase = supabaseRoute();
+  const { user_id, plugin_id, emails_tekla } = await req.json();
+
+  // emails_tekla = ["email1@...", "email2@...", "email3@..."]
+
+  const { data, error } = await supabase
+    .from("pagos")
+    .insert({
+      user_id,
+      plugin_id,
+      cantidad_licencias: emails_tekla.length,
+      estado: "pendiente",
+      fecha: new Date().toISOString(),
+      emails_tekla
+    })
+    .select()
+    .single();
+
+  if (error) return Response.json({ error }, { status: 500 });
+
+  // TODO: enviar email
+  return Response.json({ ok: true, pago: data });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\route.js
 ============================================================
 
@@ -1176,6 +1219,73 @@ export async function GET() {
     .order("fecha", { ascending: false });
 
   return NextResponse.json(data ?? []);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\validar\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const { pago_id } = await req.json();
+
+  // 1. Obtener pago
+  const { data: pago, error } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  if (error || !pago) {
+    return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  // Seguridad
+  if (!pago.emails_tekla || pago.emails_tekla.length === 0) {
+    return Response.json(
+      { error: "El pago no contiene emails Tekla" },
+      { status: 400 }
+    );
+  }
+
+  // 2. Crear licencias automáticamente
+  const nuevasLicencias = pago.emails_tekla.map((email) => ({
+    plugin_id: pago.plugin_id,
+    email_tekla: email,
+    estado: "activa",
+    max_activaciones: 1,
+    activaciones_usadas: 0,
+    fecha_creacion: new Date().toISOString(),
+    pago_id: pago.id,
+  }));
+
+  const { error: licError } = await supabaseAdmin
+    .from("licencias")
+    .insert(nuevasLicencias);
+
+  if (licError) {
+    return Response.json({ error: "Error creando licencias" }, { status: 500 });
+  }
+
+  // 3. Cambiar estado del pago a VALIDADO
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "validado" })
+    .eq("id", pago_id);
+
+  // 4. Enviar email al usuario
+  await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/licencias/activadas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: pago.user_email,
+      emails_tekla: pago.emails_tekla,
+    }),
+  });
+
+  return Response.json({ ok: true });
 }
 
 
@@ -1301,76 +1411,103 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\borrar\route.js
 ============================================================
 
-// app/api/admin/usuarios/route.js
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  const { id } = await req.json();
 
-  const body = await req.json();
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
-  const { error } = await supabaseAdmin
-    .from("usuarios")
-    .insert(body);
+  if (error) return Response.json({ error }, { status: 500 });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json({ ok: true });
+  return Response.json({ ok: true });
 }
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\editar\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const { id, role } = await req.json();
+
+  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+    user_metadata: { role }
+  });
+
+  if (error) return Response.json({ error }, { status: 500 });
+
+  return Response.json({ ok: true, user: data });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\role\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const { id, role } = await req.json();
+
+  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+    user_metadata: { role }
+  });
+
+  if (error) return Response.json({ error }, { status: 500 });
+
+  return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q")?.toLowerCase() || "";
+
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+
+  if (error) return Response.json({ error }, { status: 500 });
+
+  let users = data.users;
+
+  if (query) {
+    users = users.filter((u) =>
+      u.email?.toLowerCase().includes(query) ||
+      u.id?.toLowerCase().includes(query)
+    );
+  }
+
+  return Response.json({ users });
+}
+
 
 
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\[id]\route.js
 ============================================================
 
-// app/api/admin/usuarios/[id]/route.js
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(_, { params }) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  const { id } = params;
 
-  const { data } = await supabaseAdmin
-    .from("usuarios")
-    .select("*, licencias(*), pagos(*)")
-    .eq("id", params.id)
-    .single();
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(id);
 
-  return NextResponse.json(data);
-}
+  if (error) return Response.json({ error }, { status: 500 });
 
-export async function PUT(req, { params }) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
-
-  const body = await req.json();
-
-  const { error } = await supabaseAdmin
-    .from("usuarios")
-    .update(body)
-    .eq("id", params.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json({ ok: true });
+  return Response.json({ user: data.user });
 }
 
 
@@ -1680,6 +1817,138 @@ export async function GET() {
   }));
 
   return NextResponse.json(resultado);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
+============================================================
+
+import { sendEmail } from "@/lib/email";
+
+const TEMPLATE_COMPRA = `
+<!DOCTYPE html>
+<html lang="es" style="font-family: Arial, sans-serif;">
+  <body style="background:#f9fafb;padding:0;margin:0;">
+    <div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+
+      <h2 style="color:#1f2937;text-align:center;margin-bottom:20px;">
+        Compra recibida – OMBIM
+      </h2>
+
+      <p style="font-size:16px;color:#374151;">
+        Hola, hemos recibido tu compra del plugin:
+      </p>
+
+      <p style="font-size:20px;color:#111827;font-weight:bold;">{{plugin_nombre}}</p>
+
+      <p style="color:#4b5563;font-size:16px;">Emails Tekla asociados:</p>
+      <ul style="color:#374151;font-size:15px;">{{lista_emails}}</ul>
+
+      <p style="color:#4b5563;font-size:16px;">
+        Para completar la compra, realiza una transferencia bancaria a:
+      </p>
+
+      <div style="background:#e5e7eb;padding:12px;border-radius:6px;margin-bottom:16px;">
+        <p><strong>Cuenta bancaria:</strong> {{cuenta_banco}}</p>
+        <p><strong>Concepto:</strong> Pago OMBIM Nº {{pago_id}}</p>
+        <p><strong>Importe:</strong> {{precio}}€</p>
+      </div>
+
+      <p style="color:#4b5563;font-size:16px;">
+        Una vez validemos la transferencia, activaremos tus licencias y te enviaremos un email.
+      </p>
+
+      <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+      <p style="text-align:center;color:#9ca3af;font-size:12px;">
+        © OMBIM – Herramientas BIM para Tekla Structures
+      </p>
+    </div>
+  </body>
+</html>
+`;
+
+export async function POST(req) {
+  const { email, plugin_nombre, emails_tekla, pago_id, precio } = await req.json();
+
+  const lista = emails_tekla.map((e) => `<li>${e}</li>`).join("");
+
+  const html = TEMPLATE_COMPRA
+    .replace("{{plugin_nombre}}", plugin_nombre)
+    .replace("{{lista_emails}}", lista)
+    .replace("{{pago_id}}", pago_id)
+    .replace("{{precio}}", precio)
+    .replace("{{cuenta_banco}}", "ESXX XXXX XXXX XXXX XXXX XXXX"); // tu IBAN
+
+  await sendEmail({
+    to: email,
+    subject: "Compra recibida – OMBIM",
+    html,
+  });
+
+  return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
+============================================================
+
+import { sendEmail } from "@/lib/email";
+
+const TEMPLATE_ACTIVADAS = `
+<!DOCTYPE html>
+<html lang="es" style="font-family:Arial;">
+  <body style="background:#f3f4f6;padding:0;margin:0;">
+
+    <div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+
+      <h2 style="text-align:center;color:#111827;margin-bottom:20px;">
+        Tus licencias OMBIM han sido activadas
+      </h2>
+
+      <p style="font-size:16px;color:#374151;">
+        Hola, tu compra ha sido validada y ya puedes usar tus plugins de OMBIM.
+      </p>
+
+      <p style="font-size:16px;color:#4b5563;">
+        Emails Tekla activados:
+      </p>
+
+      <ul style="color:#374151;font-size:15px;">
+        {{lista_emails}}
+      </ul>
+
+      <p style="font-size:16px;color:#4b5563;">
+        Si ya tienes el plugin instalado, ábrelo para validar la licencia automáticamente.
+      </p>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+
+      <p style="text-align:center;color:#9ca3af;font-size:12px;">
+        © OMBIM – Herramientas BIM profesionales
+      </p>
+
+    </div>
+  </body>
+</html>
+`;
+
+export async function POST(req) {
+  const { email, emails_tekla } = await req.json();
+
+  const lista = emails_tekla.map((e) => `<li>${e}</li>`).join("");
+
+  const html = TEMPLATE_ACTIVADAS.replace("{{lista_emails}}", lista);
+
+  await sendEmail({
+    to: email,
+    subject: "Tus licencias OMBIM han sido activadas",
+    html,
+  });
+
+  return Response.json({ ok: true });
 }
 
 
@@ -2177,60 +2446,41 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\aprobar\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
 ============================================================
 
-// app/api/pagos/aprobar/route.js
-import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requireAdmin } from "@/lib/checkAdmin";
-import { enviarEmail } from "@/lib/email";
 
-export async function POST(req) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+export async function GET(req) {
+  const url = new URL(req.url);
+  const email_tekla = url.searchParams.get("email");
 
-  const { pago_id } = await req.json();
+  if (!email_tekla)
+    return Response.json({ ok: false, motivo: "sin_email" });
 
-  if (!pago_id) {
-    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
-  }
-
-  const { data: pago, error } = await supabaseAdmin
-    .from("pagos")
-    .select("*, licencias(*)")
-    .eq("id", pago_id)
-    .single();
-
-  if (error || !pago) {
-    return NextResponse.json({ error: "No se encontró el pago" }, { status: 404 });
-  }
-
-  // Aprobar pago
-  await supabaseAdmin.from("pagos").update({ estado: "aprobado" }).eq("id", pago_id);
-
-  // Activar licencias
-  await supabaseAdmin
+  const { data: licencias } = await supabaseAdmin
     .from("licencias")
-    .update({ estado: "activa" })
-    .eq("pago_id", pago_id);
+    .select("*")
+    .eq("email_tekla", email_tekla);
 
-  // Notificar usuario
-  const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(pago.user_id);
-  const emailsTekla = pago.licencias.map((l) => l.email_tekla);
+  if (!licencias || licencias.length === 0)
+    return Response.json({ ok: false, motivo: "no_existe" });
 
-  const html = `
-    <h3>Tus licencias han sido activadas</h3>
-    ${emailsTekla.map((e) => `- ${e}<br>`).join("")}
-  `;
+  const licencia = licencias[0];
 
-  if (userRes?.user?.email) {
-    await enviarEmail(userRes.user.email, "Licencias activadas", html);
-  }
+  if (licencia.estado === "bloqueada")
+    return Response.json({ ok: false, motivo: "bloqueada" });
 
-  return NextResponse.json({ ok: true });
+  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1)
+    return Response.json({ ok: false, motivo: "trial_expirado" });
+
+  return Response.json({
+    ok: true,
+    plugin_id: licencia.plugin_id,
+    estado: licencia.estado,
+    activaciones_usadas: licencia.activaciones_usadas,
+    max_activaciones: licencia.max_activaciones,
+  });
 }
 
 
@@ -2238,70 +2488,31 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
 ============================================================
 
-// app/api/pagos/crear/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  const supabase = await supabaseServer();
+  const supabase = supabaseRoute();
+  const { user_id, plugin_id, emails_tekla } = await req.json();
 
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+  // emails_tekla = ["email1@...", "email2@...", "email3@..."]
 
-  const body = await req.json();
-  const { plugin_id, licencias } = body;
-
-  if (!plugin_id || !licencias?.length) {
-    return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
-  }
-
-  const cantidad = licencias.length;
-
-  const { data: plugin } = await supabase
-    .from("plugins")
-    .select("id, precio")
-    .eq("id", plugin_id)
-    .single();
-
-  if (!plugin) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 400 });
-  }
-
-  // Crear pago
-  const { data: pago, error: pagoError } = await supabase
+  const { data, error } = await supabase
     .from("pagos")
     .insert({
-      user_id: userData.user.id,
+      user_id,
       plugin_id,
-      cantidad_licencias: cantidad,
+      cantidad_licencias: emails_tekla.length,
       estado: "pendiente",
-      importe: plugin.precio * cantidad,
+      fecha: new Date().toISOString(),
+      emails_tekla
     })
-    .select("id")
+    .select()
     .single();
 
-  if (pagoError) {
-    return NextResponse.json({ error: pagoError.message }, { status: 500 });
-  }
+  if (error) return Response.json({ error }, { status: 500 });
 
-  // Crear licencias asociadas
-  const licenciaRows = licencias.map((l) => ({
-    pago_id: pago.id,
-    plugin_id,
-    user_id: userData.user.id,
-    email_tekla: l.email_tekla ?? "",
-    estado: "trial",
-  }));
-
-  const { error: licError } = await supabase.from("licencias").insert(licenciaRows);
-
-  if (licError) {
-    return NextResponse.json({ error: licError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ pago_id: pago.id });
+  // TODO: enviar email
+  return Response.json({ ok: true, pago: data });
 }
 
 
@@ -2424,6 +2635,73 @@ export async function POST(req) {
 
   return NextResponse.json({ ok: true });
 }
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const { pago_id } = await req.json();
+
+  // 1. Obtener pago
+  const { data: pago, error } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  if (error || !pago) {
+    return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  // 2. Crear licencias por cada email tekla
+  const licencias = pago.emails_tekla.map(email => ({
+    plugin_id: pago.plugin_id,
+    email_tekla: email,
+    estado: "activa",
+    max_activaciones: 1,
+    activaciones_usadas: 0,
+    fecha_creacion: new Date().toISOString(),
+    pago_id: pago_id
+  }));
+
+  const { error: licenciasError } = await supabaseAdmin
+    .from("licencias")
+    .insert(licencias);
+
+  if (licenciasError) {
+    return Response.json({ error: "Error creando licencias" }, { status: 500 });
+  }
+
+  // 3. Cambiar estado del pago
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "validado" })
+    .eq("id", pago_id);
+
+  // 4. TODO: enviar email al usuario notificando activación
+
+  return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\[id]\route.js
+============================================================
+
+<form
+  action="/api/admin/pagos/validar"
+  method="POST"
+>
+  <input type="hidden" name="pago_id" value={pago.id} />
+
+  <button className="px-4 py-2 bg-green-600 text-white rounded">
+    Validar pago y crear licencias
+  </button>
+</form>
 
 
 ============================================================
@@ -2633,6 +2911,93 @@ export async function GET(_, props) {
 
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencias\route.js
+============================================================
+
+import { supabaseRoute } from "@/lib/supabaseRoute";
+
+export async function GET() {
+  const supabase = supabaseRoute();
+
+  // Obtener usuario logueado
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user)
+    return Response.json({ licencias: [] }, { status: 401 });
+
+  // Obtener licencias asociadas a pagos del usuario
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("id")
+    .eq("user_id", user.id);
+
+  if (!pagos || pagos.length === 0)
+    return Response.json({ licencias: [] });
+
+  const pagoIds = pagos.map((p) => p.id);
+
+  const { data: licencias } = await supabase
+    .from("licencias")
+    .select("*")
+    .in("pago_id", pagoIds)
+    .order("fecha_creacion", { ascending: false });
+
+  return Response.json({ licencias });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\pagos\route.js
+============================================================
+
+import { supabaseRoute } from "@/lib/supabaseRoute";
+
+export async function GET() {
+  const supabase = supabaseRoute();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user)
+    return Response.json({ pagos: [] }, { status: 401 });
+
+  const { data } = await supabase
+    .from("pagos")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("fecha", { ascending: false });
+
+  return Response.json({ pagos: data || [] });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\plugins\route.js
+============================================================
+
+import { supabaseRoute } from "@/lib/supabaseRoute";
+
+export async function GET() {
+  const supabase = supabaseRoute();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return Response.json({ plugins: [] });
+
+  const { data } = await supabase
+    .from("plugins")
+    .select("id, nombre, version, url_descarga");
+
+  return Response.json({ plugins: data || [] });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
 ============================================================
 
@@ -2648,12 +3013,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
-      <body className="min-h-screen flex flex-col">
+    <html lang="es" suppressHydrationWarning>
+      <body className="pt-20 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
         <Navbar />
-        <main className="flex-grow">
-          {children}
-        </main>
+        <main className="min-h-screen">{children}</main>
         <Footer />
       </body>
     </html>
@@ -2665,59 +3028,44 @@ export default function RootLayout({ children }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\middleware.js
 ============================================================
 
-// middleware.js — versión compatible con Next.js 16
+// middleware.js
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
   const url = request.nextUrl;
-  const { pathname } = url;
+  const pathname = url.pathname;
 
-  // Cookies (Next 16 API)
   const access = request.cookies.get("sb-access-token")?.value;
-  const refresh = request.cookies.get("supabase-auth-token")?.value;
   const role = request.cookies.get("sb-user-role")?.value;
 
-  const logged = access || refresh;
+  const logged = Boolean(access);
 
-  // Rutas protegidas para usuarios normales
-  const userProtected = [
-    "/panel",
-    "/panel/user",
-    "/panel/mis-",
-    "/pago",
-  ];
-
-  if (userProtected.some((r) => pathname.startsWith(r))) {
+  if (pathname.startsWith("/panel/admin")) {
     if (!logged) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
-  }
-
-  // Rutas solo para admin
-  const adminProtected = [
-    "/panel/admin",
-    "/api/admin",
-  ];
-
-  if (adminProtected.some((r) => pathname.startsWith(r))) {
     if (role !== "admin") {
       url.pathname = "/panel/user";
       return NextResponse.redirect(url);
     }
+    return NextResponse.next();
   }
 
-  // Redirección automática /panel según rol
+  if (pathname.startsWith("/panel/user")) {
+    if (!logged) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
   if (pathname === "/panel") {
     if (!logged) {
       url.pathname = "/login";
       return NextResponse.redirect(url);
     }
-
-    url.pathname = role === "admin"
-      ? "/panel/admin"
-      : "/panel/user";
-
+    url.pathname = role === "admin" ? "/panel/admin" : "/panel/user";
     return NextResponse.redirect(url);
   }
 
@@ -2725,11 +3073,7 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: [
-    "/panel/:path*",
-    "/pago/:path*",
-    "/api/admin/:path*",
-  ],
+  matcher: ["/panel", "/panel/:path*", "/pago/:path*", "/api/admin/:path*"],
 };
 
 
@@ -2777,43 +3121,75 @@ export default async function DashboardPage() {
 ============================================================
 
 // app/panel/admin/layout.jsx
-import { requireAdmin } from "@/lib/checkAdmin";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import {
+  LayoutDashboard,
+  Ticket,
+  CreditCard,
+  Scroll,
+  Users,
+  ArrowLeft,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLayout({ children }) {
-  const auth = await requireAdmin();
-
-  if (!auth.ok) {
-    redirect(auth.redirect ?? "/login");
-  }
-
+export default function AdminLayout({ children }) {
   return (
-    <div className="admin-layout flex">
-      <aside className="w-64 p-4 border-r">
-        <h3 className="font-bold mb-4">Admin</h3>
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-        <nav className="flex flex-col gap-2">
-              <Link href="/panel/admin/logs">Logs</Link>
+      <aside className="w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 space-y-6 shadow-xl">
+
+        <h2 className="text-2xl font-bold mb-4">Panel Admin</h2>
+
+        <nav className="flex flex-col space-y-2">
+
+          <Link href="/panel/admin/dashboard" className="flex items-center gap-3 hover:text-white">
+            <LayoutDashboard size={20} />
+            <span>Dashboard</span>
+          </Link>
+
+          <Link href="/panel/admin/licencias" className="flex items-center gap-3 hover:text-white">
+            <Ticket size={20} />
+            <span>Licencias</span>
+          </Link>
+
+          <Link href="/panel/admin/pagos" className="flex items-center gap-3 hover:text-white">
+            <CreditCard size={20} />
+            <span>Pagos</span>
+          </Link>
+
+          <Link href="/panel/admin/logs" className="flex items-center gap-3 hover:text-white">
+            <Scroll size={20} />
+            <span>Logs</span>
+          </Link>
+
+          {/* ⭐ USUARIOS — YA SIN “GESTIONAR” */}
+          <Link href="/panel/admin/usuarios" className="flex items-center gap-3 hover:text-white">
+            <Users size={20} />
+            <span>Usuarios</span>
+          </Link>
+
+          <Link href="/" className="flex items-center gap-3 hover:text-white mt-4">
+            <ArrowLeft size={20} />
+            <span>Volver</span>
+          </Link>
+
         </nav>
       </aside>
 
-      <main className="flex-1 p-4">{children}</main>
+      <main className="flex-1 p-10">{children}</main>
     </div>
   );
 }
-
 
 
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
 ============================================================
 
-// /app/panel/admin/licencias/page.jsx
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { Ticket, Eye } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -2828,522 +3204,60 @@ export default async function AdminLicenciasPage() {
     .limit(100);
 
   return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Licencias</h1>
+    <div className="space-y-6">
 
-      {!licencias?.length && <p>No hay licencias todavía.</p>}
+      {/* TÍTULO */}
+      <h1 className="text-xl font-bold flex items-center gap-2">
+        <Ticket size={24} /> Licencias
+      </h1>
 
-      <table className="w-full">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Plugin</th>
-            <th>Email Tekla</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th></th>
-          </tr>
-        </thead>
+      {!licencias?.length && (
+        <p>No hay licencias todavía.</p>
+      )}
 
-        <tbody>
-          {licencias?.map((l) => (
-            <tr key={l.id}>
-              <td>{l.id}</td>
-              <td>{l.plugin_id}</td>
-              <td>{l.email_tekla}</td>
-              <td>{l.estado}</td>
-              <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
-              <td>
-                <a href={`/panel/admin/licencias/${l.id}`} className="underline">
-                  Ver / Editar
-                </a>
-              </td>
+      {/* TABLA */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300 dark:border-gray-700">
+          <thead>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
+              <th className="border px-3 py-2">ID</th>
+              <th className="border px-3 py-2">Plugin</th>
+              <th className="border px-3 py-2">Email Tekla</th>
+              <th className="border px-3 py-2">Estado</th>
+              <th className="border px-3 py-2">Fecha</th>
+              <th className="border px-3 py-2">Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+          </thead>
 
+          <tbody>
+            {licencias?.map((l) => (
+              <tr
+                key={l.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <td className="border px-3 py-2">{l.id}</td>
+                <td className="border px-3 py-2">{l.plugin_id}</td>
+                <td className="border px-3 py-2">{l.email_tekla}</td>
+                <td className="border px-3 py-2">{l.estado}</td>
+                <td className="border px-3 py-2">
+                  {new Date(l.fecha_creacion).toLocaleString()}
+                </td>
 
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\[id]\page.jsx
-============================================================
+                <td className="border px-3 py-2">
+                  <a
+                    href={`/panel/admin/licencias/${l.id}`}
+                    className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white flex items-center gap-1"
+                  >
+                    <Eye size={18} /> Ver / Editar
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
 
-// /app/panel/admin/licencias/[id]/page.jsx
-import { requireAdmin } from "@/lib/checkAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminLicenciaDetallePage({ params }) {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/licencias/${params.id}`,
-    { cache: "no-store" }
-  );
-
-  const data = await res.json();
-  if (!data?.licencia) return <p>Licencia no encontrada</p>;
-
-  const l = data.licencia;
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Licencia {l.id}</h1>
-
-      <p><strong>Plugin:</strong> {l.plugin_id}</p>
-      <p><strong>Email Tekla:</strong> {l.email_tekla}</p>
-      <p><strong>Estado:</strong> {l.estado}</p>
-      <p><strong>Activaciones:</strong> {l.activaciones_usadas} / {l.max_activaciones}</p>
-
-      <div className="flex flex-col gap-4 mt-6 max-w-xs">
-
-        {/* ACTIVAR */}
-        <form action="/api/licencias/activar" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="bg-green-600 text-white px-4 py-2 rounded w-full">
-            Activar
-          </button>
-        </form>
-
-        {/* TRIAL */}
-        <form action="/api/licencias/trial" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="bg-yellow-600 text-white px-4 py-2 rounded w-full">
-            Poner en Trial
-          </button>
-        </form>
-
-        {/* BLOQUEAR */}
-        <form action="/api/licencias/bloquear" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="bg-red-600 text-white px-4 py-2 rounded w-full">
-            Bloquear
-          </button>
-        </form>
-
-        {/* RESET ACTIVACIONES */}
-        <form action="/api/licencias/reset-activaciones" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="bg-purple-600 text-white px-4 py-2 rounded w-full">
-            Reset Activaciones
-          </button>
-        </form>
-
+        </table>
       </div>
-    </div>
-  );
-}
 
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias-tipos\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminLicenciasTiposPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data: tipos } = await supabaseAdmin
-    .from("licencias_tipos")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Tipos de licencia</h1>
-
-      {!tipos?.length && <p>No hay tipos de licencia.</p>}
-
-      <table>
-        {/* ... */}
-      </table>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminLogsPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data: logs } = await supabaseAdmin
-    .from("admin_logs")
-    .select("*")
-    .order("fecha", { ascending: false });
-
-  return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Logs admin</h1>
-
-      {!logs?.length && <p>No hay logs.</p>}
-
-      {logs.map((l) => (
-        <p key={l.id}>
-          <strong>{l.tipo}</strong> — {l.mensaje}  
-          <br />
-          {new Date(l.fecha).toLocaleString()}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\page.jsx
-============================================================
-
-// /app/panel/admin/page.jsx
-export const dynamic = "force-dynamic";
-
-export default function AdminHome() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">Panel de administración</h1>
-      <p className="mt-2">Selecciona una sección del menú para comenzar.</p>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminPagosPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data: pagos } = await supabaseAdmin
-    .from("pagos")
-    .select("id, user_id, plugin_id, cantidad_licencias, estado, fecha")
-    .order("fecha", { ascending: false });
-
-  return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Pagos</h1>
-
-      {!pagos?.length && <p>No hay pagos aún.</p>}
-
-      <table> {/* … */} </table>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminPagoDetallePage({ params }) {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/pagos/${params.id}`,
-    { cache: "no-store" }
-  );
-
-  const { pago } = await res.json();
-  if (!pago) return <p>Pago no encontrado</p>;
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Pago {pago.id}</h1>
-      {/* … resto idéntico pero seguro */}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
-============================================================
-
-// /app/panel/admin/plugins/nuevo/page.jsx
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function NuevoPluginPage() {
-  const router = useRouter();
-
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [precio, setPrecio] = useState(0);
-  const [archivoUrl, setArchivoUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function submit(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const res = await fetch("/api/admin/plugins", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        nombre,
-        descripcion,
-        precio: Number(precio),
-        archivo_url: archivoUrl,
-        video_url: videoUrl,
-      }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || "Error al crear plugin");
-      return;
-    }
-
-    router.push("/panel/admin/plugins");
-  }
-
-  return (
-    <div className="max-w-xl">
-      <h1 className="text-xl font-bold mb-4">Nuevo plugin</h1>
-
-      <form onSubmit={submit} className="space-y-4">
-
-        <div>
-          <label className="block mb-1">Nombre</label>
-          <input
-            type="text"
-            required
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Descripción</label>
-          <textarea
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            className="border p-2 rounded w-full h-28"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Precio (€)</label>
-          <input
-            type="number"
-            value={precio}
-            min={0}
-            step={0.01}
-            onChange={(e) => setPrecio(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Archivo URL (descarga)</label>
-          <input
-            type="text"
-            value={archivoUrl}
-            onChange={(e) => setArchivoUrl(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Video URL (opcional)</label>
-          <input
-            type="text"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          {loading ? "Guardando..." : "Guardar"}
-        </button>
-
-        {error && (
-          <p className="text-red-600 mt-2">{error}</p>
-        )}
-      </form>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminPluginsPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data: plugins } = await supabaseAdmin
-    .from("plugins")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Plugins</h1>
-
-      <a href="/panel/admin/plugins/nuevo" className="underline block mb-4">
-        Nuevo plugin
-      </a>
-
-      {!plugins?.length && <p>No hay plugins.</p>}
-      {/* … */}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminUsuariosPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data } = await supabaseAdmin.auth.admin.listUsers();
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Usuarios</h1>
-
-      {!data?.users?.length && <p>No hay usuarios.</p>}
-
-      <table> {/* … */} </table>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\FacturacionClient.jsx
-============================================================
-
-// /app/panel/facturacion/FacturacionClient.jsx
-"use client";
-
-import { useState } from "react";
-
-export default function FacturacionClient({ user_id, datosIniciales }) {
-  const [form, setForm] = useState({
-    nombre: datosIniciales?.nombre ?? "",
-    nif: datosIniciales?.nif ?? "",
-    direccion: datosIniciales?.direccion ?? "",
-    ciudad: datosIniciales?.ciudad ?? "",
-    cp: datosIniciales?.cp ?? "",
-    pais: datosIniciales?.pais ?? "",
-    telefono: datosIniciales?.telefono ?? "",
-  });
-
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
-
-  async function guardar() {
-    setMsg("");
-    setError("");
-
-    const res = await fetch("/api/facturacion/guardar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id, ...form }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.error ?? "Error guardando datos");
-    } else {
-      setMsg("Datos guardados correctamente.");
-    }
-  }
-
-  return (
-    <div className="space-y-4 max-w-lg">
-      {Object.entries({
-        nombre: "Nombre o empresa",
-        nif: "NIF / CIF",
-        direccion: "Dirección",
-        ciudad: "Ciudad",
-        cp: "Código postal",
-        pais: "País",
-        telefono: "Teléfono",
-      }).map(([key, label]) => (
-        <div key={key}>
-          <label className="block mb-1">{label}</label>
-          <input
-            type="text"
-            value={form[key]}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, [key]: e.target.value }))
-            }
-            className="border p-2 rounded w-full"
-          />
-        </div>
-      ))}
-
-      <button
-        onClick={guardar}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        Guardar datos
-      </button>
-
-      {msg && <p className="text-green-600">{msg}</p>}
-      {error && <p className="text-red-600">{error}</p>}
     </div>
   );
 }

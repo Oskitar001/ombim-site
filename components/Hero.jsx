@@ -1,33 +1,33 @@
-export default function Hero() {
-  return (
-    <section className="py-32 text-center max-w-4xl mx-auto">
-      <h1 className="text-4xl md:text-5xl font-bold mb-6">
-        Especialista en Tekla Structures con más de 23 años de experiencia real
-      </h1>
+{/* HERO VISUAL CORRECTO */}
+<section
+  className="relative h-[70vh] w-full flex items-center justify-center text-center px-6"
+  style={{
+    backgroundImage: "url('/images/hero-tekla.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }}
+>
+  {/* Overlay adaptado a tema */}
+  <div className="absolute inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm"></div>
 
-      <p className="text-[#1f2937] text-lg mb-8">
-        Ayudo a ingenierías, constructoras y oficinas técnicas a modelar, documentar y optimizar sus proyectos mediante automatizaciones y plugins personalizados.
-      </p>
+  {/* Contenido */}
+  <div className="relative max-w-4xl mx-auto text-white">
+    <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 drop-shadow-xl">
+      Plugins, automatizaciones y modelado 3D <br />
+      para Tekla Structures
+    </h1>
 
-      <p className="text-xl font-semibold mb-10">
-        Experiencia real de obra + desarrollo avanzado para Tekla.
-      </p>
+    <p className="text-lg md:text-2xl opacity-90 leading-relaxed mb-10 drop-shadow-lg">
+      Acelera tu flujo BIM con herramientas profesionales creadas desde la experiencia real
+      en obra, fabricación y modelado avanzado.
+    </p>
 
-      <div className="flex justify-center gap-4">
-        <a
-          href="#contacto"
-          className="px-6 py-3 bg-blue-600 text-black rounded-lg font-semibold hover:bg-blue-700 transition"
-        >
-          Contactar
-        </a>
-
-        <a
-          href="#servicios"
-          className="px-6 py-3 border border-gray-400 rounded-lg font-semibold hover:bg-[#f3f4f6] transition"
-        >
-          Ver servicios
-        </a>
-      </div>
-    </section>
-  );
-}
+    <Link
+      href="/contacto"
+      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-lg transition"
+    >
+      Solicitar demo personalizada →
+    </Link>
+  </div>
+</section>
+``

@@ -1,70 +1,52 @@
 export const metadata = {
-  title: "Contacto | Óscar Martínez",
-  description:
-    "Contacta con Óscar Martínez para colaboraciones en Tekla Structures.",
+  title: "Contacto – Óscar Martínez",
+  description: "Contacta con Óscar Martínez para colaboraciones en Tekla Structures.",
 };
 
 export default function ContactoPage() {
   return (
-    <section className="max-w-4xl mx-auto px-6 mt-20 mb-32 bg-[#f3f4f6] dark:bg-[#242424]">
-      {/* Encabezado */}
-      <div className="text-center mb-16">
-        <div className="relative inline-block">
-          <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full" />
+    <section className="pt-24 pb-20 max-w-3xl mx-auto px-6">
+      <h1 className="text-3xl font-bold mb-6">Contacto</h1>
 
-          <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-            Contacto
-          </h1>
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+        ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
+        Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
+      </p>
+
+      <form className="space-y-6 bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div>
+          <label className="block mb-1 font-semibold">Nombre</label>
+          <input
+            type="text"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            placeholder="Tu nombre"
+          />
         </div>
 
-        <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10" />
+        <div>
+          <label className="block mb-1 font-semibold">Email</label>
+          <input
+            type="email"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            placeholder="tu@email.com"
+          />
+        </div>
 
-        <p className="text-center text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
-          ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
-          Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
-        </p>
-      </div>
-
-      {/* Formulario */}
-      <form
-        method="POST"
-        action="/api/contact"
-        className="grid gap-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] p-10 rounded-2xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]"
-      >
-        <input
-          type="text"
-          name="nombre"
-          placeholder="Nombre"
-          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          required
-        />
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          required
-        />
-
-        <textarea
-          name="mensaje"
-          placeholder="Mensaje"
-          rows="5"
-          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          required
-        />
+        <div>
+          <label className="block mb-1 font-semibold">Mensaje</label>
+          <textarea
+            className="w-full p-2 rounded border h-32 dark:bg-gray-900"
+            placeholder="Cuéntame cómo puedo ayudarte"
+          ></textarea>
+        </div>
 
         <button
           type="submit"
-          className="px-6 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
         >
           Enviar mensaje
         </button>
       </form>
-
-      {/* Separador inferior */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent mt-20" />
     </section>
   );
 }

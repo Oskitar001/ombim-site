@@ -28,8 +28,6 @@ export default function AdminLicenciasPage() {
   }
 
   async function ejecutarAccion() {
-    if (!selected || !accion) return;
-
     const endpoints = {
       activar: "/api/licencias/activar",
       trial: "/api/licencias/trial",
@@ -47,13 +45,23 @@ export default function AdminLicenciasPage() {
     load();
   }
 
+  const pendientes = licencias.filter((l) => l.estado === "pendiente").length;
+
   return (
     <div className="space-y-6">
 
+      {/* TÍTULO */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <Ticket size={28} /> Licencias
       </h1>
 
+      {pendientes > 0 && (
+        <div className="p-4 bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-300 rounded-lg shadow font-semibold">
+          ⚠ Tienes {pendientes} licencias pendientes de activar
+        </div>
+      )}
+
+      {/* TABLA */}
       <div className="overflow-x-auto rounded shadow">
         <table className="min-w-full border border-gray-300 dark:border-gray-700">
           <thead>
@@ -78,7 +86,29 @@ export default function AdminLicenciasPage() {
                 <td>{l.plugin_id}</td>
                 <td>{l.email_tekla}</td>
 
-                <td className="capitalize">{l.estado}</td>
+                {/* BADGE ESTADO */}
+                <td>
+                  {l.estado === "pendiente" && (
+                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold">
+                      Pendiente
+                    </span>
+                  )}
+                  {l.estado === "activa" && (
+                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold">
+                      Activa
+                    </span>
+                  )}
+                  {l.estado === "trial" && (
+                    <span className="bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded text-xs font-semibold">
+                      Trial
+                    </span>
+                  )}
+                  {l.estado === "bloqueada" && (
+                    <span className="bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded text-xs font-semibold">
+                      Bloqueada
+                    </span>
+                  )}
+                </td>
 
                 <td>
                   {l.activaciones_usadas} / {l.max_activaciones}
@@ -88,6 +118,7 @@ export default function AdminLicenciasPage() {
                   {new Date(l.fecha_creacion).toLocaleString()}
                 </td>
 
+                {/* ACCIONES CON TOOLTIP */}
                 <td>
                   <div className="flex gap-3">
 
@@ -100,36 +131,44 @@ export default function AdminLicenciasPage() {
                     </Link>
 
                     {/* ACTIVAR */}
-                    <button
-                      onClick={() => abrirModal(l, "activar")}
-                      className="text-green-600 hover:text-green-800 dark:text-green-400"
-                    >
-                      <CheckCircle size={18} />
-                    </button>
+                    <Tooltip label="Activar licencia">
+                      <button
+                        onClick={() => abrirModal(l, "activar")}
+                        className="text-green-600 hover:text-green-800 dark:text-green-400"
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                    </Tooltip>
 
                     {/* TRIAL */}
-                    <button
-                      onClick={() => abrirModal(l, "trial")}
-                      className="text-yellow-500 hover:text-yellow-700 dark:text-yellow-300"
-                    >
-                      <Clock size={18} />
-                    </button>
+                    <Tooltip label="Poner en TRIAL">
+                      <button
+                        onClick={() => abrirModal(l, "trial")}
+                        className="text-yellow-500 hover:text-yellow-700 dark:text-yellow-300"
+                      >
+                        <Clock size={18} />
+                      </button>
+                    </Tooltip>
 
                     {/* BLOQUEAR */}
-                    <button
-                      onClick={() => abrirModal(l, "bloquear")}
-                      className="text-red-600 hover:text-red-800 dark:text-red-400"
-                    >
-                      <Ban size={18} />
-                    </button>
+                    <Tooltip label="Bloquear licencia">
+                      <button
+                        onClick={() => abrirModal(l, "bloquear")}
+                        className="text-red-600 hover:text-red-800 dark:text-red-400"
+                      >
+                        <Ban size={18} />
+                      </button>
+                    </Tooltip>
 
-                    {/* RESET ACTIVACIONES */}
-                    <button
-                      onClick={() => abrirModal(l, "reset")}
-                      className="text-purple-600 hover:text-purple-800 dark:text-purple-300"
-                    >
-                      <RefreshCw size={18} />
-                    </button>
+                    {/* RESET */}
+                    <Tooltip label="Reset activaciones">
+                      <button
+                        onClick={() => abrirModal(l, "reset")}
+                        className="text-purple-600 hover:text-purple-800 dark:text-purple-300"
+                      >
+                        <RefreshCw size={18} />
+                      </button>
+                    </Tooltip>
 
                   </div>
                 </td>
@@ -143,13 +182,29 @@ export default function AdminLicenciasPage() {
       <ConfirmDialog
         open={open}
         title="Confirmar acción"
-        description={`¿Seguro que quieres ejecutar la acción "${accion}" para la licencia ${selected?.id}?`}
-        confirmText="Confirmar"
+        description={`¿Seguro que quieres "${accion}" la licencia #${selected?.id}?`}
+        confirmText="Sí"
         cancelText="Cancelar"
         onCancel={() => setOpen(false)}
         onConfirm={ejecutarAccion}
       />
+    </div>
+  );
+}
 
+/* TOOLTIP COMPONENT */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+      <div className="
+        absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+        opacity-0 group-hover:opacity-100 transition 
+        bg-black text-white text-xs py-1 px-2 rounded shadow
+        pointer-events-none
+      ">
+        {label}
+      </div>
     </div>
   );
 }

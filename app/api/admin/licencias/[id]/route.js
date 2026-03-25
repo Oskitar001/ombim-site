@@ -1,24 +1,22 @@
-// app/api/admin/licencias/[id]/route.js
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
 
-export async function GET(_, { params }) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json(admin, { status: 403 });
-  }
+export const dynamic = "force-dynamic";
+
+export async function GET(req, context) {
+  const { params } = context;
+  const { id } = await params; // ⬅️ FIX OFICIAL Next 16
 
   const { data: licencia } = await supabaseAdmin
     .from("licencias")
     .select("*, plugins(nombre)")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   const { data: activaciones } = await supabaseAdmin
     .from("activaciones")
     .select("*")
-    .eq("licencia_id", params.id);
+    .eq("licencia_id", id);
 
   return NextResponse.json({ licencia, activaciones });
 }

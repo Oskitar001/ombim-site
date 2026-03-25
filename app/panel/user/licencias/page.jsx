@@ -2,29 +2,52 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { KeyRound, CheckCircle, Clock, Ban, AlertCircle, Eye } from "lucide-react";
+import { KeyRound, CheckCircle, Clock, Ban, Eye } from "lucide-react";
+
+/* Tooltip PRO */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+
+      <div
+        className="
+          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+          opacity-0 group-hover:opacity-100 transition
+          bg-black text-white text-xs py-1 px-2 rounded shadow
+          pointer-events-none whitespace-nowrap
+        "
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export default function UserLicenciasPage() {
-  const [licencias, setLicencias] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [licencias, setLicencias] = useState(null);
 
-  // Cargar licencias del usuario
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/user/licencias", {
-        method: "GET",
-        credentials: "include",
-      });
+      try {
+        const res = await fetch("/api/user/licencias", {
+          credentials: "include",
+        });
 
-      const data = await res.json();
-      setLicencias(data.licencias || []);
-      setLoading(false);
+        const data = await res.json();
+        setLicencias(data.licencias || []);
+      } catch (err) {
+        console.error("Error cargando licencias:", err);
+        setLicencias([]);
+      }
     }
 
     load();
   }, []);
 
-  if (loading) return <p>Cargando licencias...</p>;
+  if (licencias === null) {
+    return <p>Cargando licencias...</p>;
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -34,88 +57,80 @@ export default function UserLicenciasPage() {
         <KeyRound size={30} /> Mis Licencias
       </h1>
 
-      <p className="text-gray-600 dark:text-gray-300">
-        Aquí puedes ver todas tus licencias asignadas a emails Tekla, con su estado actual.
-      </p>
+      {/* SIN LICENCIAS */}
+      {licencias.length === 0 && (
+        <p className="text-gray-500">Aún no tienes licencias activas.</p>
+      )}
 
-      {/* TABLA DE LICENCIAS */}
+      {/* TABLA */}
       <div className="overflow-x-auto rounded shadow-sm">
         <table className="min-w-full border border-gray-300 dark:border-gray-700">
           <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-              <th className="border px-3 py-2">Plugin</th>
-              <th className="border px-3 py-2">Email Tekla</th>
-              <th className="border px-3 py-2">Estado</th>
-              <th className="border px-3 py-2">Activaciones</th>
-              <th className="border px-3 py-2">Fecha</th>
-              <th className="border px-3 py-2">Acciones</th>
+            <tr className="bg-gray-200 dark:bg-gray-700">
+              <th>Plugin</th>
+              <th>Email Tekla</th>
+              <th>Estado</th>
+              <th>Activaciones</th>
+              <th>Fecha</th>
+              <th></th>
             </tr>
           </thead>
 
           <tbody>
             {licencias.map((l) => (
-              <tr 
-                key={l.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                {/* Plugin */}
-                <td className="border px-3 py-2">{l.plugin_id}</td>
+              <tr key={l.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
 
-                {/* Email Tekla */}
-                <td className="border px-3 py-2">{l.email_tekla}</td>
+                {/* PLUGIN */}
+                <td>{l.plugin_id}</td>
 
-                {/* Estado */}
-                <td className="border px-3 py-2">
+                {/* EMAIL TEKLA */}
+                <td>{l.email_tekla}</td>
+
+                {/* ESTADO */}
+                <td>
                   {l.estado === "activa" && (
-                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                      <CheckCircle size={18} /> Activa
+                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                      <CheckCircle size={14} /> Activa
                     </span>
                   )}
 
                   {l.estado === "trial" && (
-                    <span className="flex items-center gap-1 text-yellow-500 dark:text-yellow-300">
-                      <Clock size={18} /> Trial
+                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                      <Clock size={14} /> Trial
                     </span>
                   )}
 
                   {l.estado === "bloqueada" && (
-                    <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
-                      <Ban size={18} /> Bloqueada
+                    <span className="bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                      <Ban size={14} /> Bloqueada
                     </span>
                   )}
-
-                  {l.estado !== "activa" &&
-                    l.estado !== "trial" &&
-                    l.estado !== "bloqueada" && (
-                      <span className="flex items-center gap-1 text-gray-500 dark:text-gray-300">
-                        <AlertCircle size={18} /> {l.estado}
-                      </span>
-                    )}
                 </td>
 
-                {/* Activaciones */}
-                <td className="border px-3 py-2">
+                {/* ACTIVACIONES */}
+                <td>
                   {l.activaciones_usadas} / {l.max_activaciones}
                 </td>
 
-                {/* Fecha */}
-                <td className="border px-3 py-2">
-                  {new Date(l.fecha_creacion).toLocaleString()}
-                </td>
+                {/* FECHA */}
+                <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
 
-                {/* Acciones */}
-                <td className="border px-3 py-2">
-                  <Link
-                    href={`/panel/user/licencias/${l.id}`}
-                    className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white flex items-center gap-1"
-                  >
-                    <Eye size={18} /> Ver
-                  </Link>
+                {/* ACCIONES */}
+                <td>
+                  <Tooltip label="Ver detalles de la licencia">
+                    <Link
+                      href={`/panel/user/licencias/${l.id}`}
+                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    >
+                      <Eye size={16} /> Ver
+                    </Link>
+                  </Tooltip>
                 </td>
 
               </tr>
             ))}
           </tbody>
+
         </table>
       </div>
 

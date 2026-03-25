@@ -1,58 +1,95 @@
 "use client";
 
-import Link from "next/link";
-import { Download, Box } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Box, Download } from "lucide-react";
 
-export default function DescargasPage() {
-  const [plugins, setPlugins] = useState([]);
+/* Tooltip PRO */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+
+      <div
+        className="
+          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+          opacity-0 group-hover:opacity-100 transition
+          bg-black text-white text-xs py-1 px-2 rounded shadow
+          whitespace-nowrap pointer-events-none
+        "
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+export default function DescargasUserPage() {
+  const [plugins, setPlugins] = useState(null);
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/user/plugins", { credentials: "include" });
-      const data = await res.json();
-      setPlugins(data.plugins || []);
+      try {
+        const res = await fetch("/api/user/plugins", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        setPlugins(data.plugins || []);
+      } catch (err) {
+        console.error("Error cargando descargas:", err);
+        setPlugins([]);
+      }
     }
+
     load();
   }, []);
 
-  return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+  if (plugins === null) return <p>Cargando descargas...</p>;
 
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+
+      {/* Título */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Download size={28} /> Descargas disponibles
+        <Download size={30} /> Descargas disponibles
       </h1>
 
-      <p className="text-gray-600 dark:text-gray-300">
-        Puedes descargar tus plugins siempre que estés logueado.
-      </p>
+      {/* Si no hay plugins */}
+      {plugins.length === 0 && (
+        <p className="text-gray-500">No tienes plugins disponibles para descargar.</p>
+      )}
 
+      {/* Lista de plugins */}
       <div className="flex flex-col gap-4">
         {plugins.map((p) => (
           <div
             key={p.id}
-            className="flex justify-between items-center p-4 bg-gray-200 dark:bg-gray-800 rounded shadow-sm"
+            className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex justify-between items-center"
           >
             <div className="flex items-center gap-3">
-              <Box size={24} className="text-gray-600 dark:text-gray-300" />
+              <Box size={26} className="text-gray-700 dark:text-gray-300" />
               <div>
-                <p className="font-semibold">{p.nombre}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="font-semibold text-lg">{p.nombre}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Versión: {p.version}
                 </p>
               </div>
             </div>
 
-            <a
-              href={p.url_descarga}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-              download
-            >
-              Descargar
-            </a>
+            {/* Botón de descarga con tooltip */}
+            <Tooltip label="Descargar plugin">
+              <a
+                href={p.url_descarga}
+                download
+                className="btn-primary flex items-center gap-2"
+              >
+                <Download size={18} /> Descargar
+              </a>
+            </Tooltip>
           </div>
         ))}
       </div>
+
     </div>
   );
 }

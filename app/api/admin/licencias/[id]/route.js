@@ -4,8 +4,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req, context) {
-  const { params } = context;
+export async function GET(req, ctx) {
+  const { params } = await ctx;  // <<<<<< CLAVE
   const id = params.id;
 
   const { data: licencia } = await supabaseAdmin

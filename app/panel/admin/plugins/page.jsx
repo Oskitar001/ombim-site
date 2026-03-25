@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Trash2, Eye, Edit3, PlusCircle, Download } from "lucide-react";
+import { Package, Trash2, Eye, Edit3, Download } from "lucide-react";
 
 export default function AdminPluginsPage() {
   const [plugins, setPlugins] = useState([]);
@@ -12,17 +12,16 @@ export default function AdminPluginsPage() {
 
   useEffect(() => {
     async function load() {
-      // PLUGINS
+      // Obtener plugins
       const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
       const d1 = await r1.json();
       setPlugins(d1.plugins ?? d1);
 
-      // DESCARGAS TOTALES POR PLUGIN
+      // Obtener descargas por plugin
       const r2 = await fetch("/api/admin/dashboard");
       const d2 = await r2.json();
       setDescargas(d2.descargasPorPlugin ?? {});
     }
-
     load();
   }, []);
 
@@ -51,15 +50,15 @@ export default function AdminPluginsPage() {
         href="/panel/admin/plugins/nuevo"
         className="text-blue-600 flex items-center gap-2 mb-4"
       >
-        <PlusCircle size={18} /> Nuevo plugin
+        <Package size={18} /> Nuevo plugin
       </Link>
 
       <table className="w-full border border-gray-300 dark:border-gray-700">
         <thead>
           <tr className="bg-gray-300 dark:bg-gray-700">
-            <th>ID</th>
+            <th>Imagen</th>
             <th>Nombre</th>
-            <th>Versión</th>
+            <th>Precio</th>
             <th>Descargas</th>
             <th>Acciones</th>
           </tr>
@@ -68,9 +67,21 @@ export default function AdminPluginsPage() {
         <tbody>
           {plugins.map((p) => (
             <tr key={p.id} className="border-b border-gray-300 dark:border-gray-700">
-              <td>{p.id}</td>
-              <td>{p.nombre}</td>
-              <td>{p.version ?? "1.0"}</td>
+              <td className="p-2 text-center">
+                {p.imagen_url ? (
+                  <img
+                    src={p.imagen_url}
+                    alt={p.nombre}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gray-400 rounded"></div>
+                )}
+              </td>
+
+              <td className="font-semibold">{p.nombre}</td>
+              <td>{p.precio} €</td>
+
               <td className="text-center">
                 <span className="flex items-center gap-1 justify-center">
                   <Download size={16} />
@@ -96,9 +107,9 @@ export default function AdminPluginsPage() {
         </tbody>
       </table>
 
-      {/* DIALOGO CONFIRMACION */}
+      {/* MODAL BORRADO */}
       {open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
           <div className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4 max-w-md">
             <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
             <p>Esta acción no se puede deshacer.</p>

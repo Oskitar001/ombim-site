@@ -1,119 +1,71 @@
-// /app/panel/admin/plugins/nuevo/page.jsx
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { PackagePlus, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function NuevoPluginPage() {
-  const router = useRouter();
-
   const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [precio, setPrecio] = useState(0);
-  const [archivoUrl, setArchivoUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [version, setVersion] = useState("");
+  const [url, setUrl] = useState("");
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function submit(e) {
+  async function crear(e) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
 
-    const res = await fetch("/api/admin/plugins", {
+    await fetch("/api/admin/plugins", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        nombre,
-        descripcion,
-        precio: Number(precio),
-        archivo_url: archivoUrl,
-        video_url: videoUrl,
-      }),
+      body: JSON.stringify({ nombre, version, url_descarga: url }),
     });
 
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || "Error al crear plugin");
-      return;
-    }
-
-    router.push("/panel/admin/plugins");
+    window.location.href = "/panel/admin/plugins";
   }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-xl font-bold mb-4">Nuevo plugin</h1>
+    <div className="space-y-6">
 
-      <form onSubmit={submit} className="space-y-4">
+      <Link href="/panel/admin/plugins" className="text-blue-600 dark:text-blue-400 flex items-center gap-2">
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <PackagePlus size={28} /> Nuevo Plugin
+      </h1>
+
+      <form onSubmit={crear} className="space-y-4 max-w-lg">
 
         <div>
-          <label className="block mb-1">Nombre</label>
+          <label className="font-semibold">Nombre</label>
           <input
-            type="text"
-            required
+            className="w-full border p-2 rounded dark:bg-gray-800 dark:text-white"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            className="border p-2 rounded w-full"
+            required
           />
         </div>
 
         <div>
-          <label className="block mb-1">Descripción</label>
-          <textarea
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            className="border p-2 rounded w-full h-28"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Precio (€)</label>
+          <label className="font-semibold">Versión</label>
           <input
-            type="number"
-            value={precio}
-            min={0}
-            step={0.01}
-            onChange={(e) => setPrecio(e.target.value)}
-            className="border p-2 rounded w-full"
+            className="w-full border p-2 rounded dark:bg-gray-800 dark:text-white"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+            required
           />
         </div>
 
         <div>
-          <label className="block mb-1">Archivo URL (descarga)</label>
+          <label className="font-semibold">URL Descarga</label>
           <input
-            type="text"
-            value={archivoUrl}
-            onChange={(e) => setArchivoUrl(e.target.value)}
-            className="border p-2 rounded w-full"
+            className="w-full border p-2 rounded dark:bg-gray-800 dark:text-white"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            required
           />
         </div>
 
-        <div>
-          <label className="block mb-1">Video URL (opcional)</label>
-          <input
-            type="text"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
+        <button className="btn-primary">Crear plugin</button>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          {loading ? "Guardando..." : "Guardar"}
-        </button>
-
-        {error && (
-          <p className="text-red-600 mt-2">{error}</p>
-        )}
       </form>
     </div>
   );

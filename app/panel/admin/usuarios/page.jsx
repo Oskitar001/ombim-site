@@ -1,69 +1,41 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { Users, Trash2, Pencil, Eye, Search } from "lucide-react";
-
-export const dynamic = "force-dynamic";
+import { Users, Pencil, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminUsuariosPage() {
-  const params = useSearchParams();        // ✅ LEER SEARCH PARAMS CORRECTAMENTE
-  const queryURL = params.get("q") ?? "";  // ✅ YA NO DA ERROR
-
   const [usuarios, setUsuarios] = useState([]);
-  const [query, setQuery] = useState(queryURL);
+  const [open, setOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  // Cargar usuarios desde API
   useEffect(() => {
     async function load() {
-      const res = await fetch(`/api/admin/usuarios${query ? `?q=${query}` : ""}`);
-      const data = await res.json();
-      setUsuarios(data.users);
+      const r = await fetch("/api/admin/usuarios");
+      const d = await r.json();
+      setUsuarios(d.users || []);
     }
     load();
-  }, [query]);
+  }, []);
 
   return (
     <div className="space-y-6">
 
       {/* TÍTULO */}
-      <h1 className="text-2xl font-bold flex items-center gap-2">
+      <h1 className="text-3xl font-bold flex items-center gap-2">
         <Users size={28} /> Usuarios
       </h1>
 
-      {/* BUSCADOR */}
-      <form
-        className="flex items-center gap-2 max-w-md"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setQuery(e.target.q.value);
-        }}
-      >
-        <Search size={20} className="text-gray-600 dark:text-gray-300" />
-
-        <input
-          type="text"
-          name="q"
-          placeholder="Buscar por email o ID…"
-          defaultValue={query}
-          className="flex-1 border p-2 rounded dark:bg-[#1f1f1f] dark:text-white"
-        />
-
-        <button className="px-3 py-2 bg-blue-600 text-white rounded">
-          Buscar
-        </button>
-      </form>
-
-      {/* TABLA */}
-      <div className="overflow-x-auto">
+      {/* TABLA USUARIOS */}
+      <div className="overflow-x-auto rounded shadow">
         <table className="min-w-full border border-gray-300 dark:border-gray-700">
           <thead>
             <tr className="bg-gray-200 dark:bg-gray-700">
-              <th className="border px-3 py-2">Email</th>
-              <th className="border px-3 py-2 hidden md:table-cell">Rol</th>
-              <th className="border px-3 py-2 hidden md:table-cell">Último login</th>
-              <th className="border px-3 py-2">Acciones</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Último login</th>
+              <th>Acciones</th>
             </tr>
           </thead>
 
@@ -71,27 +43,23 @@ export default function AdminUsuariosPage() {
             {usuarios.map((u) => (
               <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
 
-                <td className="border px-3 py-2">{u.email}</td>
-
-                <td className="border px-3 py-2 hidden md:table-cell">
-                  {u.user_metadata?.role ?? "user"}
-                </td>
-
-                <td className="border px-3 py-2 hidden md:table-cell">
+                <td>{u.email}</td>
+                <td>{u.user_metadata?.role || "user"}</td>
+                <td>
                   {u.last_sign_in_at
                     ? new Date(u.last_sign_in_at).toLocaleString()
                     : "—"}
                 </td>
 
-                <td className="border px-3 py-2">
-                  <div className="flex gap-4">
+                <td>
+                  <div className="flex gap-3">
 
                     {/* VER */}
                     <Link
                       href={`/panel/admin/usuarios/${u.id}`}
-                      className="text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      <Eye size={18} />
+                      Ver
                     </Link>
 
                     {/* EDITAR */}
@@ -102,30 +70,26 @@ export default function AdminUsuariosPage() {
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
                             id: u.id,
-                            role: u.user_metadata?.role === "admin" ? "user" : "admin",
+                            role:
+                              u.user_metadata?.role === "admin"
+                                ? "user"
+                                : "admin",
                           }),
                         });
                         location.reload();
                       }}
-                      className="text-yellow-500 hover:text-yellow-400 dark:text-yellow-300 dark:hover:text-yellow-200"
+                      className="text-yellow-500 dark:text-yellow-300 hover:text-yellow-400"
                     >
                       <Pencil size={18} />
                     </button>
 
                     {/* BORRAR */}
                     <button
-                      onClick={async () => {
-                        if (!confirm("¿Eliminar usuario?")) return;
-
-                        await fetch("/api/admin/usuarios/borrar", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: u.id }),
-                        });
-
-                        location.reload();
+                      onClick={() => {
+                        setSelectedUser(u.id);
+                        setOpen(true);
                       }}
-                      className="text-red-500 hover:text-red-300 dark:text-red-300 dark:hover:text-red-200"
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -140,6 +104,25 @@ export default function AdminUsuariosPage() {
         </table>
       </div>
 
+      {/* MODAL CONFIRMAR BORRADO */}
+      <ConfirmDialog
+        open={open}
+        title="Eliminar usuario"
+        description="Esta acción eliminará al usuario de forma permanente."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onCancel={() => setOpen(false)}
+        onConfirm={async () => {
+          await fetch("/api/admin/usuarios/borrar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: selectedUser }),
+          });
+
+          setOpen(false);
+          location.reload();
+        }}
+      />
     </div>
   );
 }

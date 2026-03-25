@@ -1,92 +1,112 @@
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { ArrowLeft, Ticket, ShieldCheck, Ban, RefreshCw } from "lucide-react";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
-export default async function AdminLicenciaDetallePage({ params }) {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
+export default function AdminLicenciaDetallePage({ params }) {
+  const [licencia, setLicencia] = useState(null);
+  const [accion, setAccion] = useState(null);
+  const [open, setOpen] = useState(false);
 
-  // Obtener licencia
-  const { data, error } = await supabaseAdmin
-    .from("licencias")
-    .select("*")
-    .eq("id", params.id)
-    .single();
+  useEffect(() => {
+    async function load() {
+      const r = await fetch(`/api/admin/licencias/${params.id}`);
+      const d = await r.json();
+      setLicencia(d.licencia || null);
+    }
+    load();
+  }, [params.id]);
 
-  if (error || !data)
-    return <p className="text-red-500">Licencia no encontrada</p>;
+  function abrirModal(tipo) {
+    setAccion(tipo);
+    setOpen(true);
+  }
 
-  const l = data;
+  async function ejecutar() {
+    const endpoints = {
+      activar: "/api/licencias/activar",
+      trial: "/api/licencias/trial",
+      bloquear: "/api/licencias/bloquear",
+      reset: "/api/licencias/reset-activaciones",
+    };
+
+    await fetch(endpoints[accion], {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ licencia_id: licencia.id }),
+    });
+
+    setOpen(false);
+    window.location.reload();
+  }
+
+  if (!licencia) return <p>Cargando...</p>;
 
   return (
     <div className="space-y-6">
 
-      {/* VOLVER */}
-      <a
-        href="/panel/admin/licencias"
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
-      >
+      <Link href="/panel/admin/licencias" className="text-blue-600 dark:text-blue-400 flex items-center gap-2">
         <ArrowLeft size={20} /> Volver
-      </a>
+      </Link>
 
-      {/* TÍTULO */}
-      <h1 className="text-2xl font-bold flex items-center gap-2">
-        <Ticket size={28} /> Licencia {l.id}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <KeyRound size={28} /> Licencia {licencia.id}
       </h1>
 
-      {/* DATOS */}
-      <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 space-y-3">
-        <p><strong>Plugin:</strong> {l.plugin_id}</p>
-        <p><strong>Email Tekla:</strong> {l.email_tekla}</p>
-        <p><strong>Estado:</strong> {l.estado}</p>
-        <p>
-          <strong>Activaciones:</strong> {l.activaciones_usadas} /{" "}
-          {l.max_activaciones}
-        </p>
-        <p>
-          <strong>Creada:</strong>{" "}
-          {new Date(l.fecha_creacion).toLocaleString()}
-        </p>
-      </div>
+      <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow space-y-4">
 
-      {/* ACCIONES */}
-      <div className="flex flex-col gap-4 max-w-xs">
-
-        {/* ACTIVAR */}
-        <form action="/api/licencias/activar" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-            <ShieldCheck size={18} /> Activar
-          </button>
-        </form>
-
-        {/* PONER TRIAL */}
-        <form action="/api/licencias/trial" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="w-full flex items-center justify-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2 rounded">
-            <ShieldCheck size={18} /> Poner en Trial
-          </button>
-        </form>
-
-        {/* BLOQUEAR */}
-        <form action="/api/licencias/bloquear" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
-            <Ban size={18} /> Bloquear
-          </button>
-        </form>
-
-        {/* RESET ACTIVACIONES */}
-        <form action="/api/licencias/reset-activaciones" method="POST">
-          <input type="hidden" name="licencia_id" value={l.id} />
-          <button className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
-            <RefreshCw size={18} /> Reset Activaciones
-          </button>
-        </form>
+        <p><strong>Plugin:</strong> {licencia.plugin_id}</p>
+        <p><strong>Email Tekla:</strong> {licencia.email_tekla}</p>
+        <p><strong>Estado:</strong> {licencia.estado}</p>
+        <p><strong>Activaciones:</strong> {licencia.activaciones_usadas} / {licencia.max_activaciones}</p>
+        <p><strong>Creada:</strong> {new Date(licencia.fecha_creacion).toLocaleString()}</p>
 
       </div>
+
+      <div className="flex flex-col gap-3 max-w-sm">
+
+        <button
+          onClick={() => abrirModal("activar")}
+          className="btn-primary flex items-center justify-center gap-2"
+        >
+          <CheckCircle size={18} /> Activar
+        </button>
+
+        <button
+          onClick={() => abrirModal("trial")}
+          className="btn-secondary flex items-center justify-center gap-2"
+        >
+          <Clock size={18} /> Poner en Trial
+        </button>
+
+        <button
+          onClick={() => abrirModal("bloquear")}
+          className="btn-danger flex items-center justify-center gap-2"
+        >
+          <Ban size={18} /> Bloquear
+        </button>
+
+        <button
+          onClick={() => abrirModal("reset")}
+          className="btn-secondary flex items-center justify-center gap-2"
+        >
+          <RefreshCw size={18} /> Reset Activaciones
+        </button>
+
+      </div>
+
+      <ConfirmDialog
+        open={open}
+        title="Confirmar acción"
+        description={`¿Seguro que quieres "${accion}" la licencia #${licencia.id}?`}
+        confirmText="Sí"
+        cancelText="Cancelar"
+        onCancel={() => setOpen(false)}
+        onConfirm={ejecutar}
+      />
+
     </div>
   );
 }

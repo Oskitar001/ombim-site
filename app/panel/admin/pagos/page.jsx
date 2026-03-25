@@ -1,64 +1,111 @@
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { CreditCard } from "lucide-react";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { CreditCard, CheckCircle, Trash2 } from "lucide-react";
+import Link from "next/link";
 
-export default async function AdminPagosPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
+export default function AdminPagosPage() {
+  const [pagos, setPagos] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [selectedPago, setSelectedPago] = useState(null);
 
-  const { data: pagos } = await supabaseAdmin
-    .from("pagos")
-    .select("id, user_id, plugin_id, cantidad_licencias, estado, fecha")
-    .order("fecha", { ascending: false });
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    const r = await fetch("/api/admin/pagos");
+    const d = await r.json();
+    setPagos(d.pagos || []);
+  }
+
+  function confirmarValidacion(pago) {
+    setSelectedPago(pago);
+    setOpen(true);
+  }
+
+  async function validar() {
+    await fetch(`/api/admin/pagos/validar/${selectedPago.id}`, {
+      method: "POST",
+    });
+    setOpen(false);
+    load();
+  }
 
   return (
     <div className="space-y-6">
 
-      {/* TÍTULO */}
-      <h1 className="text-xl font-bold flex items-center gap-2">
-        <CreditCard size={24} /> Pagos
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <CreditCard size={28} /> Pagos
       </h1>
 
-      {!pagos?.length && (
-        <p>No hay pagos aún.</p>
-      )}
-
-      {/* TABLA */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded shadow">
         <table className="min-w-full border border-gray-300 dark:border-gray-700">
           <thead>
             <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-              <th className="border px-3 py-2">ID</th>
-              <th className="border px-3 py-2">Usuario</th>
-              <th className="border px-3 py-2">Plugin</th>
-              <th className="border px-3 py-2">Licencias</th>
-              <th className="border px-3 py-2">Estado</th>
-              <th className="border px-3 py-2">Fecha</th>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Plugin</th>
+              <th>Licencias</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
             </tr>
           </thead>
 
           <tbody>
-            {pagos?.map((pago) => (
+            {pagos.map((p) => (
               <tr
-                key={pago.id}
+                key={p.id}
                 className="hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <td className="border px-3 py-2">{pago.id}</td>
-                <td className="border px-3 py-2">{pago.user_id}</td>
-                <td className="border px-3 py-2">{pago.plugin_id}</td>
-                <td className="border px-3 py-2">{pago.cantidad_licencias}</td>
-                <td className="border px-3 py-2">{pago.estado}</td>
-                <td className="border px-3 py-2">
-                  {new Date(pago.fecha).toLocaleString()}
+                <td>{p.id}</td>
+                <td>{p.user_email}</td>
+                <td>{p.plugin_id}</td>
+                <td>{p.cantidad_licencias}</td>
+                <td className="capitalize">{p.estado}</td>
+                <td>{new Date(p.fecha).toLocaleString()}</td>
+
+                <td>
+                  <div className="flex gap-3">
+
+                    {/* VER */}
+                    <Link
+                      href={`/panel/admin/pagos/${p.id}`}
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Ver
+                    </Link>
+
+                    {/* VALIDAR */}
+                    {p.estado !== "validado" && (
+                      <button
+                        onClick={() => confirmarValidacion(p)}
+                        className="text-green-600 hover:text-green-800 dark:text-green-400"
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                    )}
+
+                  </div>
                 </td>
+
               </tr>
             ))}
           </tbody>
-
         </table>
       </div>
+
+      <ConfirmDialog
+        open={open}
+        title="Validar pago"
+        description={`¿Quieres validar el pago #${selectedPago?.id} y crear las licencias automáticamente?`}
+        confirmText="Validar"
+        cancelText="Cancelar"
+        onCancel={() => setOpen(false)}
+        onConfirm={validar}
+      />
 
     </div>
   );

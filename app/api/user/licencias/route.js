@@ -1,4 +1,4 @@
-// /app/api/user/licencias/route.js
+// app/api/user/licencias/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function GET() {
@@ -7,19 +7,16 @@ export async function GET() {
   // Usuario logueado
   const {
     data: { user },
-    error: userError
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (!user) {
     return Response.json({ licencias: [] }, { status: 401 });
   }
 
-  // Obtener licencias del usuario + nombre plugin
+  // Licencias del usuario
   const { data, error } = await supabase
     .from("licencias")
-    .select(
-      "id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)"
-    )
+    .select("id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)")
     .eq("user_id", user.id)
     .order("fecha_creacion", { ascending: false });
 
@@ -27,7 +24,6 @@ export async function GET() {
     return Response.json({ licencias: [] });
   }
 
-  // Limpieza del DTO
   const licencias = data.map((l) => ({
     id: l.id,
     email_tekla: l.email_tekla,
@@ -36,7 +32,7 @@ export async function GET() {
     estado: l.estado,
     activaciones_usadas: l.activaciones_usadas,
     max_activaciones: l.max_activaciones,
-    fecha_creacion: l.fecha_creacion
+    fecha_creacion: l.fecha_creacion,
   }));
 
   return Response.json({ licencias });

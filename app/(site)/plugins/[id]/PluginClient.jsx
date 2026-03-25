@@ -1,8 +1,9 @@
+// app/(site)/plugins/[id]/PluginClient.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import DescargarBoton from "./DescargarBoton";
+import { Download } from "lucide-react";
 
 export default function PluginClient({ plugin, pluginId }) {
   const [user, setUser] = useState(null);
@@ -14,59 +15,66 @@ export default function PluginClient({ plugin, pluginId }) {
   }, []);
 
   return (
-    <section className="max-w-4xl mx-auto py-20 px-6">
-      <h1 className="text-4xl font-bold mb-6">{plugin.nombre}</h1>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold">{plugin.nombre}</h1>
 
-      <p className="text-lg mb-6">{plugin.descripcion}</p>
+      {/* FOTO PRINCIPAL */}
+      <div className="h-80 bg-white dark:bg-gray-900 rounded shadow overflow-hidden flex items-center justify-center">
+        <img
+          src={plugin.imagen_url ?? "/plugin-placeholder.png"}
+          alt={plugin.nombre}
+          className="object-cover h-full w-full"
+        />
+      </div>
 
-      {plugin.precio > 0 ? (
-        <p className="text-2xl font-bold text-blue-600 mb-6">
-          {plugin.precio} €
-        </p>
-      ) : (
-        <p className="text-2xl font-bold text-green-600 mb-6">Gratis</p>
-      )}
+      <p className="opacity-80">{plugin.descripcion}</p>
 
-      {/* VIDEO */}
       {plugin.video_url && (
-        <div className="aspect-video mb-8">
+        <div className="aspect-video w-full overflow-hidden rounded shadow">
           <iframe
             src={plugin.video_url}
-            className="w-full h-full rounded-xl"
+            className="w-full h-full"
             allowFullScreen
           />
         </div>
       )}
 
-      {/* ARCHIVO */}
-      {plugin.archivo_url && (
-        <p className="mb-4 text-gray-600 dark:text-gray-400">
-          Archivo disponible para descarga.
-        </p>
-      )}
+      <div className="space-y-4">
+        {/* PRECIO */}
+        <div className="text-xl font-semibold">
+          {plugin.precio > 0
+            ? `${plugin.precio} €`
+            : "Gratis"}
+        </div>
 
-      {/* ACCIONES */}
-      {user ? (
-        <>
-          {/* Descarga si es gratis */}
-          {plugin.precio === 0 && <DescargarBoton pluginId={pluginId} />}
+        {/* BOTONES */}
+        {user ? (
+          <>
+            <a
+              href={`/api/plugin/download?plugin_id=${pluginId}`}
+              className="bg-green-600 text-white inline-flex items-center gap-2 px-4 py-2 rounded hover:bg-green-700 transition"
+            >
+              <Download size={18} /> Descargar Trial
+            </a>
 
-          {/* Compra */}
-          {plugin.precio > 0 && (
-            <Link href={`/pago/${pluginId}`}>
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
-                Comprar licencias
-              </button>
-            </Link>
-          )}
-        </>
-      ) : (
-        <Link href="/login">
-          <p className="mt-6 underline text-blue-600">
-            Inicia sesión para descargar o comprar
-          </p>
-        </Link>
-      )}
-    </section>
+            {plugin.precio > 0 && (
+              <Link
+                href={`/pago/${pluginId}`}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition inline-block"
+              >
+                Comprar licencias →
+              </Link>
+            )}
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 inline-block"
+          >
+            Iniciar sesión para descargar
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }

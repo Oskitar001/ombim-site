@@ -9,13 +9,14 @@ export async function GET(req) {
     return NextResponse.json(admin, { status: 403 });
   }
 
-  const q = req.nextUrl.searchParams.get("q") ?? "";
-
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("licencias")
     .select("*, plugins(nombre)")
-    .ilike("email_tekla", `%${q}%`)
     .order("fecha_creacion", { ascending: false });
 
-  return NextResponse.json({ licencias: data });
+  if (error) {
+    return NextResponse.json({ error: "Error DB" }, { status: 500 });
+  }
+
+  return NextResponse.json({ licencias: data ?? [] });
 }

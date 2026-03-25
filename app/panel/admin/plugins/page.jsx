@@ -1,34 +1,30 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Trash2, Eye, Edit3, PlusCircle } from "lucide-react";
-import ConfirmDialog from "@/components/ConfirmDialog";
-
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
+import { Package, Trash2, Eye, Edit3, PlusCircle, Download } from "lucide-react";
 
 export default function AdminPluginsPage() {
   const [plugins, setPlugins] = useState([]);
+  const [descargas, setDescargas] = useState({});
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
+    async function load() {
+      // PLUGINS
+      const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
+      const d1 = await r1.json();
+      setPlugins(d1.plugins ?? d1);
+
+      // DESCARGAS TOTALES POR PLUGIN
+      const r2 = await fetch("/api/admin/dashboard");
+      const d2 = await r2.json();
+      setDescargas(d2.descargasPorPlugin ?? {});
+    }
+
     load();
   }, []);
-
-  async function load() {
-    const r = await fetch("/api/admin/plugins", { credentials: "include" });
-    const d = await r.json();
-    setPlugins(d.plugins ?? []);
-  }
 
   function confirmarBorrar(plugin) {
     setSelected(plugin);
@@ -40,11 +36,11 @@ export default function AdminPluginsPage() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: selected.id })
+      body: JSON.stringify({ id: selected.id }),
     });
 
     setOpen(false);
-    load();
+    location.reload();
   }
 
   return (
@@ -58,43 +54,73 @@ export default function AdminPluginsPage() {
         <PlusCircle size={18} /> Nuevo plugin
       </Link>
 
-      <table className="w-full">
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Versión</th>
-          <th>Acciones</th>
-        </tr>
-
-        {plugins.map((p) => (
-          <tr key={p.id}>
-            <td>{p.id}</td>
-            <td>{p.nombre}</td>
-            <td>{p.version}</td>
-            <td className="flex gap-3">
-              <Link href={`/panel/admin/plugins/${p.id}`}>
-                <Eye className="text-blue-500" />
-              </Link>
-
-              <Link href={`/panel/admin/plugins/editar/${p.id}`}>
-                <Edit3 className="text-yellow-500" />
-              </Link>
-
-              <button onClick={() => confirmarBorrar(p)}>
-                <Trash2 className="text-red-600" />
-              </button>
-            </td>
+      <table className="w-full border border-gray-300 dark:border-gray-700">
+        <thead>
+          <tr className="bg-gray-300 dark:bg-gray-700">
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Versión</th>
+            <th>Descargas</th>
+            <th>Acciones</th>
           </tr>
-        ))}
+        </thead>
+
+        <tbody>
+          {plugins.map((p) => (
+            <tr key={p.id} className="border-b border-gray-300 dark:border-gray-700">
+              <td>{p.id}</td>
+              <td>{p.nombre}</td>
+              <td>{p.version ?? "1.0"}</td>
+              <td className="text-center">
+                <span className="flex items-center gap-1 justify-center">
+                  <Download size={16} />
+                  {descargas[p.id] ?? 0}
+                </span>
+              </td>
+
+              <td className="flex gap-3 py-2 justify-center">
+                <Link href={`/panel/admin/plugins/${p.id}`}>
+                  <Eye className="text-blue-600 hover:text-blue-800" />
+                </Link>
+
+                <Link href={`/panel/admin/plugins/editar/${p.id}`}>
+                  <Edit3 className="text-yellow-500 hover:text-yellow-600" />
+                </Link>
+
+                <button onClick={() => confirmarBorrar(p)}>
+                  <Trash2 className="text-red-600 hover:text-red-800" />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
       </table>
 
-      <ConfirmDialog
-        open={open}
-        title="¿Eliminar plugin?"
-        description="Esta acción no se puede deshacer."
-        onCancel={() => setOpen(false)}
-        onConfirm={borrar}
-      />
+      {/* DIALOGO CONFIRMACION */}
+      {open && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4 max-w-md">
+            <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
+            <p>Esta acción no se puede deshacer.</p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setOpen(false)}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={borrar}
+                className="px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

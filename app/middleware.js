@@ -7,9 +7,22 @@ export function middleware(request) {
 
   const access = request.cookies.get("sb-access-token")?.value;
   const role = request.cookies.get("sb-user-role")?.value;
-
   const logged = Boolean(access);
 
+  // ============================
+  // PROTECCIÓN PARA /pago/*
+  // ============================
+  if (pathname.startsWith("/pago")) {
+    if (!logged) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  // ============================
+  // PANEL ADMIN
+  // ============================
   if (pathname.startsWith("/panel/admin")) {
     if (!logged) {
       url.pathname = "/login";
@@ -22,6 +35,9 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
+  // ============================
+  // PANEL USUARIO
+  // ============================
   if (pathname.startsWith("/panel/user")) {
     if (!logged) {
       url.pathname = "/login";
@@ -30,6 +46,9 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
+  // ============================
+  // ACCESO A /panel DIRECTO
+  // ============================
   if (pathname === "/panel") {
     if (!logged) {
       url.pathname = "/login";
@@ -43,5 +62,10 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/panel", "/panel/:path*", "/pago/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/panel",
+    "/panel/:path*",
+    "/pago/:path*",
+    "/api/admin/:path*"
+  ],
 };

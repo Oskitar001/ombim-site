@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 
 export default function Page() {
@@ -17,7 +16,7 @@ export default function Page() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
@@ -28,52 +27,50 @@ export default function Page() {
       return;
     }
 
-    // REFRESCAMOS SESIÓN PARA LEER ROL CORRECTO
     const refresh = await fetch("/api/auth/me", { credentials: "include" });
     const me = await refresh.json();
+
     const role = me?.user?.user_metadata?.role ?? "user";
 
-    window.location.href =
-      role === "admin" ? "/panel/admin" : "/panel/user";
+    window.location.href = role === "admin" ? "/panel/admin" : "/panel/user";
   }
 
   return (
-    <div className="max-w-md mx-auto mt-24 p-6 bg-white dark:bg-[#1f1f1f] rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Iniciar sesión</h1>
+    <div className="max-w-md mx-auto py-10">
+      <h2 className="text-2xl font-bold mb-4">Iniciar sesión</h2>
 
       <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            className="border p-2 rounded w-full dark:bg-[#333]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
+        <input
+          type="email"
+          placeholder="Email"
+          className="border p-2 rounded w-full"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-        <div>
-          <label>Contraseña</label>
-          <input
-            type="password"
-            className="border p-2 rounded w-full dark:bg-[#333]"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        <input
+          type="password"
+          placeholder="Contraseña"
+          className="border p-2 rounded w-full"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-600">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white p-2 rounded mt-2"
-        >
+        <button className="w-full bg-blue-600 text-white py-2 rounded">
           {loading ? "Cargando..." : "Entrar"}
         </button>
       </form>
+
+      <p className="text-center mt-4 text-sm">
+        ¿No tienes cuenta?{" "}
+        <a href="/register" className="text-blue-600 underline">
+          Regístrate aquí
+        </a>
+      </p>
     </div>
   );
 }

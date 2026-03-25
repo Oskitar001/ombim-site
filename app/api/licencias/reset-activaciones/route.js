@@ -15,9 +15,10 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
+  // comprobar existencia
   const { data: lic } = await supabaseAdmin
     .from("licencias")
-    .select("activaciones_usadas")
+    .select("id")
     .eq("id", licencia_id)
     .single();
 
@@ -25,10 +26,14 @@ export async function POST(req) {
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("licencias")
     .update({ activaciones_usadas: 0 })
     .eq("id", licencia_id);
+
+  if (error) {
+    return NextResponse.json({ error: "Error actualizando" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

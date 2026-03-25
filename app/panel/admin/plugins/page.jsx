@@ -1,26 +1,17 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Package, Trash2, Eye, Edit3, PlusCircle } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-/* Tooltip PRO */
 function Tooltip({ label, children }) {
   return (
-    <div className="relative group flex items-center">
+    <span className="relative group">
       {children}
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2 
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          whitespace-nowrap pointer-events-none
-        "
-      >
+      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
         {label}
-      </div>
-    </div>
+      </span>
+    </span>
   );
 }
 
@@ -34,9 +25,9 @@ export default function AdminPluginsPage() {
   }, []);
 
   async function load() {
-    const r = await fetch("/api/admin/plugins");
+    const r = await fetch("/api/admin/plugins", { credentials: "include" });
     const d = await r.json();
-    setPlugins(d.plugins || []);
+    setPlugins(d.plugins ?? []);
   }
 
   function confirmarBorrar(plugin) {
@@ -47,8 +38,9 @@ export default function AdminPluginsPage() {
   async function borrar() {
     await fetch("/api/admin/plugins/borrar", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: selected.id }),
+      body: JSON.stringify({ id: selected.id })
     });
 
     setOpen(false);
@@ -56,91 +48,50 @@ export default function AdminPluginsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Plugins</h2>
 
-      {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Package size={28} /> Plugins
-      </h1>
-
-      {/* NUEVO PLUGIN */}
       <Link
         href="/panel/admin/plugins/nuevo"
-        className="btn-primary inline-flex items-center gap-2 w-fit"
+        className="text-blue-600 flex items-center gap-2 mb-4"
       >
         <PlusCircle size={18} /> Nuevo plugin
       </Link>
 
-      {/* TABLA */}
-      <div className="overflow-x-auto rounded shadow mt-4">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Versión</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+      <table className="w-full">
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Versión</th>
+          <th>Acciones</th>
+        </tr>
 
-          <tbody>
-            {plugins.map((p) => (
-              <tr
-                key={p.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td>{p.id}</td>
-                <td>{p.nombre}</td>
-                <td>{p.version}</td>
+        {plugins.map((p) => (
+          <tr key={p.id}>
+            <td>{p.id}</td>
+            <td>{p.nombre}</td>
+            <td>{p.version}</td>
+            <td className="flex gap-3">
+              <Link href={`/panel/admin/plugins/${p.id}`}>
+                <Eye className="text-blue-500" />
+              </Link>
 
-                <td>
-                  <div className="flex gap-4 items-center">
+              <Link href={`/panel/admin/plugins/editar/${p.id}`}>
+                <Edit3 className="text-yellow-500" />
+              </Link>
 
-                    {/* VER */}
-                    <Tooltip label="Ver detalles">
-                      <Link
-                        href={`/panel/admin/plugins/${p.id}`}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800"
-                      >
-                        <Eye size={18} />
-                      </Link>
-                    </Tooltip>
+              <button onClick={() => confirmarBorrar(p)}>
+                <Trash2 className="text-red-600" />
+              </button>
+            </td>
+          </tr>
+        ))}
+      </table>
 
-                    {/* EDITAR */}
-                    <Tooltip label="Editar plugin">
-                      <Link
-                        href={`/panel/admin/plugins/editar/${p.id}`}
-                        className="text-yellow-500 dark:text-yellow-300 hover:text-yellow-600"
-                      >
-                        <Edit3 size={18} />
-                      </Link>
-                    </Tooltip>
-
-                    {/* BORRAR */}
-                    <Tooltip label="Eliminar plugin">
-                      <button
-                        onClick={() => confirmarBorrar(p)}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </Tooltip>
-
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* CONFIRM DIALOG */}
       <ConfirmDialog
         open={open}
-        title="Borrar plugin"
-        description={`¿Seguro que quieres eliminar el plugin "${selected?.nombre}"?`}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title="¿Eliminar plugin?"
+        description="Esta acción no se puede deshacer."
         onCancel={() => setOpen(false)}
         onConfirm={borrar}
       />

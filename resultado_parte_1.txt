@@ -152,7 +152,6 @@ export default function DemosPage() {
 ============================================================
 
 "use client";
-
 import { useState } from "react";
 
 export default function Page() {
@@ -170,7 +169,7 @@ export default function Page() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
@@ -181,52 +180,50 @@ export default function Page() {
       return;
     }
 
-    // REFRESCAMOS SESIÓN PARA LEER ROL CORRECTO
     const refresh = await fetch("/api/auth/me", { credentials: "include" });
     const me = await refresh.json();
+
     const role = me?.user?.user_metadata?.role ?? "user";
 
-    window.location.href =
-      role === "admin" ? "/panel/admin" : "/panel/user";
+    window.location.href = role === "admin" ? "/panel/admin" : "/panel/user";
   }
 
   return (
-    <div className="max-w-md mx-auto mt-24 p-6 bg-white dark:bg-[#1f1f1f] rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Iniciar sesión</h1>
+    <div className="max-w-md mx-auto py-10">
+      <h2 className="text-2xl font-bold mb-4">Iniciar sesión</h2>
 
       <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label>Email</label>
-          <input
-            type="email"
-            className="border p-2 rounded w-full dark:bg-[#333]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
+        <input
+          type="email"
+          placeholder="Email"
+          className="border p-2 rounded w-full"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-        <div>
-          <label>Contraseña</label>
-          <input
-            type="password"
-            className="border p-2 rounded w-full dark:bg-[#333]"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        <input
+          type="password"
+          placeholder="Contraseña"
+          className="border p-2 rounded w-full"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-600">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white p-2 rounded mt-2"
-        >
+        <button className="w-full bg-blue-600 text-white py-2 rounded">
           {loading ? "Cargando..." : "Entrar"}
         </button>
       </form>
+
+      <p className="text-center mt-4 text-sm">
+        ¿No tienes cuenta?{" "}
+        <a href="/register" className="text-blue-600 underline">
+          Regístrate aquí
+        </a>
+      </p>
     </div>
   );
 }
@@ -759,6 +756,11 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nombre, setNombre] = useState("");
+  const [empresa, setEmpresa] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [pais, setPais] = useState("");
+  const [idioma, setIdioma] = useState("es");
+
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
@@ -770,7 +772,15 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, nombre }),
+      body: JSON.stringify({
+        email,
+        password,
+        nombre,
+        empresa,
+        telefono,
+        pais,
+        idioma
+      })
     });
 
     const data = await res.json();
@@ -780,46 +790,79 @@ export default function RegisterPage() {
       return;
     }
 
-    setOk(
-      "Registro completado. Revisa tu email para confirmar tu cuenta."
-    );
+    setOk("Registro completado. Revisa tu email para confirmar tu cuenta.");
   }
 
   return (
-    <div className="max-w-md mx-auto py-10 space-y-4">
-      <h1 className="text-xl font-bold">Crear cuenta</h1>
+    <div className="max-w-md mx-auto py-10">
+      <h2 className="text-2xl font-bold mb-4">Crear cuenta</h2>
 
       <form onSubmit={handleRegister} className="space-y-4">
+        
         <input
-          required
+          type="text"
           placeholder="Nombre"
-          onChange={(e) => setNombre(e.target.value)}
           className="border p-2 rounded w-full"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
         />
 
         <input
-          required
+          type="text"
+          placeholder="Empresa"
+          className="border p-2 rounded w-full"
+          value={empresa}
+          onChange={(e) => setEmpresa(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="Teléfono"
+          className="border p-2 rounded w-full"
+          value={telefono}
+          onChange={(e) => setTelefono(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="País"
+          className="border p-2 rounded w-full"
+          value={pais}
+          onChange={(e) => setPais(e.target.value)}
+        />
+
+        <select
+          className="border p-2 rounded w-full"
+          value={idioma}
+          onChange={(e) => setIdioma(e.target.value)}
+        >
+          <option value="es">Español</option>
+          <option value="en">Inglés</option>
+        </select>
+
+        <input
           type="email"
           placeholder="Email"
-          onChange={(e) => setEmail(e.target.value)}
           className="border p-2 rounded w-full"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
 
         <input
-          required
           type="password"
           placeholder="Contraseña"
-          onChange={(e) => setPassword(e.target.value)}
           className="border p-2 rounded w-full"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded w-full">
+        <button className="w-full bg-blue-600 text-white py-2 rounded">
           Registrarse
         </button>
-      </form>
 
-      {error && <p className="text-red-600">{error}</p>}
-      {ok && <p className="text-green-600">{ok}</p>}
+        {error && <p className="text-red-600">{error}</p>}
+        {ok && <p className="text-green-600">{ok}</p>}
+      </form>
     </div>
   );
 }
@@ -1116,27 +1159,25 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\[id]\route.js
 ============================================================
 
-// app/api/admin/licencias/[id]/route.js
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
 
-export async function GET(_, { params }) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json(admin, { status: 403 });
-  }
+export const dynamic = "force-dynamic";
+
+export async function GET(req, context) {
+  const { params } = context;
+  const { id } = await params; // ⬅️ FIX OFICIAL Next 16
 
   const { data: licencia } = await supabaseAdmin
     .from("licencias")
     .select("*, plugins(nombre)")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   const { data: activaciones } = await supabaseAdmin
     .from("activaciones")
     .select("*")
-    .eq("licencia_id", params.id);
+    .eq("licencia_id", id);
 
   return NextResponse.json({ licencia, activaciones });
 }
@@ -1226,12 +1267,16 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\validar\route.js
 ============================================================
 
+// app/api/admin/pagos/validar/route.js
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
   const { pago_id } = await req.json();
 
-  // 1. Obtener pago
+  if (!pago_id) {
+    return Response.json({ error: "Falta pago_id" }, { status: 400 });
+  }
+
   const { data: pago, error } = await supabaseAdmin
     .from("pagos")
     .select("*")
@@ -1242,15 +1287,79 @@ export async function POST(req) {
     return Response.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
-  // Seguridad
-  if (!pago.emails_tekla || pago.emails_tekla.length === 0) {
+  if (!Array.isArray(pago.emails_tekla) || pago.emails_tekla.length === 0) {
     return Response.json(
       { error: "El pago no contiene emails Tekla" },
       { status: 400 }
     );
   }
 
-  // 2. Crear licencias automáticamente
+  // Crear licencias
+  const licencias = pago.emails_tekla.map((email) => ({
+    plugin_id: pago.plugin_id,
+    email_tekla: email,
+    estado: "activa",
+    max_activaciones: 1,
+    activaciones_usadas: 0,
+    fecha_creacion: new Date().toISOString(),
+    pago_id: pago.id,
+    user_id: pago.user_id,
+  }));
+
+  const { error: licError } = await supabaseAdmin
+    .from("licencias")
+    .insert(licencias);
+
+  if (licError) {
+    return Response.json({ error: "Error creando licencias" }, { status: 500 });
+  }
+
+  // Validar pago
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "validado" })
+    .eq("id", pago_id);
+
+  return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\validar\[id]\route.js
+============================================================
+
+// app/api/admin/pagos/validar/[id]/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(req, { params }) {
+  const pago_id = params.id;
+
+  if (!pago_id) {
+    return Response.json({ error: "Falta pago_id" }, { status: 400 });
+  }
+
+  // 1. Obtener el pago
+  const { data: pago, error } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  if (error || !pago) {
+    return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  // Validar que contiene emails Tekla
+  if (!Array.isArray(pago.emails_tekla) || pago.emails_tekla.length === 0) {
+    return Response.json(
+      { error: "Este pago no tiene emails Tekla asignados" },
+      { status: 400 }
+    );
+  }
+
+  // 2. Crear licencias
   const nuevasLicencias = pago.emails_tekla.map((email) => ({
     plugin_id: pago.plugin_id,
     email_tekla: email,
@@ -1259,6 +1368,7 @@ export async function POST(req) {
     activaciones_usadas: 0,
     fecha_creacion: new Date().toISOString(),
     pago_id: pago.id,
+    user_id: pago.user_id, // ← añadido, coherente con tu sistema
   }));
 
   const { error: licError } = await supabaseAdmin
@@ -1266,27 +1376,34 @@ export async function POST(req) {
     .insert(nuevasLicencias);
 
   if (licError) {
-    return Response.json({ error: "Error creando licencias" }, { status: 500 });
+    return Response.json(
+      { error: "No se pudieron crear las licencias" },
+      { status: 500 }
+    );
   }
 
-  // 3. Cambiar estado del pago a VALIDADO
+  // 3. Marcar pago como validado
   await supabaseAdmin
     .from("pagos")
     .update({ estado: "validado" })
     .eq("id", pago_id);
 
-  // 4. Enviar email al usuario
-  await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/email/licencias/activadas`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: pago.user_email,
-      emails_tekla: pago.emails_tekla,
-    }),
-  });
+  // 4. Enviar email de activación (igual que en el endpoint paralelo)
+  await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/email/licencias/activadas`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: pago.user_email,
+        emails_tekla: pago.emails_tekla,
+      }),
+    }
+  );
 
   return Response.json({ ok: true });
 }
+
 
 
 ============================================================
@@ -1326,6 +1443,7 @@ export async function GET(_, { params }) {
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { logAdminAction } from "@/lib/logAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
@@ -1339,11 +1457,27 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta id" }, { status: 400 });
   }
 
+  const { data: plugin } = await supabaseAdmin
+    .from("plugins")
+    .select("id, nombre")
+    .eq("id", id)
+    .single();
+
+  if (!plugin) {
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
+  }
+
   const { error } = await supabaseAdmin.from("plugins").delete().eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  await logAdminAction({
+    tipo: "BORRAR_PLUGIN",
+    mensaje: `Plugin ${plugin.nombre} (#${plugin.id}) borrado`,
+    user_id: admin.user.id
+  });
 
   return NextResponse.json({ ok: true });
 }
@@ -1414,16 +1548,44 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\borrar\route.js
 ============================================================
 
+// app/api/admin/usuarios/borrar/route.js
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { NextResponse } from "next/server";
+import { logAdminAction } from "@/lib/logAdmin";
 
 export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   const { id } = await req.json();
+
+  if (!id) {
+    return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  }
+
+  if (id === admin.user.id) {
+    return NextResponse.json(
+      { error: "No puedes borrarte a ti mismo" },
+      { status: 400 }
+    );
+  }
 
   const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
-  if (error) return Response.json({ error }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  return Response.json({ ok: true });
+  await logAdminAction({
+    tipo: "BORRAR_USUARIO",
+    mensaje: `Usuario #${id} borrado`,
+    user_id: admin.user.id
+  });
+
+  return NextResponse.json({ ok: true });
 }
 
 
@@ -1679,13 +1841,20 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\register\route.js
 ============================================================
 
-// /app/api/auth/register/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
   try {
-    const { nombre, email, password } = await req.json();
+    const {
+      nombre,
+      email,
+      password,
+      empresa,
+      telefono,
+      pais,
+      idioma
+    } = await req.json();
 
     if (!nombre || !email || !password) {
       return NextResponse.json(
@@ -1694,23 +1863,36 @@ export async function POST(req) {
       );
     }
 
+    // Crear usuario con metadata completa
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: false,
-      user_metadata: { nombre, role: "user" },
+      user_metadata: {
+        nombre,
+        empresa,
+        telefono,
+        pais,
+        idioma,
+        role: "user"
+      }
     });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Enviar email de verificación
+    await supabaseAdmin.auth.admin.generateLink({
+      type: "signup",
+      email
+    });
+
     return NextResponse.json({
       ok: true,
-      user: data.user,
-      message:
-        "Registro completado. Revisa tu email para confirmar tu cuenta.",
+      message: "Registro completado. Revisa tu email para confirmar tu cuenta."
     });
+
   } catch (err) {
     return NextResponse.json(
       { error: "Error interno del servidor" },
@@ -1824,62 +2006,20 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
 ============================================================
 
+import { PLANTILLA_COMPRA } from "@/app/api/email/plantillas/compra";
 import { sendEmail } from "@/lib/email";
-
-const TEMPLATE_COMPRA = `
-<!DOCTYPE html>
-<html lang="es" style="font-family: Arial, sans-serif;">
-  <body style="background:#f9fafb;padding:0;margin:0;">
-    <div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-
-      <h2 style="color:#1f2937;text-align:center;margin-bottom:20px;">
-        Compra recibida – OMBIM
-      </h2>
-
-      <p style="font-size:16px;color:#374151;">
-        Hola, hemos recibido tu compra del plugin:
-      </p>
-
-      <p style="font-size:20px;color:#111827;font-weight:bold;">{{plugin_nombre}}</p>
-
-      <p style="color:#4b5563;font-size:16px;">Emails Tekla asociados:</p>
-      <ul style="color:#374151;font-size:15px;">{{lista_emails}}</ul>
-
-      <p style="color:#4b5563;font-size:16px;">
-        Para completar la compra, realiza una transferencia bancaria a:
-      </p>
-
-      <div style="background:#e5e7eb;padding:12px;border-radius:6px;margin-bottom:16px;">
-        <p><strong>Cuenta bancaria:</strong> {{cuenta_banco}}</p>
-        <p><strong>Concepto:</strong> Pago OMBIM Nº {{pago_id}}</p>
-        <p><strong>Importe:</strong> {{precio}}€</p>
-      </div>
-
-      <p style="color:#4b5563;font-size:16px;">
-        Una vez validemos la transferencia, activaremos tus licencias y te enviaremos un email.
-      </p>
-
-      <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;" />
-
-      <p style="text-align:center;color:#9ca3af;font-size:12px;">
-        © OMBIM – Herramientas BIM para Tekla Structures
-      </p>
-    </div>
-  </body>
-</html>
-`;
 
 export async function POST(req) {
   const { email, plugin_nombre, emails_tekla, pago_id, precio } = await req.json();
 
   const lista = emails_tekla.map((e) => `<li>${e}</li>`).join("");
 
-  const html = TEMPLATE_COMPRA
+  const html = PLANTILLA_COMPRA
     .replace("{{plugin_nombre}}", plugin_nombre)
     .replace("{{lista_emails}}", lista)
     .replace("{{pago_id}}", pago_id)
     .replace("{{precio}}", precio)
-    .replace("{{cuenta_banco}}", "ESXX XXXX XXXX XXXX XXXX XXXX"); // tu IBAN
+    .replace("{{cuenta_banco}}", "ES00 0000 0000 0000 0000 0000");
 
   await sendEmail({
     to: email,
@@ -1895,52 +2035,15 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
 ============================================================
 
+import { PLANTILLA_ACTIVADAS } from "@/app/api/email/plantillas/activadas";
 import { sendEmail } from "@/lib/email";
-
-const TEMPLATE_ACTIVADAS = `
-<!DOCTYPE html>
-<html lang="es" style="font-family:Arial;">
-  <body style="background:#f3f4f6;padding:0;margin:0;">
-
-    <div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-
-      <h2 style="text-align:center;color:#111827;margin-bottom:20px;">
-        Tus licencias OMBIM han sido activadas
-      </h2>
-
-      <p style="font-size:16px;color:#374151;">
-        Hola, tu compra ha sido validada y ya puedes usar tus plugins de OMBIM.
-      </p>
-
-      <p style="font-size:16px;color:#4b5563;">
-        Emails Tekla activados:
-      </p>
-
-      <ul style="color:#374151;font-size:15px;">
-        {{lista_emails}}
-      </ul>
-
-      <p style="font-size:16px;color:#4b5563;">
-        Si ya tienes el plugin instalado, ábrelo para validar la licencia automáticamente.
-      </p>
-
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
-
-      <p style="text-align:center;color:#9ca3af;font-size:12px;">
-        © OMBIM – Herramientas BIM profesionales
-      </p>
-
-    </div>
-  </body>
-</html>
-`;
 
 export async function POST(req) {
   const { email, emails_tekla } = await req.json();
 
   const lista = emails_tekla.map((e) => `<li>${e}</li>`).join("");
 
-  const html = TEMPLATE_ACTIVADAS.replace("{{lista_emails}}", lista);
+  const html = PLANTILLA_ACTIVADAS.replace("{{lista_emails}}", lista);
 
   await sendEmail({
     to: email,
@@ -1950,6 +2053,104 @@ export async function POST(req) {
 
   return Response.json({ ok: true });
 }
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\activadas.js
+============================================================
+
+// /app/api/email/plantillas/activadas.js
+
+export const PLANTILLA_ACTIVADAS = `
+<!DOCTYPE html>
+<html lang="es" style="font-family:Arial;">
+<body style="background:#f3f4f6;padding:0;margin:0;">
+
+<div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;
+     box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+
+  <h2 style="text-align:center;color:#111827;margin-bottom:20px;">
+    Tus licencias OMBIM han sido activadas
+  </h2>
+
+  <p style="font-size:16px;color:#374151;">
+    Ya puedes usar tu plugin de OMBIM. Se han activado las licencias para los siguientes emails Tekla:
+  </p>
+
+  <ul style="color:#374151;font-size:15px;">
+    {{lista_emails}}
+  </ul>
+
+  <p style="font-size:16px;color:#4b5563;margin-top:20px;">
+    Si ya tienes el plugin instalado en Tekla, simplemente ábrelo y se activará automáticamente.
+  </p>
+
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+
+  <p style="text-align:center;color:#9ca3af;font-size:12px;">
+    © OMBIM – Herramientas BIM profesionales
+  </p>
+
+</div>
+</body>
+</html>
+`;
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\compra.js
+============================================================
+
+// /app/api/email/plantillas/compra.js
+
+export const PLANTILLA_COMPRA = `
+<!DOCTYPE html>
+<html lang="es" style="font-family: Arial, sans-serif;">
+<body style="background:#f9fafb;padding:0;margin:0;">
+
+<div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;
+     box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+
+  <h2 style="color:#1f2937;text-align:center;margin-bottom:20px;">
+    Compra recibida – OMBIM
+  </h2>
+
+  <p style="font-size:16px;color:#374151;">
+    Hemos recibido tu compra del plugin <strong>{{plugin_nombre}}</strong>.
+  </p>
+
+  <p style="margin-top:20px;font-size:16px;color:#4b5563;">
+    Emails Tekla asignados a esta compra:
+  </p>
+
+  <ul style="color:#374151;font-size:15px;">
+    {{lista_emails}}
+  </ul>
+
+  <p style="margin-top:20px;font-size:16px;color:#4b5563;">
+    Para completar la compra, realiza una transferencia bancaria a:
+  </p>
+
+  <div style="background:#e5e7eb;padding:12px;border-radius:6px;">
+    <p><strong>Cuenta bancaria:</strong> {{cuenta_banco}}</p>
+    <p><strong>Concepto:</strong> Pago OMBIM Nº {{pago_id}}</p>
+    <p><strong>Importe:</strong> {{precio}}€</p>
+  </div>
+
+  <p style="margin-top:20px;font-size:16px;color:#4b5563;">
+    Cuando validemos la transferencia, activaremos tus licencias y te avisaremos por email.
+  </p>
+
+  <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+  <p style="text-align:center;color:#9ca3af;font-size:12px;">
+    © OMBIM – Herramientas BIM para Tekla Structures
+  </p>
+
+</div>
+</body>
+</html>
+`;
 
 
 ============================================================
@@ -2147,60 +2348,37 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar-factura\route.js
 ============================================================
 
-// app/api/facturacion/solicitar-factura/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
-import { enviarEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(req) {
   const supabase = await supabaseServer();
 
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { pago_id } = await req.json();
-  if (!pago_id) {
-    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
-  }
-
-  const { data: pago } = await supabase
-    .from("pagos")
-    .select("*, licencias(*)")
-    .eq("id", pago_id)
-    .eq("user_id", userData.user.id)
-    .single();
-
-  if (!pago) {
-    return NextResponse.json(
-      { error: "Pago no encontrado o no pertenece al usuario" },
-      { status: 404 }
-    );
-  }
-
-  const { data: facturacion } = await supabase
-    .from("facturacion")
-    .select("*")
-    .eq("user_id", userData.user.id)
-    .single();
-
-  if (!facturacion) {
-    return NextResponse.json(
-      { error: "Debes completar tus datos de facturación" },
-      { status: 400 }
-    );
-  }
+  const { nombre, direccion, cif, pedidoId } = await req.json();
 
   const html = `
-  <h4>Solicitud de factura</h4>
-  Usuario: ${userData.user.email}<br>
-  Pago ID: ${pago.id}<br>
-  Importe: ${pago.importe ?? "—"} €
-  Nombre: ${facturacion.nombre}
+    <h2>Solicitud de factura</h2>
+    <p><strong>Usuario:</strong> ${user.email}</p>
+    <p><strong>Nombre:</strong> ${nombre}</p>
+    <p><strong>Dirección:</strong> ${direccion}</p>
+    <p><strong>CIF:</strong> ${cif}</p>
+    <p><strong>Pedido ID:</strong> ${pedidoId}</p>
   `;
 
-  await enviarEmail(process.env.ADMIN_EMAIL, "Solicitud de factura", html);
+  await sendEmail({
+    to: "facturacion@ombim.site",
+    subject: "Nueva solicitud de factura",
+    html,
+  });
 
   return NextResponse.json({ ok: true });
 }
@@ -2210,37 +2388,28 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\activar\route.js
 ============================================================
 
-// app/api/licencias/activar/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { licencia_id } = await req.json();
-
-  if (!licencia_id) {
+  if (!licencia_id)
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
-  }
 
   const { data: lic } = await supabaseAdmin
     .from("licencias")
-    .select("*")
+    .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic) {
+  if (!lic)
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
-  }
 
-  await supabaseAdmin
-    .from("licencias")
-    .update({ estado: "activa" })
-    .eq("id", licencia_id);
+  await supabaseAdmin.from("licencias").update({ estado: "activa" }).eq("id", licencia_id);
 
   return NextResponse.json({ ok: true });
 }
@@ -2250,37 +2419,28 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\bloquear\route.js
 ============================================================
 
-// app/api/licencias/bloquear/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { licencia_id } = await req.json();
-
-  if (!licencia_id) {
+  if (!licencia_id)
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
-  }
 
   const { data: lic } = await supabaseAdmin
     .from("licencias")
-    .select("*")
+    .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic) {
+  if (!lic)
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
-  }
 
-  await supabaseAdmin
-    .from("licencias")
-    .update({ estado: "bloqueada" })
-    .eq("id", licencia_id);
+  await supabaseAdmin.from("licencias").update({ estado: "bloqueada" }).eq("id", licencia_id);
 
   return NextResponse.json({ ok: true });
 }
@@ -2351,9 +2511,10 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
+  // comprobar existencia
   const { data: lic } = await supabaseAdmin
     .from("licencias")
-    .select("activaciones_usadas")
+    .select("id")
     .eq("id", licencia_id)
     .single();
 
@@ -2361,10 +2522,14 @@ export async function POST(req) {
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("licencias")
     .update({ activaciones_usadas: 0 })
     .eq("id", licencia_id);
+
+  if (error) {
+    return NextResponse.json({ error: "Error actualizando" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -2409,39 +2574,160 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
 ============================================================
 
-// app/api/licencias/trial/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { licencia_id } = await req.json();
-
-  if (!licencia_id) {
+  if (!licencia_id)
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
-  }
 
   const { data: lic } = await supabaseAdmin
     .from("licencias")
-    .select("*")
+    .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic) {
+  if (!lic)
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
-  }
 
-  await supabaseAdmin
-    .from("licencias")
-    .update({ estado: "trial" })
-    .eq("id", licencia_id);
+  await supabaseAdmin.from("licencias").update({ estado: "trial" }).eq("id", licencia_id);
 
   return NextResponse.json({ ok: true });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\validar\route.js
+============================================================
+
+// app/api/licencias/validar/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(req) {
+  // ============================
+  // 1. Validar payload
+  // ============================
+  let payload;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "payload_invalido" });
+  }
+
+  const { email_tekla, plugin_id, hardware_id } = payload;
+
+  if (!email_tekla || !plugin_id || !hardware_id) {
+    return NextResponse.json({ ok: false, error: "faltan_datos" });
+  }
+
+  // ============================
+  // 2. Rate limit por IP
+  // ============================
+  const ip = req.headers.get("x-forwarded-for") ?? "0.0.0.0";
+  const key = `rate_${ip}`;
+
+  const rate = globalThis[key] ?? { count: 0, time: Date.now() };
+  if (Date.now() - rate.time > 60000) {
+    rate.count = 0;
+    rate.time = Date.now();
+  }
+  rate.count++;
+  globalThis[key] = rate;
+
+  if (rate.count > 30) {
+    return NextResponse.json({ ok: false, error: "rate_limit" });
+  }
+
+  // ============================
+  // 3. Buscar licencia
+  // ============================
+  const { data: licencia, error: licError } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("email_tekla", email_tekla)
+    .eq("plugin_id", plugin_id)
+    .single();
+
+  if (licError || !licencia) {
+    return NextResponse.json({ ok: false, error: "no_existe" });
+  }
+
+  // ============================
+  // 4. Licencia bloqueada
+  // ============================
+  if (licencia.estado === "bloqueada") {
+    return NextResponse.json({ ok: false, error: "bloqueada" });
+  }
+
+  // ============================
+  // 5. Trial expirado por activaciones
+  // ============================
+  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1) {
+    return NextResponse.json({ ok: false, error: "trial_expirado" });
+  }
+
+  // ============================
+  // 6. Primera activación → guardar hardware_id
+  // ============================
+  if (!licencia.hardware_id) {
+    const { error: hardwareError } = await supabaseAdmin
+      .from("licencias")
+      .update({ hardware_id })
+      .eq("id", licencia.id);
+
+    if (hardwareError) {
+      return NextResponse.json({ ok: false, error: "error_guardar_hardware" });
+    }
+
+    // Actualizar objeto local en memoria
+    licencia.hardware_id = hardware_id;
+  }
+
+  // ============================
+  // 7. Hardware diferente → sharing detectado
+  // ============================
+  if (licencia.hardware_id && licencia.hardware_id !== hardware_id) {
+    return NextResponse.json({ ok: false, error: "hardware_diferente" });
+  }
+
+  // ============================
+  // 8. Incrementar activaciones
+  // ============================
+  const nuevasActivaciones = licencia.activaciones_usadas + 1;
+
+  const { error: activacionError } = await supabaseAdmin
+    .from("licencias")
+    .update({
+      activaciones_usadas: nuevasActivaciones,
+      ultima_activacion: new Date().toISOString()
+    })
+    .eq("id", licencia.id);
+
+  if (activacionError) {
+    return NextResponse.json({ ok: false, error: "error_activacion" });
+  }
+
+  // ============================
+  // 9. Respuesta final (DTO limpio)
+  // ============================
+  return NextResponse.json({
+    ok: true,
+    licencia: {
+      estado: licencia.estado,
+      activaciones_usadas: nuevasActivaciones,
+      max_activaciones: licencia.max_activaciones
+      // NOTA: no devolvemos fecha_expiracion porque no existe en tu BD
+    }
+  });
 }
 
 
@@ -2449,37 +2735,53 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
 ============================================================
 
+// app/api/licencias/verificar/route.js
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
   const url = new URL(req.url);
   const email_tekla = url.searchParams.get("email");
+  const plugin_id = url.searchParams.get("plugin_id");
 
-  if (!email_tekla)
+  if (!email_tekla) {
     return Response.json({ ok: false, motivo: "sin_email" });
+  }
 
-  const { data: licencias } = await supabaseAdmin
+  if (!plugin_id) {
+    return Response.json({ ok: false, motivo: "sin_plugin" });
+  }
+
+  // Buscar licencia concreta por email + plugin
+  const { data: licencia, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
-    .eq("email_tekla", email_tekla);
+    .eq("email_tekla", email_tekla)
+    .eq("plugin_id", plugin_id)
+    .order("fecha_creacion", { ascending: false })
+    .limit(1)
+    .single();
 
-  if (!licencias || licencias.length === 0)
+  if (error || !licencia) {
     return Response.json({ ok: false, motivo: "no_existe" });
+  }
 
-  const licencia = licencias[0];
-
-  if (licencia.estado === "bloqueada")
+  // Estado bloqueado
+  if (licencia.estado === "bloqueada") {
     return Response.json({ ok: false, motivo: "bloqueada" });
+  }
 
-  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1)
+  // Trial expirado
+  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1) {
     return Response.json({ ok: false, motivo: "trial_expirado" });
+  }
 
+  // Respuesta limpia
   return Response.json({
     ok: true,
     plugin_id: licencia.plugin_id,
     estado: licencia.estado,
     activaciones_usadas: licencia.activaciones_usadas,
-    max_activaciones: licencia.max_activaciones,
+    max_activaciones: licencia.max_activaciones
   });
 }
 
@@ -2488,30 +2790,44 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
 ============================================================
 
+// app/api/pagos/create/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
   const supabase = supabaseRoute();
-  const { user_id, plugin_id, emails_tekla } = await req.json();
 
-  // emails_tekla = ["email1@...", "email2@...", "email3@..."]
+  // Obtener usuario REAL
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
+  if (userError || !user) {
+    return Response.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  const { plugin_id, emails_tekla } = await req.json();
+
+  if (!plugin_id || !emails_tekla?.length) {
+    return Response.json({ error: "Datos incompletos" }, { status: 400 });
+  }
+
+  // Crear pago seguro
   const { data, error } = await supabase
     .from("pagos")
     .insert({
-      user_id,
+      user_id: user.id,     // ← seguridad
       plugin_id,
+      emails_tekla,
       cantidad_licencias: emails_tekla.length,
       estado: "pendiente",
       fecha: new Date().toISOString(),
-      emails_tekla
     })
     .select()
     .single();
 
   if (error) return Response.json({ error }, { status: 500 });
 
-  // TODO: enviar email
   return Response.json({ ok: true, pago: data });
 }
 
@@ -2527,8 +2843,10 @@ import { supabaseServer } from "@/lib/supabaseServer";
 export async function GET(req) {
   const supabase = await supabaseServer();
 
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
+  // Usuario logueado
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData?.user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
@@ -2538,6 +2856,7 @@ export async function GET(req) {
     return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
+  // Obtener el pago del usuario
   const { data: pago, error } = await supabase
     .from("pagos")
     .select("*, licencias(*)")
@@ -2545,17 +2864,23 @@ export async function GET(req) {
     .eq("user_id", userData.user.id)
     .single();
 
+  // Si el pago no existe o no pertenece al usuario
   if (error || !pago) {
     return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
   }
 
-  const { data: facturacion } = await supabase
+  // Obtener facturación del usuario
+  const { data: facturacion, error: factError } = await supabase
     .from("facturacion")
     .select("*")
     .eq("user_id", pago.user_id)
     .single();
 
-  return NextResponse.json({ ...pago, facturacion: facturacion ?? null });
+  // Si no hay datos de facturación, devolvemos null, NO error
+  return NextResponse.json({
+    ...pago,
+    facturacion: facturacion ?? null
+  });
 }
 
 
@@ -2593,45 +2918,43 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
 ============================================================
 
-// app/api/pagos/notificar-transferencia/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
-import { enviarEmail, plantillaTransferenciaNotificada } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
+
+const TEMPLATE_TRANSFERENCIA = `
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial; background:#f4f4f4; padding:20px;">
+    <div style="max-width:600px;margin:auto;background:white;padding:20px;border-radius:6px;">
+      <h2>Notificación de transferencia recibida</h2>
+      <p>Un usuario ha indicado que ha realizado la transferencia bancaria.</p>
+      <p>Por favor verifica el pago en tu banca online.</p>
+    </div>
+  </body>
+</html>
+`;
 
 export async function POST(req) {
   const supabase = await supabaseServer();
-  const { data: userData } = await supabase.auth.getUser();
 
-  if (!userData?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   const { pago_id } = await req.json();
 
-  if (!pago_id) {
-    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
-  }
+  const html = TEMPLATE_TRANSFERENCIA;
 
-  const { data: pago } = await supabase
-    .from("pagos")
-    .select("*, licencias(*)")
-    .eq("id", pago_id)
-    .single();
-
-  if (!pago) {
-    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
-  }
-
-  // Actualizar estado del pago
-  await supabase
-    .from("pagos")
-    .update({ estado: "transferencia_notificada" })
-    .eq("id", pago_id);
-
-  // Email al admin
-  const html = plantillaTransferenciaNotificada(userData.user.email, pago);
-
-  await enviarEmail(process.env.ADMIN_EMAIL, "Transferencia notificada", html);
+  await sendEmail({
+    to: "pagos@ombim.site",
+    subject: `El usuario ${user.email} indica que ha realizado una transferencia`,
+    html,
+  });
 
   return NextResponse.json({ ok: true });
 }
@@ -2689,22 +3012,6 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\[id]\route.js
-============================================================
-
-<form
-  action="/api/admin/pagos/validar"
-  method="POST"
->
-  <input type="hidden" name="pago_id" value={pago.id} />
-
-  <button className="px-4 py-2 bg-green-600 text-white rounded">
-    Validar pago y crear licencias
-  </button>
-</form>
-
-
-============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
 ============================================================
 
@@ -2715,8 +3022,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
   const supabase = await supabaseServer();
-  const { data: userData } = await supabase.auth.getUser();
 
+  // Usuario actual
+  const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
@@ -2727,9 +3035,10 @@ export async function GET(req) {
     return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
   }
 
+  // Obtener archivo del plugin
   const { data: plugin, error } = await supabaseAdmin
     .from("plugins")
-    .select("archivo_url")
+    .select("archivo_url, precio")
     .eq("id", plugin_id)
     .single();
 
@@ -2737,10 +3046,52 @@ export async function GET(req) {
     return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
   }
 
-  // Registrar descarga
+  // =====================================================
+  // 1. Determinar si esta descarga es TRIAL o COMPRADA
+  // =====================================================
+
+  const { data: pagoValido } = await supabase
+    .from("pagos")
+    .select("id")
+    .eq("plugin_id", plugin_id)
+    .eq("user_id", userData.user.id)
+    .eq("estado", "validado")
+    .maybeSingle();
+
+  const esTrial = !pagoValido; // si no ha pagado → trial
+
+  // =====================================================
+  // 2. Registrar descarga en la base de datos
+  // =====================================================
+
   await supabase
     .from("descargas")
-    .insert({ user_id: userData.user.id, plugin_id });
+    .insert({
+      user_id: userData.user.id,
+      plugin_id,
+      fecha: new Date().toISOString(),
+      tipo: esTrial ? "trial" : "full"
+    });
+
+  // =====================================================
+  // 3. Si se solicita JSON (fetch), enviamos info del trial
+  // =====================================================
+
+  const wantsJSON = req.headers.get("accept")?.includes("application/json");
+
+  if (wantsJSON) {
+    return NextResponse.json({
+      ok: true,
+      trial: esTrial,
+      mensaje: esTrial
+        ? "Descarga en modo TRIAL registrada."
+        : "Descarga registrada."
+    });
+  }
+
+  // =====================================================
+  // 4. Si es navegación normal → redirigir al archivo
+  // =====================================================
 
   return NextResponse.redirect(plugin.archivo_url);
 }
@@ -2829,15 +3180,24 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-  const { email_tekla, plugin_id, maquina_id } = await req.json();
+  let payload;
 
-  if (!email_tekla || !plugin_id) {
-    return NextResponse.json(
-      { estado: "error", mensaje: "Datos incompletos" },
-      { status: 400 }
-    );
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ estado: "error", mensaje: "json_invalido" });
   }
 
+  const { email_tekla, plugin_id, maquina_id } = payload;
+
+  if (!email_tekla || !plugin_id) {
+    return NextResponse.json({
+      estado: "error",
+      mensaje: "Datos incompletos"
+    });
+  }
+
+  // obtener licencia
   const { data: lic, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
@@ -2851,28 +3211,29 @@ export async function POST(req) {
     return NextResponse.json({ estado: "sin_licencia" });
   }
 
+  // bloqueada
   if (lic.estado === "bloqueada") {
     return NextResponse.json({ estado: "bloqueada" });
   }
 
-  // Trial expirado
+  // trial expirado
   if (lic.fecha_expiracion) {
     if (new Date(lic.fecha_expiracion) < new Date()) {
       return NextResponse.json({ estado: "expirada" });
     }
   }
 
-  // Límite de activaciones
+  // sin activaciones disponibles
   if (lic.activaciones_usadas >= lic.max_activaciones) {
     return NextResponse.json({ estado: "sin_activaciones" });
   }
 
-  // Registrar nueva activación
+  // registrar activación
   await supabaseAdmin
     .from("licencias")
     .update({
       activaciones_usadas: lic.activaciones_usadas + 1,
-      maquina_id: maquina_id ?? lic.maquina_id,
+      maquina_id: maquina_id ?? lic.maquina_id
     })
     .eq("id", lic.id);
 
@@ -2880,7 +3241,7 @@ export async function POST(req) {
     estado: lic.estado,
     activaciones_restantes:
       lic.max_activaciones - (lic.activaciones_usadas + 1),
-    fecha_expiracion: lic.fecha_expiracion,
+    fecha_expiracion: lic.fecha_expiracion ?? null
   });
 }
 
@@ -2911,354 +3272,50 @@ export async function GET(_, props) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencias\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencia\route.js
 ============================================================
 
+// /app/api/user/licencia/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
-export async function GET() {
+export async function GET(req) {
   const supabase = supabaseRoute();
 
-  // Obtener usuario logueado
+  const id = req.nextUrl.searchParams.get("id");
+
   const {
-    data: { user },
+    data: { user }
   } = await supabase.auth.getUser();
 
-  if (!user)
-    return Response.json({ licencias: [] }, { status: 401 });
+  if (!user) {
+    return Response.json({ error: "no_auth" }, { status: 401 });
+  }
 
-  // Obtener licencias asociadas a pagos del usuario
-  const { data: pagos } = await supabase
-    .from("pagos")
-    .select("id")
-    .eq("user_id", user.id);
-
-  if (!pagos || pagos.length === 0)
-    return Response.json({ licencias: [] });
-
-  const pagoIds = pagos.map((p) => p.id);
-
-  const { data: licencias } = await supabase
+  // Obtener solo la licencia del propio usuario
+  const { data, error } = await supabase
     .from("licencias")
-    .select("*")
-    .in("pago_id", pagoIds)
-    .order("fecha_creacion", { ascending: false });
-
-  return Response.json({ licencias });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\pagos\route.js
-============================================================
-
-import { supabaseRoute } from "@/lib/supabaseRoute";
-
-export async function GET() {
-  const supabase = supabaseRoute();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user)
-    return Response.json({ pagos: [] }, { status: 401 });
-
-  const { data } = await supabase
-    .from("pagos")
-    .select("*")
+    .select(
+      "id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)"
+    )
+    .eq("id", id)
     .eq("user_id", user.id)
-    .order("fecha", { ascending: false });
+    .single();
 
-  return Response.json({ pagos: data || [] });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\plugins\route.js
-============================================================
-
-import { supabaseRoute } from "@/lib/supabaseRoute";
-
-export async function GET() {
-  const supabase = supabaseRoute();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return Response.json({ plugins: [] });
-
-  const { data } = await supabase
-    .from("plugins")
-    .select("id, nombre, version, url_descarga");
-
-  return Response.json({ plugins: data || [] });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
-============================================================
-
-// app/layout.jsx
-import "./globals.css";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-
-export const metadata = {
-  title: "OMBIM",
-  description: "Modelado 3D y software para Tekla Structures",
-};
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="es" suppressHydrationWarning>
-      <body className="pt-20 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
-      </body>
-    </html>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\middleware.js
-============================================================
-
-// middleware.js
-import { NextResponse } from "next/server";
-
-export function middleware(request) {
-  const url = request.nextUrl;
-  const pathname = url.pathname;
-
-  const access = request.cookies.get("sb-access-token")?.value;
-  const role = request.cookies.get("sb-user-role")?.value;
-
-  const logged = Boolean(access);
-
-  if (pathname.startsWith("/panel/admin")) {
-    if (!logged) {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    }
-    if (role !== "admin") {
-      url.pathname = "/panel/user";
-      return NextResponse.redirect(url);
-    }
-    return NextResponse.next();
+  if (error || !data) {
+    return Response.json({ error: "not_found" }, { status: 404 });
   }
 
-  if (pathname.startsWith("/panel/user")) {
-    if (!logged) {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    }
-    return NextResponse.next();
-  }
+  const licencia = {
+    id: data.id,
+    email_tekla: data.email_tekla,
+    plugin_id: data.plugin_id,
+    plugin_nombre: data.plugins?.nombre ?? "",
+    estado: data.estado,
+    activaciones_usadas: data.activaciones_usadas,
+    max_activaciones: data.max_activaciones,
+    fecha_creacion: data.fecha_creacion
+  };
 
-  if (pathname === "/panel") {
-    if (!logged) {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
-    }
-    url.pathname = role === "admin" ? "/panel/admin" : "/panel/user";
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ["/panel", "/panel/:path*", "/pago/:path*", "/api/admin/:path*"],
-};
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\dashboard\page.jsx
-============================================================
-
-// /app/panel/admin/dashboard/page.jsx
-import { requireAdmin } from "@/lib/checkAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function DashboardPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/dashboard`, {
-    cache: "no-store",
-  });
-
-  const stats = await res.json();
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-6">Dashboard</h1>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded">
-          <h3>Total licencias</h3>
-          <p>{stats.totalLicencias}</p>
-        </div>
-
-        <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded">
-          <h3>Pagos</h3>
-          <p>{stats.totalPagos}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
-============================================================
-
-// app/panel/admin/layout.jsx
-import Link from "next/link";
-import {
-  LayoutDashboard,
-  Ticket,
-  CreditCard,
-  Scroll,
-  Users,
-  ArrowLeft,
-} from "lucide-react";
-
-export const dynamic = "force-dynamic";
-
-export default function AdminLayout({ children }) {
-  return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-
-      <aside className="w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 space-y-6 shadow-xl">
-
-        <h2 className="text-2xl font-bold mb-4">Panel Admin</h2>
-
-        <nav className="flex flex-col space-y-2">
-
-          <Link href="/panel/admin/dashboard" className="flex items-center gap-3 hover:text-white">
-            <LayoutDashboard size={20} />
-            <span>Dashboard</span>
-          </Link>
-
-          <Link href="/panel/admin/licencias" className="flex items-center gap-3 hover:text-white">
-            <Ticket size={20} />
-            <span>Licencias</span>
-          </Link>
-
-          <Link href="/panel/admin/pagos" className="flex items-center gap-3 hover:text-white">
-            <CreditCard size={20} />
-            <span>Pagos</span>
-          </Link>
-
-          <Link href="/panel/admin/logs" className="flex items-center gap-3 hover:text-white">
-            <Scroll size={20} />
-            <span>Logs</span>
-          </Link>
-
-          {/* ⭐ USUARIOS — YA SIN “GESTIONAR” */}
-          <Link href="/panel/admin/usuarios" className="flex items-center gap-3 hover:text-white">
-            <Users size={20} />
-            <span>Usuarios</span>
-          </Link>
-
-          <Link href="/" className="flex items-center gap-3 hover:text-white mt-4">
-            <ArrowLeft size={20} />
-            <span>Volver</span>
-          </Link>
-
-        </nav>
-      </aside>
-
-      <main className="flex-1 p-10">{children}</main>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { Ticket, Eye } from "lucide-react";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminLicenciasPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data: licencias } = await supabaseAdmin
-    .from("licencias")
-    .select("id, plugin_id, email_tekla, estado, fecha_creacion")
-    .order("fecha_creacion", { ascending: false })
-    .limit(100);
-
-  return (
-    <div className="space-y-6">
-
-      {/* TÍTULO */}
-      <h1 className="text-xl font-bold flex items-center gap-2">
-        <Ticket size={24} /> Licencias
-      </h1>
-
-      {!licencias?.length && (
-        <p>No hay licencias todavía.</p>
-      )}
-
-      {/* TABLA */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-              <th className="border px-3 py-2">ID</th>
-              <th className="border px-3 py-2">Plugin</th>
-              <th className="border px-3 py-2">Email Tekla</th>
-              <th className="border px-3 py-2">Estado</th>
-              <th className="border px-3 py-2">Fecha</th>
-              <th className="border px-3 py-2">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {licencias?.map((l) => (
-              <tr
-                key={l.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td className="border px-3 py-2">{l.id}</td>
-                <td className="border px-3 py-2">{l.plugin_id}</td>
-                <td className="border px-3 py-2">{l.email_tekla}</td>
-                <td className="border px-3 py-2">{l.estado}</td>
-                <td className="border px-3 py-2">
-                  {new Date(l.fecha_creacion).toLocaleString()}
-                </td>
-
-                <td className="border px-3 py-2">
-                  <a
-                    href={`/panel/admin/licencias/${l.id}`}
-                    className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white flex items-center gap-1"
-                  >
-                    <Eye size={18} /> Ver / Editar
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
-
-    </div>
-  );
+  return Response.json({ licencia });
 }
 

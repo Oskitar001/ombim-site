@@ -1,44 +1,43 @@
+// /app/api/user/licencias/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function GET() {
   const supabase = supabaseRoute();
 
-  // Obtener usuario logueado
+  // Usuario logueado
   const {
     data: { user },
-    error: userError,
+    error: userError
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
     return Response.json({ licencias: [] }, { status: 401 });
   }
 
-  // Obtener todos los pagos del usuario
-  const { data: pagos, error: pagosError } = await supabase
-    .from("pagos")
-    .select("id")
-    .eq("user_id", user.id);
-
-  if (pagosError || !pagos) {
-    return Response.json({ licencias: [] });
-  }
-
-  if (pagos.length === 0) {
-    return Response.json({ licencias: [] });
-  }
-
-  const pagoIds = pagos.map((p) => p.id);
-
-  // Obtener licencias vinculadas a los pagos
-  const { data: licencias, error: licError } = await supabase
+  // Obtener licencias del usuario + nombre plugin
+  const { data, error } = await supabase
     .from("licencias")
-    .select("*")
-    .in("pago_id", pagoIds)
+    .select(
+      "id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)"
+    )
+    .eq("user_id", user.id)
     .order("fecha_creacion", { ascending: false });
 
-  if (licError) {
+  if (error || !data) {
     return Response.json({ licencias: [] });
   }
+
+  // Limpieza del DTO
+  const licencias = data.map((l) => ({
+    id: l.id,
+    email_tekla: l.email_tekla,
+    plugin_id: l.plugin_id,
+    plugin_nombre: l.plugins?.nombre ?? "",
+    estado: l.estado,
+    activaciones_usadas: l.activaciones_usadas,
+    max_activaciones: l.max_activaciones,
+    fecha_creacion: l.fecha_creacion
+  }));
 
   return Response.json({ licencias });
 }

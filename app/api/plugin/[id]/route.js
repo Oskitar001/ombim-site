@@ -7,7 +7,7 @@ export async function GET(_, props) {
 
   const { data, error } = await supabaseAdmin
     .from("plugins")
-    .select("*")
+    .select("id, nombre, descripcion, precio, video_url, created_at")
     .eq("id", id)
     .single();
 

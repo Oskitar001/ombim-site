@@ -4,75 +4,58 @@
 ============================================================
 
 export const metadata = {
-  title: "Contacto | Óscar Martínez",
-  description:
-    "Contacta con Óscar Martínez para colaboraciones en Tekla Structures.",
+  title: "Contacto – Óscar Martínez",
+  description: "Contacta con Óscar Martínez para colaboraciones en Tekla Structures.",
 };
 
 export default function ContactoPage() {
   return (
-    <section className="max-w-4xl mx-auto px-6 mt-20 mb-32 bg-[#f3f4f6] dark:bg-[#242424]">
-      {/* Encabezado */}
-      <div className="text-center mb-16">
-        <div className="relative inline-block">
-          <span className="absolute inset-0 bg-gradient-to-r from-blue-200/40 via-transparent to-blue-200/40 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full" />
+    <section className="pt-24 pb-20 max-w-3xl mx-auto px-6">
+      <h1 className="text-3xl font-bold mb-6">Contacto</h1>
 
-          <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-            Contacto
-          </h1>
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+        ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
+        Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
+      </p>
+
+      <form className="space-y-6 bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div>
+          <label className="block mb-1 font-semibold">Nombre</label>
+          <input
+            type="text"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            placeholder="Tu nombre"
+          />
         </div>
 
-        <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10" />
+        <div>
+          <label className="block mb-1 font-semibold">Email</label>
+          <input
+            type="email"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            placeholder="tu@email.com"
+          />
+        </div>
 
-        <p className="text-center text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed max-w-3xl mx-auto">
-          ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
-          Estoy disponible para colaboraciones por proyecto, por horas o de forma continua.
-        </p>
-      </div>
-
-      {/* Formulario */}
-      <form
-        method="POST"
-        action="/api/contact"
-        className="grid gap-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] p-10 rounded-2xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]"
-      >
-        <input
-          type="text"
-          name="nombre"
-          placeholder="Nombre"
-          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          required
-        />
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          required
-        />
-
-        <textarea
-          name="mensaje"
-          placeholder="Mensaje"
-          rows="5"
-          className="p-4 border border-[#d1d5db] dark:border-gray-600 bg-white dark:bg-[#242424] text-[#1f2937] dark:text-[#e6e6e6] rounded-xl text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          required
-        />
+        <div>
+          <label className="block mb-1 font-semibold">Mensaje</label>
+          <textarea
+            className="w-full p-2 rounded border h-32 dark:bg-gray-900"
+            placeholder="Cuéntame cómo puedo ayudarte"
+          ></textarea>
+        </div>
 
         <button
           type="submit"
-          className="px-6 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 hover:shadow-xl transition-all active:scale-95"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
         >
           Enviar mensaje
         </button>
       </form>
-
-      {/* Separador inferior */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent mt-20" />
     </section>
   );
 }
+
 
 
 ============================================================
@@ -239,6 +222,7 @@ import AboutSection from "../../components/AboutSection";
 import TrustSection from "../../components/TrustSection";
 import TestimonialsSection from "../../components/TestimonialsSection";
 import RevealObserver from "../../components/RevealObserver";
+import Link from "next/link";
 
 const apps = [
   {
@@ -250,13 +234,13 @@ const apps = [
   {
     title: "Aplicaciones Tekla Structures",
     description:
-      "Combina aplicaciones con plugin y crea elementos estructurales en segundos. Configurable, preciso y diseñado para acelerar tus proyectos.",
+      "Combina aplicaciones con plugins para crear elementos estructurales en segundos. Configurable, preciso y pensado para acelerar tus proyectos.",
     video: "https://www.youtube.com/embed/MBL7E9rF2HU",
   },
   {
-    title: "Plugin Tekla Structures",
+    title: "Plugins profesionales para Tekla",
     description:
-      "Mejora tu productividad con herramientas integradas directamente en Tekla. Flujo de trabajo más ágil y profesional.",
+      "Mejora tu productividad con herramientas creadas para resolver problemas reales del día a día en ingeniería, taller y obra.",
     video: "https://www.youtube.com/embed/9HiQz_x9UCU",
   },
 ];
@@ -266,120 +250,96 @@ export default function HomePage() {
     <>
       <RevealObserver />
 
-      {/* CTA móvil */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-50">
-        <a
+      {/* ----------------------------- */}
+      {/* TÍTULO SIMPLE                 */}
+      {/* ----------------------------- */}
+      <section className="pt-24 pb-10 text-center max-w-4xl mx-auto px-6">
+        <h1 className="text-4xl font-bold mb-6">
+          Modelado 3D, automatizaciones y plugins
+          <br />
+          para Tekla Structures
+        </h1>
+
+        <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-8">
+          Aumento la productividad de ingenierías, constructoras y oficinas técnicas
+          mediante herramientas personalizadas, flujos BIM optimizados y 23 años de
+          experiencia real en obra, fabricación y modelado avanzado.
+        </p>
+
+        <Link
           href="/contacto"
-          className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg text-base font-medium active:scale-95 transition-all"
+          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
         >
-          Solicitar demo
-        </a>
-      </div>
+          Solicitar demo personalizada →
+        </Link>
+      </section>
 
-      {/* Fondo global */}
-      <div className="pb-20 min-h-screen bg-[#f3f4f6] dark:bg-[#242424]">
+      {/* ----------------------------- */}
+      {/* CARDS CON VÍDEO              */}
+      {/* ----------------------------- */}
+      <section className="py-10 max-w-6xl mx-auto grid md:grid-cols-3 gap-10 px-6">
+        {apps.map((app, index) => (
+          <div
+            key={index}
+            className="bg-gray-200 dark:bg-gray-800 p-5 rounded-lg shadow reveal flex flex-col gap-4"
+          >
+            <h3 className="text-xl font-bold">{app.title}</h3>
+            <p className="opacity-80">{app.description}</p>
 
-        {/* CONTENEDOR PRINCIPAL */}
-        <div className="container mx-auto border-t border-gray-300 dark:border-gray-700">
-
-          {/* HERO */}
-          <section className="reveal text-center max-w-4xl mx-auto mt-20 mb-24 px-6">
-            <div className="relative inline-block">
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-300/30 via-transparent to-blue-300/30 dark:from-blue-900/20 dark:to-blue-900/20 blur-xl rounded-full"></span>
-
-              <h1 className="relative text-5xl md:text-6xl font-bold tracking-tight mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
-                Modelado 3D y Software para Tekla Structures
-              </h1>
+            <div className="rounded overflow-hidden">
+              <iframe
+                width="100%"
+                height="200"
+                src={app.video}
+                title={app.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="rounded"
+              ></iframe>
             </div>
 
-            <div className="w-24 h-[3px] bg-blue-600 mx-auto rounded-full mb-10"></div>
-
-            <p className="text-[#1f2937] dark:text-[#e6e6e6] text-xl md:text-2xl leading-relaxed mb-6">
-              Más de <strong>20 años de experiencia</strong> en modelado 3D con Tekla Structures,
-              aportando precisión, detalle y eficiencia en estructuras metálicas y de hormigón.
-            </p>
-
-            <p className="text-[#1f2937] dark:text-[#e6e6e6] text-lg md:text-xl leading-relaxed mb-10">
-              Más de <strong>100 proyectos reales</strong> optimizados con <strong>software propio</strong>:
-              plugins, automatizaciones y herramientas internas que aceleran tu flujo BIM y reducen errores.
-            </p>
-
-            <a
+            <Link
               href="/contacto"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1 active:scale-95"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-center w-full"
             >
-              Solicitar demo personalizada <span className="text-2xl">→</span>
-            </a>
-          </section>
+              Solicitar demo →
+            </Link>
 
-          {/* CARDS */}
-          <div className="grid md:grid-cols-3 gap-10 px-6">
-            {apps.map((app, index) => (
-              <div
-                key={index}
-                className="reveal bg-[#ffffff] dark:bg-[#1a1a1a] rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-500 hover:-translate-y-2 border border-gray-200 dark:border-gray-700"
-              >
-                <div className="rounded-xl overflow-hidden mb-4">
-                  <iframe
-                    className="w-full aspect-video"
-                    src={`${app.video}?rel=0&modestbranding=1&controls=1&autoplay=0&mute=0`}
-                    title={app.title}
-                    frameBorder="0"
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-
-                <h3 className="text-xl font-semibold mb-2 text-[#1f2937] dark:text-[#e6e6e6]">
-                  {app.title}
-                </h3>
-
-                <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-4">
-                  {app.description}
-                </p>
-
-                <a
-                  href="/contacto"
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 active:scale-95 transition-all"
-                >
-                  Solicitar demo ahora
-                  <span className="text-base">→</span>
-                </a>
-
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Respuesta en menos de 24h
-                </p>
-              </div>
-            ))}
+            <span className="text-sm opacity-70">Respuesta en menos de 24h</span>
           </div>
+        ))}
+      </section>
 
-          {/* ABOUT + TRUST + TESTIMONIALS */}
-          <div className="mt-32">
-            <AboutSection />
-            <TrustSection />
-            <TestimonialsSection />
-          </div>
+      {/* SOBRE MÍ */}
+      <AboutSection />
 
-          {/* CTA FINAL */}
-          <div className="reveal text-center mt-32 px-6">
-            <h2 className="text-3xl font-bold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
-              ¿Quieres ver cómo funciona en tu proyecto?
-            </h2>
+      {/* CONFIANZA */}
+      <TrustSection />
 
-            <p className="text-[#1f2937] dark:text-[#e6e6e6] mb-6">
-              Te preparamos una demo personalizada sin compromiso.
-            </p>
+      {/* TESTIMONIOS */}
+      <TestimonialsSection />
 
-            <a
-              href="/contacto"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-lg active:scale-95"
-            >
-              Solicitar demo personalizada <span className="text-xl">→</span>
-            </a>
-          </div>
+      {/* ----------------------------- */}
+      {/* CTA FINAL                     */}
+      {/* ----------------------------- */}
+      <section className="py-20 text-center max-w-3xl mx-auto px-6 reveal">
+        <h2 className="text-3xl font-bold mb-4">
+          ¿Quieres mejorar tu productividad en Tekla?
+        </h2>
 
-        </div>
-      </div>
+        <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
+          Preparo una demo personalizada adaptada a tu empresa: automatizaciones, plugins,
+          modelado 3D o flujos BIM. Soluciones reales y prácticas.
+        </p>
+
+        <Link
+          href="/contacto"
+          className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+        >
+          Solicitar demo →
+        </Link>
+      </section>
     </>
   );
 }
@@ -585,61 +545,96 @@ export default async function Page({ params }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\page.jsx
 ============================================================
 
-// app/(site)/plugins/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+export default function PluginsPage() {
+  const [plugins, setPlugins] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-export default async function PluginsPage() {
-  // Obtener plugins desde tu API pública admin
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/plugin`, {
-    cache: "no-store",
-  });
-  const plugins = await res.json();
+  useEffect(() => {
+    async function load() {
+      try {
+        // Plugins
+        const r1 = await fetch("/api/plugin", { cache: "no-store" });
+        const d1 = await r1.json();
+        setPlugins(Array.isArray(d1) ? d1 : []);
+
+        // Usuario
+        const r2 = await fetch("/api/auth/me");
+        const d2 = await r2.json();
+        setUser(d2.user ?? null);
+      } catch {
+        setPlugins([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) return <p>Cargando plugins...</p>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10">
-      <h1 className="text-3xl font-bold">Plugins OMBIM</h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <h2 className="text-3xl font-bold mb-6">Plugins OMBIM</h2>
 
-      {!plugins?.length && (
-        <p>No hay plugins disponibles todavía.</p>
-      )}
+      {!plugins.length && <p>No hay plugins disponibles todavía.</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => (
           <div
             key={p.id}
-            className="bg-gray-200 dark:bg-gray-800 p-5 rounded-lg shadow flex flex-col gap-4"
+            className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg shadow"
           >
-            {/* FOTO DEL PLUGIN */}
-            <div className="h-40 bg-white dark:bg-gray-900 rounded flex justify-center items-center overflow-hidden shadow-inner">
+            {/* Imagen */}
+            {p.imagen_url && (
               <img
-                src={p.imagen_url ?? "/plugin-placeholder.png"}
+                src={p.imagen_url}
                 alt={p.nombre}
-                className="object-cover h-full w-full"
+                className="w-full h-40 object-cover rounded mb-3"
               />
-            </div>
+            )}
 
-            {/* TITULO */}
-            <h2 className="text-xl font-semibold">{p.nombre}</h2>
+            <h4 className="text-xl font-bold mb-2">{p.nombre}</h4>
 
-            {/* PRECIO */}
-            <p className="font-bold">
+            {p.descripcion && (
+              <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
+                {p.descripcion}
+              </p>
+            )}
+
+            <p className="font-semibold mb-4">
               {p.precio > 0 ? `${p.precio} €` : "Gratis"}
             </p>
 
-            {/* BOTONES */}
-            <div className="flex flex-col gap-2">
-              <Link
-                href={`/plugins/${p.id}`}
-                className="w-full bg-blue-600 text-white text-center py-2 rounded hover:bg-blue-700 transition"
+            {/* Descargar Trial */}
+            {user ? (
+              <a
+                href={`/api/plugin/download?plugin_id=${p.id}`}
+                className="bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
               >
-                Ver plugin
+                Descargar versión Trial
+              </a>
+            ) : (
+              <Link
+                href="/login"
+                className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
+              >
+                Inicia sesión para descargar
               </Link>
+            )}
 
-              {/* DESCARGAR TRIAL (solo si logueado) */}
-              <TrialButton pluginId={p.id} />
-            </div>
+            {/* Ver plugin */}
+            <Link
+              href={`/plugins/${p.id}`}
+              className="text-blue-600 underline text-sm inline-block mt-2"
+            >
+              Más información →
+            </Link>
           </div>
         ))}
       </div>
@@ -647,35 +642,6 @@ export default async function PluginsPage() {
   );
 }
 
-// ======================
-// BOTÓN "DESCARGAR TRIAL"
-// ======================
-async function TrialButton({ pluginId }) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/auth/me`, {
-    cache: "no-store",
-  });
-  const me = await res.json();
-
-  if (!me?.user) {
-    return (
-      <Link
-        href="/login"
-        className="w-full bg-gray-500 text-white text-center py-2 rounded hover:bg-gray-600 transition"
-      >
-        Iniciar sesión para descargar
-      </Link>
-    );
-  }
-
-  return (
-    <a
-      href={`/api/plugin/download?plugin_id=${pluginId}`}
-      className="w-full bg-green-600 text-white text-center py-2 rounded hover:bg-green-700 transition"
-    >
-      Descargar Trial
-    </a>
-  );
-}
 
 
 ============================================================
@@ -705,28 +671,106 @@ export default function DescargarBoton({ pluginId }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\[id]\page.jsx
 ============================================================
 
-// app/(site)/plugins/[id]/page.jsx
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import PluginClient from "./PluginClient";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
 
-export default async function PluginPage({ params }) {
-  const { id } = params;
+export default function PluginPage({ params }) {
+  const { id } = use(params); // Next.js 16: params es un Promise
 
-  const { data: plugin, error } = await supabaseAdmin
-    .from("plugins")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [plugin, setPlugin] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (error || !plugin) {
-    return <p>Plugin no encontrado.</p>;
-  }
+  useEffect(() => {
+    async function load() {
+      try {
+        // Cargar plugin
+        const r1 = await fetch(`/api/plugin/${id}`, { cache: "no-store" });
+        const d1 = await r1.json();
 
-  return <PluginClient plugin={plugin} pluginId={id} />;
+        // Cargar usuario
+        const r2 = await fetch("/api/auth/me");
+        const d2 = await r2.json();
+
+        setPlugin(d1?.error ? null : d1);
+        setUser(d2.user ?? null);
+      } catch (e) {
+        console.error(e);
+        setPlugin(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  if (loading) return <p className="mt-10">Cargando plugin...</p>;
+  if (!plugin) return <p className="mt-10">Plugin no encontrado.</p>;
+
+  return (
+    <div className="max-w-4xl mx-auto mt-10 p-6">
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold mb-4">{plugin.nombre}</h1>
+
+      {/* Descripción */}
+      <p className="text-gray-700 dark:text-gray-300 mb-6">
+        {plugin.descripcion}
+      </p>
+
+      {/* Vídeo */}
+      {plugin.video_url && (
+        <div className="mb-10">
+          <iframe
+            width="100%"
+            height="400"
+            src={plugin.video_url}
+            className="rounded-lg shadow"
+          ></iframe>
+        </div>
+      )}
+
+      {/* Precio */}
+      <p className="text-2xl font-bold mb-6">
+        {plugin.precio > 0 ? `${plugin.precio} €` : "Gratis"}
+      </p>
+
+      {/* Botones */}
+      <div className="flex flex-col gap-4">
+
+        {/* Descarga Trial */}
+        {user ? (
+          <a
+            href={`/api/plugin/download?plugin_id=${plugin.id}`}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg text-center font-semibold shadow hover:bg-blue-700"
+          >
+            Descargar versión TRIAL
+          </a>
+        ) : (
+          <Link
+            href="/login"
+            className="bg-gray-500 text-white px-6 py-3 rounded-lg text-center font-semibold shadow hover:bg-gray-600"
+          >
+            Inicia sesión para descargar
+          </Link>
+        )}
+
+        {/* Comprar licencias */}
+        {plugin.precio > 0 && (
+          <Link
+            href={`/pago/${plugin.id}`}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg text-center font-semibold shadow hover:bg-green-700"
+          >
+            Comprar licencias →
+          </Link>
+        )}
+      </div>
+    </div>
+  );
 }
-``
+
 
 
 ============================================================
@@ -1279,8 +1323,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req, context) {
-  const { params } = context;
+export async function GET(req, ctx) {
+  const { params } = await ctx;  // <<<<<< CLAVE
   const id = params.id;
 
   const { data: licencia } = await supabaseAdmin
@@ -1543,45 +1587,88 @@ export async function GET(_, { params }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\borrar\route.js
 ============================================================
 
-// app/api/admin/plugins/borrar/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { logAdminAction } from "@/lib/logAdmin";
 
 export async function POST(req) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
-
   const { id } = await req.json();
 
-  if (!id) {
-    return NextResponse.json({ error: "Falta id" }, { status: 400 });
-  }
-
-  const { data: plugin } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("plugins")
-    .select("id, nombre")
-    .eq("id", id)
-    .single();
-
-  if (!plugin) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
-  }
-
-  const { error } = await supabaseAdmin.from("plugins").delete().eq("id", id);
+    .delete()
+    .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    console.error(error);
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 
-  await logAdminAction({
-    tipo: "BORRAR_PLUGIN",
-    mensaje: `Plugin ${plugin.nombre} (#${plugin.id}) borrado`,
-    user_id: admin.user.id
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\editar\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const body = await req.json();
+
+  const { error } = await supabaseAdmin
+    .from("plugins")
+    .update({
+      nombre: body.nombre,
+      descripcion: body.descripcion,
+      precio: body.precio,
+      archivo_url: body.archivo_url,
+      video_url: body.video_url,
+      imagen_url: body.imagen_url,
+      version: body.version,
+    })
+    .eq("id", body.id);
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\nuevo\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const runtime = "nodejs";  // 💥 NECESARIO EN NEXT 16
+
+export async function POST(req) {
+  const body = await req.json();
+  const { nombre, descripcion, precio, archivo_url, video_url, imagen_url } = body;
+
+  if (!nombre) {
+    return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin.from("plugins").insert({
+    nombre,
+    descripcion,
+    precio,
+    archivo_url,
+    video_url,
+    imagen_url,
   });
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -1644,6 +1731,61 @@ export async function POST(req) {
   }
 
   return NextResponse.json({ id: data.id });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\upload-image\route.js
+============================================================
+
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const name = req.nextUrl.searchParams.get("name");
+  const file = await req.blob();
+
+  const { error } = await supabaseAdmin.storage
+    .from("plugins")
+    .upload(`images/${name}`, file, { upsert: true });
+
+  if (error) return NextResponse.json({ error: true }, { status: 500 });
+
+  const { data: url } = supabaseAdmin.storage
+    .from("plugins")
+    .getPublicUrl(`images/${name}`);
+
+  return NextResponse.json({ url: url.publicUrl });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\upload-tsep\route.js
+============================================================
+
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const name = req.nextUrl.searchParams.get("name");
+  const file = await req.blob();
+
+  const { error } = await supabaseAdmin.storage
+    .from("plugins")
+    .upload(`tsep/${name}`, file, { upsert: true });
+
+  if (error) return NextResponse.json({ error: true }, { status: 500 });
+
+  const { data: url } = supabaseAdmin.storage
+    .from("plugins")
+    .getPublicUrl(`tsep/${name}`);
+
+  return NextResponse.json({ url: url.publicUrl });
 }
 
 
@@ -3204,119 +3346,23 @@ export async function GET(req) {
 ============================================================
 
 // app/api/plugin/route.js
+
+export const runtime = "nodejs";  // ⬅⬅⬅ ESTA LÍNEA ES LA CLAVE
+
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("plugins")
-    .select("id, nombre, descripcion, precio, video_url, imagen_url, version")
+    .select("id, nombre, descripcion, precio, archivo_url, video_url, imagen_url, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: "No se pudieron obtener los plugins" }, { status: 500 });
+    console.error("Error cargando plugins:", error);
+    return NextResponse.json([], { status: 500 });
   }
 
   return NextResponse.json(data ?? []);
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
-============================================================
-
-// app/api/plugin/validate-license/route.js
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export async function POST(req) {
-  let payload;
-
-  try {
-    payload = await req.json();
-  } catch {
-    return NextResponse.json({ estado: "error", mensaje: "json_invalido" });
-  }
-
-  const { email_tekla, plugin_id, maquina_id } = payload;
-
-  if (!email_tekla || !plugin_id) {
-    return NextResponse.json({
-      estado: "error",
-      mensaje: "Datos incompletos"
-    });
-  }
-
-  // obtener licencia
-  const { data: lic, error } = await supabaseAdmin
-    .from("licencias")
-    .select("*")
-    .eq("email_tekla", email_tekla)
-    .eq("plugin_id", plugin_id)
-    .order("fecha_creacion", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error || !lic) {
-    return NextResponse.json({ estado: "sin_licencia" });
-  }
-
-  // bloqueada
-  if (lic.estado === "bloqueada") {
-    return NextResponse.json({ estado: "bloqueada" });
-  }
-
-  // trial expirado
-  if (lic.fecha_expiracion) {
-    if (new Date(lic.fecha_expiracion) < new Date()) {
-      return NextResponse.json({ estado: "expirada" });
-    }
-  }
-
-  // sin activaciones disponibles
-  if (lic.activaciones_usadas >= lic.max_activaciones) {
-    return NextResponse.json({ estado: "sin_activaciones" });
-  }
-
-  // registrar activación
-  await supabaseAdmin
-    .from("licencias")
-    .update({
-      activaciones_usadas: lic.activaciones_usadas + 1,
-      maquina_id: maquina_id ?? lic.maquina_id
-    })
-    .eq("id", lic.id);
-
-  return NextResponse.json({
-    estado: lic.estado,
-    activaciones_restantes:
-      lic.max_activaciones - (lic.activaciones_usadas + 1),
-    fecha_expiracion: lic.fecha_expiracion ?? null
-  });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\[id]\route.js
-============================================================
-
-// app/api/plugin/[id]/route.js
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export async function GET(_, props) {
-  const { id } = props.params;
-
-  const { data, error } = await supabaseAdmin
-    .from("plugins")
-    .select("id, nombre, descripcion, precio, video_url, imagen_url, version, created_at")
-    .eq("id", id)
-    .single();
-
-  if (error || !data) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
-  }
-
-  return NextResponse.json(data);
 }
 

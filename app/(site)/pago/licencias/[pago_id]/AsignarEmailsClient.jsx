@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function AsignarEmailsClient({ pago }) {
+export default function AsignarEmailsClient({ pago, onSaved }) {
   const [emails, setEmails] = useState(
     pago.licencias.map((l) => ({
       licencia_id: l.id,
@@ -45,20 +45,18 @@ export default function AsignarEmailsClient({ pago }) {
       return;
     }
 
-    setMsg("Emails guardados correctamente.");
+    setMsg("Emails confirmados correctamente.");
+
+    if (onSaved) onSaved();
   }
 
   return (
-    <section className="max-w-3xl mx-auto py-10 space-y-4">
-      <h1 className="text-2xl font-bold mb-4">Asignar Emails Tekla</h1>
-
+    <div className="space-y-4">
       {emails.map((item, i) => (
-        <div key={item.licencia_id}>
-          <label className="block font-semibold mb-1">
-            Licencia {item.licencia_id}
-          </label>
+        <div key={i}>
+          <label className="font-semibold">Email Tekla #{i + 1}</label>
           <input
-            className="border p-2 w-full rounded"
+            className="w-full p-2 rounded border dark:bg-gray-900"
             value={item.email_tekla}
             onChange={(e) => actualizarEmail(i, e.target.value)}
           />
@@ -71,10 +69,10 @@ export default function AsignarEmailsClient({ pago }) {
       <button
         onClick={guardar}
         disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
+        className="w-full bg-blue-600 text-white py-2 rounded mt-2 hover:bg-blue-800"
       >
-        {loading ? "Guardando..." : "Guardar emails"}
+        {loading ? "Guardando..." : "Confirmar emails"}
       </button>
-    </section>
+    </div>
   );
 }

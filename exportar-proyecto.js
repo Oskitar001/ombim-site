@@ -4,22 +4,31 @@ const path = require("path");
 // Carpetas a exportar
 const carpetas = [
   path.join(process.cwd(), "app"),
+  path.join(process.cwd(), "src/app"),   // ← por si usas src/
+  path.join(process.cwd(), "api"),       // ← por si usas api/ fuera
+  path.join(process.cwd(), "server"),    // ← por si usas server/
   path.join(process.cwd(), "components"),
   path.join(process.cwd(), "hooks"),
   path.join(process.cwd(), "lib")
 ];
 
-// Solo queremos archivos .js y .jsx
-const extensionesPermitidas = [".js", ".jsx"];
+// Extensiones permitidas
+const extensionesPermitidas = [
+  ".js", ".jsx",
+  ".ts", ".tsx",
+  ".mjs", ".cjs"
+];
 
-// Extensiones a ignorar (binarios)
+// Ficheros especiales que Next usa como APIs aunque no sean .js plano
+const nombresEspeciales = ["route.js", "route.ts", "index.js", "index.ts"];
+
+// Binarios
 const binarios = [
   ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
   ".webp", ".mp4", ".mov", ".avi", ".mp3",
   ".woff", ".woff2", ".ttf", ".eot", ".pdf"
 ];
 
-// Límites
 const MAX_LINEAS = 5000;
 const MAX_CARACTERES = 100000;
 
@@ -61,7 +70,6 @@ function leerCarpeta(dir) {
   try {
     elementos = fs.readdirSync(dir);
   } catch (err) {
-    console.log("❌ Error leyendo carpeta:", dir, err.message);
     return;
   }
 
@@ -72,7 +80,6 @@ function leerCarpeta(dir) {
     try {
       stats = fs.statSync(ruta);
     } catch (err) {
-      console.log("❌ Error leyendo archivo:", ruta, err.message);
       continue;
     }
 
@@ -81,16 +88,22 @@ function leerCarpeta(dir) {
       continue;
     }
 
+    const nombreArchivo = path.basename(ruta);
     const ext = path.extname(ruta).toLowerCase();
 
     if (binarios.includes(ext)) continue;
-    if (!extensionesPermitidas.includes(ext)) continue;
+
+    if (
+      !extensionesPermitidas.includes(ext) &&
+      !nombresEspeciales.includes(nombreArchivo)
+    ) {
+      continue;
+    }
 
     let contenido;
     try {
       contenido = fs.readFileSync(ruta, "utf8");
-    } catch (err) {
-      console.log("❌ Error leyendo contenido:", ruta, err.message);
+    } catch {
       continue;
     }
 

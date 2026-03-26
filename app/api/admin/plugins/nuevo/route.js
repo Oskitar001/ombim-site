@@ -1,17 +1,23 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+export const runtime = "nodejs";  // 💥 NECESARIO EN NEXT 16
+
 export async function POST(req) {
   const body = await req.json();
+  const { nombre, descripcion, precio, archivo_url, video_url, imagen_url } = body;
+
+  if (!nombre) {
+    return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
+  }
 
   const { error } = await supabaseAdmin.from("plugins").insert({
-    nombre: body.nombre,
-    descripcion: body.descripcion,
-    precio: body.precio,
-    archivo_url: body.archivo_url,
-    video_url: body.video_url,
-    imagen_url: body.imagen_url,
-    version: body.version,
+    nombre,
+    descripcion,
+    precio,
+    archivo_url,
+    video_url,
+    imagen_url,
   });
 
   if (error) {

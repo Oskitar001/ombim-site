@@ -1,5 +1,105 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
+============================================================
+
+// app/api/plugin/validate-license/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  let payload;
+
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ estado: "error", mensaje: "json_invalido" });
+  }
+
+  const { email_tekla, plugin_id, maquina_id } = payload;
+
+  if (!email_tekla || !plugin_id) {
+    return NextResponse.json({
+      estado: "error",
+      mensaje: "Datos incompletos"
+    });
+  }
+
+  // obtener licencia
+  const { data: lic, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("email_tekla", email_tekla)
+    .eq("plugin_id", plugin_id)
+    .order("fecha_creacion", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !lic) {
+    return NextResponse.json({ estado: "sin_licencia" });
+  }
+
+  // bloqueada
+  if (lic.estado === "bloqueada") {
+    return NextResponse.json({ estado: "bloqueada" });
+  }
+
+  // trial expirado
+  if (lic.fecha_expiracion) {
+    if (new Date(lic.fecha_expiracion) < new Date()) {
+      return NextResponse.json({ estado: "expirada" });
+    }
+  }
+
+  // sin activaciones disponibles
+  if (lic.activaciones_usadas >= lic.max_activaciones) {
+    return NextResponse.json({ estado: "sin_activaciones" });
+  }
+
+  // registrar activación
+  await supabaseAdmin
+    .from("licencias")
+    .update({
+      activaciones_usadas: lic.activaciones_usadas + 1,
+      maquina_id: maquina_id ?? lic.maquina_id
+    })
+    .eq("id", lic.id);
+
+  return NextResponse.json({
+    estado: lic.estado,
+    activaciones_restantes:
+      lic.max_activaciones - (lic.activaciones_usadas + 1),
+    fecha_expiracion: lic.fecha_expiracion ?? null
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\[id]\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req, context) {
+  // ⬅️ Aquí va la parte crítica: params es un PROMISE
+  const { id } = await context.params;
+
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .select("id, nombre, descripcion, precio, archivo_url, video_url, imagen_url, created_at")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencia\route.js
 ============================================================
 
@@ -247,7 +347,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="pt-20 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+     <body className="pt-20 bg-gray-100 dark:bg-[#1b1f24] text-gray-900 dark:text-gray-100 transition-colors">
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />
@@ -514,6 +614,7 @@ import {
   CreditCard,
   Scroll,
   Users,
+  Package,
   ArrowLeft,
 } from "lucide-react";
 
@@ -522,9 +623,7 @@ export const dynamic = "force-dynamic";
 export default function AdminLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-
       <aside className="w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 space-y-6 shadow-xl">
-
         <h2 className="text-2xl font-bold mb-4">Panel Admin</h2>
 
         <nav className="flex flex-col space-y-2">
@@ -544,12 +643,18 @@ export default function AdminLayout({ children }) {
             <span>Pagos</span>
           </Link>
 
+          {/*  ⭐ AÑADIDO AHORA ⭐ */}
+          <Link href="/panel/admin/plugins" className="flex items-center gap-3 hover:text-white">
+            <Package size={20} />
+            <span>Plugins</span>
+          </Link>
+          {/* ------------------- */}
+
           <Link href="/panel/admin/logs" className="flex items-center gap-3 hover:text-white">
             <Scroll size={20} />
             <span>Logs</span>
           </Link>
 
-          {/* ⭐ USUARIOS — YA SIN “GESTIONAR” */}
           <Link href="/panel/admin/usuarios" className="flex items-center gap-3 hover:text-white">
             <Users size={20} />
             <span>Usuarios</span>
@@ -679,27 +784,37 @@ import Link from "next/link";
 function EstadoBadge({ estado }) {
   if (estado === "activa")
     return <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-semibold">Activa</span>;
+
   if (estado === "trial")
     return <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold">Trial</span>;
+
   if (estado === "bloqueada")
     return <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-semibold">Bloqueada</span>;
+
   return <span className="px-2 py-1 bg-gray-200 text-gray-800 rounded text-xs font-semibold">—</span>;
 }
 
 export default function AdminLicenciaDetallePage({ params }) {
-  const { id } = params;
+
+  // ❗ AQUI ESTÁ EL FIX REAL:
+  const id = params?.id;  
+
   const [licencia, setLicencia] = useState(null);
 
   useEffect(() => {
+    if (!id) return; // ← Evita llamadas con undefined
+
     async function load() {
       const r = await fetch(`/api/admin/licencias/${id}`);
       const d = await r.json();
       setLicencia(d.licencia ?? null);
     }
+
     load();
   }, [id]);
 
-  if (!licencia) return <p>Cargando licencia...</p>;
+  if (!id) return <p className="p-4">ID no válido</p>;
+  if (!licencia) return <p className="p-4">Cargando licencia...</p>;
 
   async function accion(tipo) {
     const endpoint = {
@@ -720,6 +835,7 @@ export default function AdminLicenciaDetallePage({ params }) {
 
   return (
     <div className="space-y-6 p-4">
+
       <Link href="/panel/admin/licencias" className="text-blue-600 hover:underline flex items-center gap-1">
         <ArrowLeft size={20} /> Volver
       </Link>
@@ -729,56 +845,34 @@ export default function AdminLicenciaDetallePage({ params }) {
       </h1>
 
       <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow space-y-3">
-        <p>
-          <strong>Plugin:</strong> {licencia.plugin_id}
-        </p>
-        <p>
-          <strong>Email Tekla:</strong> {licencia.email_tekla}
-        </p>
-        <p>
-          <strong>Estado:</strong> <EstadoBadge estado={licencia.estado} />
-        </p>
-        <p>
-          <strong>Activaciones:</strong> {licencia.activaciones_usadas}/{licencia.max_activaciones}
-        </p>
-        <p>
-          <strong>Creada:</strong> {new Date(licencia.fecha_creacion).toLocaleString()}
-        </p>
+        <p><strong>Plugin:</strong> {licencia.plugin_id}</p>
+        <p><strong>Email Tekla:</strong> {licencia.email_tekla}</p>
+        <p><strong>Estado:</strong> <EstadoBadge estado={licencia.estado} /></p>
+        <p><strong>Activaciones:</strong> {licencia.activaciones_usadas}/{licencia.max_activaciones}</p>
+        <p><strong>Creada:</strong> {new Date(licencia.fecha_creacion).toLocaleString()}</p>
       </div>
 
       <div className="flex flex-col gap-3 max-w-sm">
-        <button
-          onClick={() => accion("activar")}
-          className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"
-        >
+        <button onClick={() => accion("activar")} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2">
           <CheckCircle size={18} /> Activar
         </button>
 
-        <button
-          onClick={() => accion("trial")}
-          className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2"
-        >
-          <Clock size={18} /> Marcar como Trial
+        <button onClick={() => accion("trial")} className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2">
+          <Clock size={18} /> Trial
         </button>
 
-        <button
-          onClick={() => accion("bloquear")}
-          className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2"
-        >
+        <button onClick={() => accion("bloquear")} className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2">
           <Ban size={18} /> Bloquear
         </button>
 
-        <button
-          onClick={() => accion("reset")}
-          className="bg-purple-600 text-white px-4 py-2 rounded flex items-center gap-2"
-        >
+        <button onClick={() => accion("reset")} className="bg-purple-600 text-white px-4 py-2 rounded flex items-center gap-2">
           <RefreshCw size={18} /> Reset activaciones
         </button>
       </div>
+
     </div>
   );
 }
-``
 
 
 ============================================================
@@ -1051,78 +1145,414 @@ export default function AdminPagoDetallePage({ params }) {
 
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\borrar\[id]\page.jsx
+============================================================
+
+
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Trash2 } from "lucide-react";
+
+export default function BorrarPluginPage({ params }) {
+  const { id } = params;
+  const [confirm, setConfirm] = useState(false);
+
+  async function borrar() {
+    await fetch("/api/admin/plugins/borrar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+    window.location.href = "/panel/admin/plugins";
+  }
+
+  return (
+    <div className="space-y-6 p-4 max-w-xl mx-auto">
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      <h1 className="text-3xl font-bold text-red-600 flex items-center gap-2">
+        <Trash2 size={26} /> Eliminar Plugin
+      </h1>
+
+      <p className="text-gray-700 dark:text-gray-300">
+        ¿Estás seguro de que deseas eliminar este plugin? Esta acción no se puede deshacer.
+      </p>
+
+      {!confirm && (
+        <button
+          onClick={() => setConfirm(true)}
+          className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
+        >
+          Sí, eliminar
+        </button>
+      )}
+
+      {confirm && (
+        <button
+          onClick={borrar}
+          className="w-full bg-red-800 text-white py-3 rounded-lg hover:bg-red-900"
+        >
+          Confirmar eliminación
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\editar\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default function EditarPlugin({ params }) {
+  const { id } = use(params);
+
+  const [form, setForm] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: 0,
+    archivo_url: "",
+    video_url: "",
+    imagen_url: "",
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  function update(key, value) {
+    setForm((p) => ({ ...p, [key]: value }));
+  }
+
+  // ==== CARGAR PLUGIN ====
+  useEffect(() => {
+    async function load() {
+      const r = await fetch(`/api/plugin/${id}`);
+      const d = await r.json();
+
+      setForm({
+        nombre: d.nombre,
+        descripcion: d.descripcion,
+        precio: d.precio,
+        archivo_url: d.archivo_url,
+        video_url: d.video_url,
+        imagen_url: d.imagen_url,
+      });
+
+      setLoading(false);
+    }
+    load();
+  }, [id]);
+
+  // ==== SUBIR IMAGEN ====
+  async function subirImagen(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop();
+    const name = `${Date.now()}.${ext}`;
+
+    const upload = await fetch(`/api/admin/upload-image?name=${name}`, {
+      method: "POST",
+      body: file,
+    });
+
+    const json = await upload.json();
+    update("imagen_url", json.url);
+  }
+
+  // ==== SUBIR .TSEP ====
+  async function subirTsep(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".tsep")) {
+      alert("Debe ser .tsep");
+      return;
+    }
+
+    const name = `${Date.now()}.tsep`;
+
+    const upload = await fetch(`/api/admin/upload-tsep?name=${name}`, {
+      method: "POST",
+      body: file,
+    });
+
+    const json = await upload.json();
+    update("archivo_url", json.url);
+  }
+
+  // ==== GUARDAR CAMBIOS ====
+  async function guardar() {
+    await fetch("/api/admin/plugins/editar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...form }),
+    });
+
+    window.location.href = "/panel/admin/plugins";
+  }
+
+  if (loading) return <p>Cargando plugin...</p>;
+
+  return (
+    <div className="space-y-6 p-4 max-w-xl mx-auto">
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      <h1 className="text-3xl font-bold">Editar Plugin</h1>
+
+      <div className="space-y-4">
+        <div>
+          <label>Nombre</label>
+          <input
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.nombre}
+            onChange={(e) => update("nombre", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Descripción</label>
+          <textarea
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            rows={4}
+            value={form.descripcion}
+            onChange={(e) => update("descripcion", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Precio (€)</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.precio}
+            onChange={(e) => update("precio", Number(e.target.value))}
+          />
+        </div>
+
+        <div>
+          <label>Archivo del plugin (.tsep)</label>
+          <input
+            type="file"
+            accept=".tsep"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            onChange={subirTsep}
+          />
+        </div>
+
+        <div>
+          <label>Video URL</label>
+          <input
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.video_url}
+            onChange={(e) => update("video_url", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Imagen del plugin</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            onChange={subirImagen}
+          />
+        </div>
+
+        <button
+          onClick={guardar}
+          className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+        >
+          Guardar cambios
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
 ============================================================
 
 "use client";
 
 import { useState } from "react";
-import { PackagePlus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function NuevoPluginPage() {
-  const [nombre, setNombre] = useState("");
-  const [version, setVersion] = useState("");
-  const [url, setUrl] = useState("");
+  const [form, setForm] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: 0,
+    archivo_url: "",
+    video_url: "",
+    imagen_url: "",
+  });
 
-  async function crear(e) {
-    e.preventDefault();
+  function update(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
 
-    await fetch("/api/admin/plugins", {
+  // ==========================
+  // SUBIR IMAGEN A SUPABASE
+  // ==========================
+  async function subirImagen(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop();
+    const name = `${Date.now()}.${ext}`;
+
+    const upload = await fetch(`/api/admin/upload-image?name=${name}`, {
+      method: "POST",
+      body: file,
+    });
+
+    const json = await upload.json();
+    update("imagen_url", json.url);
+  }
+
+  // ==========================
+  // SUBIR PLUGIN .TSEP
+  // ==========================
+  async function subirTsep(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop();
+    if (ext !== "tsep") {
+      alert("El archivo debe ser .tsep");
+      return;
+    }
+
+    const name = `${Date.now()}.${ext}`;
+
+    const upload = await fetch(`/api/admin/upload-tsep?name=${name}`, {
+      method: "POST",
+      body: file,
+    });
+
+    const json = await upload.json();
+    update("archivo_url", json.url);
+  }
+
+  // ==========================
+  // GUARDAR PLUGIN EN SUPABASE
+  // ==========================
+  async function guardar() {
+    await fetch("/api/admin/plugins/nuevo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre, version, url_descarga: url }),
+      body: JSON.stringify(form),
     });
 
     window.location.href = "/panel/admin/plugins";
   }
 
   return (
-    <div className="space-y-6">
-
-      <Link href="/panel/admin/plugins" className="text-blue-600 dark:text-blue-400 flex items-center gap-2">
+    <div className="space-y-6 p-4 max-w-xl mx-auto">
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
         <ArrowLeft size={20} /> Volver
       </Link>
 
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <PackagePlus size={28} /> Nuevo Plugin
-      </h1>
+      <h1 className="text-3xl font-bold">Nuevo Plugin</h1>
 
-      <form onSubmit={crear} className="space-y-4 max-w-lg">
+      <div className="space-y-4">
 
+        {/* Nombre */}
         <div>
-          <label className="font-semibold">Nombre</label>
+          <label>Nombre</label>
           <input
-            className="w-full border p-2 rounded dark:bg-gray-800 dark:text-white"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.nombre}
+            onChange={(e) => update("nombre", e.target.value)}
           />
         </div>
 
+        {/* Descripción */}
         <div>
-          <label className="font-semibold">Versión</label>
-          <input
-            className="w-full border p-2 rounded dark:bg-gray-800 dark:text-white"
-            value={version}
-            onChange={(e) => setVersion(e.target.value)}
-            required
+          <label>Descripción</label>
+          <textarea
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            rows={4}
+            value={form.descripcion}
+            onChange={(e) => update("descripcion", e.target.value)}
           />
         </div>
 
+        {/* Precio */}
         <div>
-          <label className="font-semibold">URL Descarga</label>
+          <label>Precio (€)</label>
           <input
-            className="w-full border p-2 rounded dark:bg-gray-800 dark:text-white"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            required
+            type="number"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.precio}
+            onChange={(e) => update("precio", parseFloat(e.target.value))}
           />
         </div>
 
-        <button className="btn-primary">Crear plugin</button>
+        {/* Subir archivo TSEP */}
+        <div>
+          <label>Archivo (.tsep)</label>
+          <input
+            type="file"
+            accept=".tsep"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            onChange={subirTsep}
+          />
+          {form.archivo_url && (
+            <p className="text-green-600 text-sm">Archivo subido correctamente</p>
+          )}
+        </div>
 
-      </form>
+        {/* Video */}
+        <div>
+          <label>Video URL (YouTube)</label>
+          <input
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.video_url}
+            onChange={(e) => update("video_url", e.target.value)}
+          />
+        </div>
+
+        {/* Subir imagen */}
+        <div>
+          <label>Imagen del plugin</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            onChange={subirImagen}
+          />
+          {form.imagen_url && (
+            <p className="text-green-600 text-sm">Imagen subida correctamente</p>
+          )}
+        </div>
+
+        {/* Guardar */}
+        <button
+          onClick={guardar}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+        >
+          Guardar Plugin
+        </button>
+
+      </div>
     </div>
   );
 }
@@ -1136,7 +1566,7 @@ export default function NuevoPluginPage() {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Trash2, Eye, Edit3, PlusCircle, Download } from "lucide-react";
+import { Package, Trash2, Eye, Edit3, Download } from "lucide-react";
 
 export default function AdminPluginsPage() {
   const [plugins, setPlugins] = useState([]);
@@ -1146,17 +1576,16 @@ export default function AdminPluginsPage() {
 
   useEffect(() => {
     async function load() {
-      // PLUGINS
+      // Obtener plugins
       const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
       const d1 = await r1.json();
       setPlugins(d1.plugins ?? d1);
 
-      // DESCARGAS TOTALES POR PLUGIN
+      // Obtener descargas por plugin
       const r2 = await fetch("/api/admin/dashboard");
       const d2 = await r2.json();
       setDescargas(d2.descargasPorPlugin ?? {});
     }
-
     load();
   }, []);
 
@@ -1185,15 +1614,15 @@ export default function AdminPluginsPage() {
         href="/panel/admin/plugins/nuevo"
         className="text-blue-600 flex items-center gap-2 mb-4"
       >
-        <PlusCircle size={18} /> Nuevo plugin
+        <Package size={18} /> Nuevo plugin
       </Link>
 
       <table className="w-full border border-gray-300 dark:border-gray-700">
         <thead>
           <tr className="bg-gray-300 dark:bg-gray-700">
-            <th>ID</th>
+            <th>Imagen</th>
             <th>Nombre</th>
-            <th>Versión</th>
+            <th>Precio</th>
             <th>Descargas</th>
             <th>Acciones</th>
           </tr>
@@ -1202,9 +1631,21 @@ export default function AdminPluginsPage() {
         <tbody>
           {plugins.map((p) => (
             <tr key={p.id} className="border-b border-gray-300 dark:border-gray-700">
-              <td>{p.id}</td>
-              <td>{p.nombre}</td>
-              <td>{p.version ?? "1.0"}</td>
+              <td className="p-2 text-center">
+                {p.imagen_url ? (
+                  <img
+                    src={p.imagen_url}
+                    alt={p.nombre}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gray-400 rounded"></div>
+                )}
+              </td>
+
+              <td className="font-semibold">{p.nombre}</td>
+              <td>{p.precio} €</td>
+
               <td className="text-center">
                 <span className="flex items-center gap-1 justify-center">
                   <Download size={16} />
@@ -1230,9 +1671,9 @@ export default function AdminPluginsPage() {
         </tbody>
       </table>
 
-      {/* DIALOGO CONFIRMACION */}
+      {/* MODAL BORRADO */}
       {open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
           <div className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4 max-w-md">
             <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
             <p>Esta acción no se puede deshacer.</p>
@@ -1258,6 +1699,58 @@ export default function AdminPluginsPage() {
     </div>
   );
 }
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default function PluginDetalleAdmin({ params }) {
+  const { id } = use(params);
+  const [plugin, setPlugin] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      const r = await fetch(`/api/plugin/${id}`);
+      const d = await r.json();
+      setPlugin(d);
+    }
+    load();
+  }, [id]);
+
+  if (!plugin) return <p className="p-4">Cargando...</p>;
+
+  return (
+    <div className="space-y-6 p-4">
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      <h1 className="text-3xl font-bold">{plugin.nombre}</h1>
+
+      {plugin.imagen_url && (
+        <img
+          src={plugin.imagen_url}
+          alt={plugin.nombre}
+          className="w-64 h-64 object-cover rounded shadow"
+        />
+      )}
+
+      <p>{plugin.descripcion}</p>
+      <p><strong>Precio:</strong> {plugin.precio} €</p>
+      <p><strong>Archivo:</strong> {plugin.archivo_url}</p>
+      <p><strong>Video:</strong> {plugin.video_url ?? "N/A"}</p>
+      <p><strong>Versión:</strong> {plugin.version ?? "1.0.0"}</p>
+    </div>
+  );
+}
+
 
 
 ============================================================
@@ -2839,548 +3332,4 @@ function Row({ children }) {
   );
 }
 ``
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { CreditCard, Eye } from "lucide-react";
-
-/* Tooltip PRO */
-function Tooltip({ label, children }) {
-  return (
-    <div className="relative group flex items-center">
-      {children}
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          pointer-events-none whitespace-nowrap
-        "
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
-
-export default function UserPagosPage() {
-  const [pagos, setPagos] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/user/pagos", {
-          credentials: "include",
-        });
-
-        const data = await res.json();
-        setPagos(data.pagos || []);
-      } catch (err) {
-        console.error("Error cargando pagos:", err);
-        setPagos([]);
-      }
-    }
-
-    load();
-  }, []);
-
-  if (pagos === null) return <p>Cargando pagos...</p>;
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-
-      {/* Título */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <CreditCard size={30} />
-        Mis Pagos
-      </h1>
-
-      {/* No hay pagos */}
-      {pagos.length === 0 && (
-        <p className="text-gray-500">Todavía no tienes pagos registrados.</p>
-      )}
-
-      {/* Tabla */}
-      <div className="overflow-x-auto rounded shadow-sm">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700">
-              <th>ID</th>
-              <th>Plugin</th>
-              <th>Licencias</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {pagos.map((p) => (
-              <tr
-                key={p.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td>{p.id}</td>
-                <td>{p.plugin_id}</td>
-                <td>{p.cantidad_licencias}</td>
-
-                {/* Estado con badge PRO */}
-                <td>
-                  {p.estado === "pendiente" && (
-                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold">
-                      Pendiente
-                    </span>
-                  )}
-
-                  {p.estado === "validado" && (
-                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold">
-                      Validado
-                    </span>
-                  )}
-                </td>
-
-                {/* Fecha */}
-                <td>{new Date(p.fecha).toLocaleString()}</td>
-
-                {/* Acciones */}
-                <td>
-                  <Tooltip label="Ver detalles del pago">
-                    <Link
-                      href={`/panel/user/pagos/${p.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    >
-                      <Eye size={16} /> Ver
-                    </Link>
-                  </Tooltip>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
-
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft, CreditCard, CheckCircle } from "lucide-react";
-
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
-
-export default function UserPagoDetallePage({ params }) {
-  const { id } = params;
-  const [pago, setPago] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const r = await fetch(`/api/pagos/detalle?pago_id=${id}`, {
-          credentials: "include",
-        });
-
-        const data = await r.json();
-
-        if (!r.ok) {
-          setError(data.error ?? "Error cargando pago");
-          return;
-        }
-
-        setPago(data);
-      } catch (err) {
-        setError("Error de conexión");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [id]);
-
-  if (loading) return <p className="p-4">Cargando pago…</p>;
-  if (error) return <p className="p-4 text-red-600">{error}</p>;
-  if (!pago) return <p className="p-4">Pago no encontrado.</p>;
-
-  const { licencias = [], facturacion } = pago;
-
-  return (
-    <div className="p-4">
-      <Link href="/panel/user/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
-        <ArrowLeft size={18} /> Volver
-      </Link>
-
-      <h2 className="text-2xl font-bold my-4">Pago #{pago.id}</h2>
-
-      <p><strong>Estado:</strong> {pago.estado}</p>
-      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
-      {pago.fecha && (
-        <p>
-          <strong>Fecha:</strong>{" "}
-          {new Date(pago.fecha).toLocaleString()}
-        </p>
-      )}
-
-      <h3 className="text-xl font-bold mt-6 mb-2">Licencias</h3>
-
-      {!licencias.length ? (
-        <p>No hay licencias asociadas.</p>
-      ) : (
-        <ul className="space-y-2">
-          {licencias.map((l) => (
-            <li key={l.id}>
-              <strong>Email Tekla:</strong> {l.email_tekla ?? "—"} — 
-              <strong> Estado:</strong> {l.estado}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h3 className="text-xl font-bold mt-6 mb-2">Datos de facturación</h3>
-
-      {!facturacion ? (
-        <p>No hay datos guardados.</p>
-      ) : (
-        <div className="space-y-1">
-          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
-          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
-          <p><strong>País:</strong> {facturacion.pais}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\perfil\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import { User, Save } from "lucide-react";
-
-export default function PerfilUsuarioPage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  // CAMPOS DEL PERFIL
-  const [email, setEmail] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [empresa, setEmpresa] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [pais, setPais] = useState("");
-
-  // CAMPOS FISCALES
-  const [direccion, setDireccion] = useState("");
-  const [ciudad, setCiudad] = useState("");
-  const [cp, setCp] = useState("");
-  const [cif, setCif] = useState("");
-
-  // IDIOMA
-  const [idioma, setIdioma] = useState("es");
-
-  useEffect(() => {
-    async function load() {
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      const user = data?.user;
-
-      if (user) {
-        setEmail(user.email || "");
-        setNombre(user.user_metadata?.nombre || "");
-        setEmpresa(user.user_metadata?.empresa || "");
-        setTelefono(user.user_metadata?.telefono || "");
-        setPais(user.user_metadata?.pais || "");
-
-        // Datos fiscales
-        setDireccion(user.user_metadata?.direccion || "");
-        setCiudad(user.user_metadata?.ciudad || "");
-        setCp(user.user_metadata?.cp || "");
-        setCif(user.user_metadata?.cif || "");
-
-        // Idioma
-        setIdioma(user.user_metadata?.idioma || "es");
-      }
-
-      setLoading(false);
-    }
-
-    load();
-  }, []);
-
-  async function guardar(e) {
-    e.preventDefault();
-    setSaving(true);
-
-    await fetch("/api/user/perfil", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nombre,
-        empresa,
-        telefono,
-        pais,
-        direccion,
-        ciudad,
-        cp,
-        cif,
-        idioma,
-      }),
-    });
-
-    setSaving(false);
-    alert("Datos guardados correctamente.");
-  }
-
-  if (loading) return <p>Cargando datos...</p>;
-
-  return (
-    <div className="space-y-8 max-w-3xl mx-auto">
-
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <User size={28} /> Mi Perfil
-      </h1>
-
-      <form
-        className="space-y-6 bg-gray-200 dark:bg-gray-800 p-8 rounded-lg shadow"
-        onSubmit={guardar}
-      >
-        {/* EMAIL */}
-        <div>
-          <label className="font-semibold block mb-1">Email</label>
-          <input
-            type="email"
-            value={email}
-            disabled
-            className="w-full border p-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-          />
-        </div>
-
-        {/* NOMBRE */}
-        <Campo valor={nombre} setValor={setNombre} label="Nombre" placeholder="Tu nombre" />
-
-        {/* EMPRESA */}
-        <Campo valor={empresa} setValor={setEmpresa} label="Empresa" placeholder="Nombre empresa" />
-
-        {/* TELEFONO */}
-        <Campo valor={telefono} setValor={setTelefono} label="Teléfono" placeholder="+34..." />
-
-        {/* PAIS */}
-        <Campo valor={pais} setValor={setPais} label="País" placeholder="España" />
-
-        {/* DIRECCIÓN FISCAL */}
-        <h2 className="text-xl font-bold mt-6">Dirección fiscal</h2>
-
-        <Campo valor={direccion} setValor={setDireccion} label="Dirección" placeholder="Calle, número…" />
-
-        <Campo valor={ciudad} setValor={setCiudad} label="Ciudad" placeholder="Barcelona" />
-
-        <Campo valor={cp} setValor={setCp} label="Código postal" placeholder="08000" />
-
-        <Campo valor={cif} setValor={setCif} label="CIF / NIF / VAT" placeholder="ES12345678A" />
-
-        {/* IDIOMA */}
-        <div>
-          <label className="font-semibold block mb-1">Idioma</label>
-          <select
-            className="w-full border p-2 rounded dark:bg-gray-900"
-            value={idioma}
-            onChange={(e) => setIdioma(e.target.value)}
-          >
-            <option value="es">Español</option>
-            <option value="en">Inglés</option>
-          </select>
-        </div>
-
-        {/* BOTÓN GUARDAR */}
-        <button
-          type="submit"
-          disabled={saving}
-          className="btn-primary flex items-center justify-center gap-2 w-full"
-        >
-          <Save size={18} />
-          {saving ? "Guardando..." : "Guardar datos"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
-function Campo({ valor, setValor, label, placeholder }) {
-  return (
-    <div>
-      <label className="font-semibold block mb-1">{label}</label>
-      <input
-        className="w-full border p-2 rounded dark:bg-gray-900"
-        value={valor}
-        onChange={(e) => setValor(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\plugins\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Box, Download, KeyRound } from "lucide-react";
-
-/* Tooltip PRO */
-function Tooltip({ label, children }) {
-  return (
-    <div className="relative group flex items-center">
-      {children}
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          pointer-events-none whitespace-nowrap
-        "
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
-
-export default function UserPluginsPage() {
-  const [plugins, setPlugins] = useState(null);
-  const [licencias, setLicencias] = useState([]);
-
-  useEffect(() => {
-    async function load() {
-      /* Obtener plugins disponibles */
-      const rP = await fetch("/api/user/plugins", { credentials: "include" });
-      const dP = await rP.json();
-      setPlugins(dP.plugins || []);
-
-      /* Obtener licencias para contar cuántas tiene de cada plugin */
-      const rL = await fetch("/api/user/licencias");
-      const dL = await rL.json();
-      setLicencias(dL.licencias || []);
-    }
-
-    load();
-  }, []);
-
-  if (plugins === null) return <p>Cargando plugins...</p>;
-
-  /* Licencias por plugin_id */
-  const licPorPlugin = licencias.reduce((acc, l) => {
-    acc[l.plugin_id] = (acc[l.plugin_id] || 0) + 1;
-    return acc;
-  }, {});
-
-  return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-
-      {/* Título */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Box size={30} /> Mis Plugins
-      </h1>
-
-      {/* Si no hay plugins */}
-      {plugins.length === 0 && (
-        <p className="text-gray-500">Aún no tienes plugins asociados.</p>
-      )}
-
-      {/* Tarjetas */}
-      <div className="flex flex-col gap-4">
-        {plugins.map((p) => (
-          <div
-            key={p.id}
-            className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex justify-between items-center"
-          >
-            {/* Info del plugin */}
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold text-lg">{p.nombre}</p>
-              <p className="text-sm text-gray-700 dark:text-gray-400">
-                Versión: {p.version}
-              </p>
-
-              <p className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-400">
-                <KeyRound size={14} /> {licPorPlugin[p.id] || 0} licencias asociadas
-              </p>
-            </div>
-
-            {/* Botón descargar */}
-            <Tooltip label="Descargar plugin">
-              <a
-                href={p.url_descarga}
-                download
-                className="btn-primary flex items-center gap-2"
-              >
-                <Download size={18} /> Descargar
-              </a>
-            </Tooltip>
-          </div>
-        ))}
-      </div>
-
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
-============================================================
-
-
-"use client";
-
-export default function AboutSection() {
-  return (
-    <section className='py-20 max-w-5xl mx-auto px-6'>
-      <h2 className='text-3xl font-bold mb-6 text-center'>Sobre mí</h2>
-      <p className='text-gray-700 dark:text-gray-300 leading-relaxed mb-4'>Soy Óscar Martínez…</p>
-      <p className='text-gray-700 dark:text-gray-300 leading-relaxed'>Actualmente desarrollo plugins…</p>
-    </section>
-  );
-}
-
 

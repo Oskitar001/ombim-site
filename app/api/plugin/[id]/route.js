@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req) {
-  // Obtener el ID desde la URL (Next.js 16)
-  const id = req.nextUrl.pathname.split("/").pop();
-
-  if (!id) {
-    return NextResponse.json({ error: "ID no encontrado" }, { status: 400 });
-  }
+export async function GET(req, context) {
+  // ⬅️ Aquí va la parte crítica: params es un PROMISE
+  const { id } = await context.params;
 
   const { data, error } = await supabaseAdmin
     .from("plugins")
@@ -16,8 +12,7 @@ export async function GET(req) {
     .single();
 
   if (error || !data) {
-    console.error("Error cargando plugin:", error);
-    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   return NextResponse.json(data);

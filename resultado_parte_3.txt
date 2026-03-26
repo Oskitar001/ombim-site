@@ -1,5 +1,558 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { CreditCard, Eye } from "lucide-react";
+
+/* Tooltip PRO */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+      <div
+        className="
+          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+          opacity-0 group-hover:opacity-100 transition
+          bg-black text-white text-xs py-1 px-2 rounded shadow
+          pointer-events-none whitespace-nowrap
+        "
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+export default function UserPagosPage() {
+  const [pagos, setPagos] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/user/pagos", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        setPagos(data.pagos || []);
+      } catch (err) {
+        console.error("Error cargando pagos:", err);
+        setPagos([]);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (pagos === null) return <p>Cargando pagos...</p>;
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <CreditCard size={30} />
+        Mis Pagos
+      </h1>
+
+      {/* No hay pagos */}
+      {pagos.length === 0 && (
+        <p className="text-gray-500">Todavía no tienes pagos registrados.</p>
+      )}
+
+      {/* Tabla */}
+      <div className="overflow-x-auto rounded shadow-sm">
+        <table className="min-w-full border border-gray-300 dark:border-gray-700">
+          <thead>
+            <tr className="bg-gray-200 dark:bg-gray-700">
+              <th>ID</th>
+              <th>Plugin</th>
+              <th>Licencias</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {pagos.map((p) => (
+              <tr
+                key={p.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <td>{p.id}</td>
+                <td>{p.plugin_id}</td>
+                <td>{p.cantidad_licencias}</td>
+
+                {/* Estado con badge PRO */}
+                <td>
+                  {p.estado === "pendiente" && (
+                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold">
+                      Pendiente
+                    </span>
+                  )}
+
+                  {p.estado === "validado" && (
+                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold">
+                      Validado
+                    </span>
+                  )}
+                </td>
+
+                {/* Fecha */}
+                <td>{new Date(p.fecha).toLocaleString()}</td>
+
+                {/* Acciones */}
+                <td>
+                  <Tooltip label="Ver detalles del pago">
+                    <Link
+                      href={`/panel/user/pagos/${p.id}`}
+                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    >
+                      <Eye size={16} /> Ver
+                    </Link>
+                  </Tooltip>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { ArrowLeft, CreditCard, CheckCircle } from "lucide-react";
+
+function Tooltip({ label, children }) {
+  return (
+    <span className="relative group">
+      {children}
+      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+        {label}
+      </span>
+    </span>
+  );
+}
+
+export default function UserPagoDetallePage({ params }) {
+  const { id } = params;
+  const [pago, setPago] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`/api/pagos/detalle?pago_id=${id}`, {
+          credentials: "include",
+        });
+
+        const data = await r.json();
+
+        if (!r.ok) {
+          setError(data.error ?? "Error cargando pago");
+          return;
+        }
+
+        setPago(data);
+      } catch (err) {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [id]);
+
+  if (loading) return <p className="p-4">Cargando pago…</p>;
+  if (error) return <p className="p-4 text-red-600">{error}</p>;
+  if (!pago) return <p className="p-4">Pago no encontrado.</p>;
+
+  const { licencias = [], facturacion } = pago;
+
+  return (
+    <div className="p-4">
+      <Link href="/panel/user/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
+        <ArrowLeft size={18} /> Volver
+      </Link>
+
+      <h2 className="text-2xl font-bold my-4">Pago #{pago.id}</h2>
+
+      <p><strong>Estado:</strong> {pago.estado}</p>
+      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
+      {pago.fecha && (
+        <p>
+          <strong>Fecha:</strong>{" "}
+          {new Date(pago.fecha).toLocaleString()}
+        </p>
+      )}
+
+      <h3 className="text-xl font-bold mt-6 mb-2">Licencias</h3>
+
+      {!licencias.length ? (
+        <p>No hay licencias asociadas.</p>
+      ) : (
+        <ul className="space-y-2">
+          {licencias.map((l) => (
+            <li key={l.id}>
+              <strong>Email Tekla:</strong> {l.email_tekla ?? "—"} — 
+              <strong> Estado:</strong> {l.estado}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="text-xl font-bold mt-6 mb-2">Datos de facturación</h3>
+
+      {!facturacion ? (
+        <p>No hay datos guardados.</p>
+      ) : (
+        <div className="space-y-1">
+          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
+          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
+          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
+          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
+          <p><strong>País:</strong> {facturacion.pais}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\perfil\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { User, Save } from "lucide-react";
+
+export default function PerfilUsuarioPage() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // CAMPOS DEL PERFIL
+  const [email, setEmail] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [empresa, setEmpresa] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [pais, setPais] = useState("");
+
+  // CAMPOS FISCALES
+  const [direccion, setDireccion] = useState("");
+  const [ciudad, setCiudad] = useState("");
+  const [cp, setCp] = useState("");
+  const [cif, setCif] = useState("");
+
+  // IDIOMA
+  const [idioma, setIdioma] = useState("es");
+
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      const user = data?.user;
+
+      if (user) {
+        setEmail(user.email || "");
+        setNombre(user.user_metadata?.nombre || "");
+        setEmpresa(user.user_metadata?.empresa || "");
+        setTelefono(user.user_metadata?.telefono || "");
+        setPais(user.user_metadata?.pais || "");
+
+        // Datos fiscales
+        setDireccion(user.user_metadata?.direccion || "");
+        setCiudad(user.user_metadata?.ciudad || "");
+        setCp(user.user_metadata?.cp || "");
+        setCif(user.user_metadata?.cif || "");
+
+        // Idioma
+        setIdioma(user.user_metadata?.idioma || "es");
+      }
+
+      setLoading(false);
+    }
+
+    load();
+  }, []);
+
+  async function guardar(e) {
+    e.preventDefault();
+    setSaving(true);
+
+    await fetch("/api/user/perfil", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre,
+        empresa,
+        telefono,
+        pais,
+        direccion,
+        ciudad,
+        cp,
+        cif,
+        idioma,
+      }),
+    });
+
+    setSaving(false);
+    alert("Datos guardados correctamente.");
+  }
+
+  if (loading) return <p>Cargando datos...</p>;
+
+  return (
+    <div className="space-y-8 max-w-3xl mx-auto">
+
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <User size={28} /> Mi Perfil
+      </h1>
+
+      <form
+        className="space-y-6 bg-gray-200 dark:bg-gray-800 p-8 rounded-lg shadow"
+        onSubmit={guardar}
+      >
+        {/* EMAIL */}
+        <div>
+          <label className="font-semibold block mb-1">Email</label>
+          <input
+            type="email"
+            value={email}
+            disabled
+            className="w-full border p-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+          />
+        </div>
+
+        {/* NOMBRE */}
+        <Campo valor={nombre} setValor={setNombre} label="Nombre" placeholder="Tu nombre" />
+
+        {/* EMPRESA */}
+        <Campo valor={empresa} setValor={setEmpresa} label="Empresa" placeholder="Nombre empresa" />
+
+        {/* TELEFONO */}
+        <Campo valor={telefono} setValor={setTelefono} label="Teléfono" placeholder="+34..." />
+
+        {/* PAIS */}
+        <Campo valor={pais} setValor={setPais} label="País" placeholder="España" />
+
+        {/* DIRECCIÓN FISCAL */}
+        <h2 className="text-xl font-bold mt-6">Dirección fiscal</h2>
+
+        <Campo valor={direccion} setValor={setDireccion} label="Dirección" placeholder="Calle, número…" />
+
+        <Campo valor={ciudad} setValor={setCiudad} label="Ciudad" placeholder="Barcelona" />
+
+        <Campo valor={cp} setValor={setCp} label="Código postal" placeholder="08000" />
+
+        <Campo valor={cif} setValor={setCif} label="CIF / NIF / VAT" placeholder="ES12345678A" />
+
+        {/* IDIOMA */}
+        <div>
+          <label className="font-semibold block mb-1">Idioma</label>
+          <select
+            className="w-full border p-2 rounded dark:bg-gray-900"
+            value={idioma}
+            onChange={(e) => setIdioma(e.target.value)}
+          >
+            <option value="es">Español</option>
+            <option value="en">Inglés</option>
+          </select>
+        </div>
+
+        {/* BOTÓN GUARDAR */}
+        <button
+          type="submit"
+          disabled={saving}
+          className="btn-primary flex items-center justify-center gap-2 w-full"
+        >
+          <Save size={18} />
+          {saving ? "Guardando..." : "Guardar datos"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function Campo({ valor, setValor, label, placeholder }) {
+  return (
+    <div>
+      <label className="font-semibold block mb-1">{label}</label>
+      <input
+        className="w-full border p-2 rounded dark:bg-gray-900"
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\plugins\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Box, Download, KeyRound } from "lucide-react";
+
+/* Tooltip PRO */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+      <div
+        className="
+          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+          opacity-0 group-hover:opacity-100 transition
+          bg-black text-white text-xs py-1 px-2 rounded shadow
+          pointer-events-none whitespace-nowrap
+        "
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+export default function UserPluginsPage() {
+  const [plugins, setPlugins] = useState(null);
+  const [licencias, setLicencias] = useState([]);
+
+  useEffect(() => {
+    async function load() {
+      /* Obtener plugins disponibles */
+      const rP = await fetch("/api/user/plugins", { credentials: "include" });
+      const dP = await rP.json();
+      setPlugins(dP.plugins || []);
+
+      /* Obtener licencias para contar cuántas tiene de cada plugin */
+      const rL = await fetch("/api/user/licencias");
+      const dL = await rL.json();
+      setLicencias(dL.licencias || []);
+    }
+
+    load();
+  }, []);
+
+  if (plugins === null) return <p>Cargando plugins...</p>;
+
+  /* Licencias por plugin_id */
+  const licPorPlugin = licencias.reduce((acc, l) => {
+    acc[l.plugin_id] = (acc[l.plugin_id] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Box size={30} /> Mis Plugins
+      </h1>
+
+      {/* Si no hay plugins */}
+      {plugins.length === 0 && (
+        <p className="text-gray-500">Aún no tienes plugins asociados.</p>
+      )}
+
+      {/* Tarjetas */}
+      <div className="flex flex-col gap-4">
+        {plugins.map((p) => (
+          <div
+            key={p.id}
+            className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex justify-between items-center"
+          >
+            {/* Info del plugin */}
+            <div className="flex flex-col gap-1">
+              <p className="font-semibold text-lg">{p.nombre}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-400">
+                Versión: {p.version}
+              </p>
+
+              <p className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-400">
+                <KeyRound size={14} /> {licPorPlugin[p.id] || 0} licencias asociadas
+              </p>
+            </div>
+
+            {/* Botón descargar */}
+            <Tooltip label="Descargar plugin">
+              <a
+                href={p.url_descarga}
+                download
+                className="btn-primary flex items-center gap-2"
+              >
+                <Download size={18} /> Descargar
+              </a>
+            </Tooltip>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
+============================================================
+
+"use client";
+
+export default function AboutSection() {
+  return (
+    <section className="py-20 max-w-5xl mx-auto px-6 reveal">
+      <h2 className="text-3xl font-bold mb-8 text-center">Sobre mí</h2>
+
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+        Soy Óscar Martínez, especialista en Tekla Structures con más de 23 años de experiencia
+        en modelado avanzado, fabricación, prefabricado y montaje. Durante más de dos décadas
+        trabajé en proyectos reales que me permitieron conocer cada fase del proceso constructivo:
+        desde la ingeniería, al taller y la obra.
+      </p>
+
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+        Actualmente ayudo a empresas a mejorar su productividad mediante automatizaciones,
+        plugins personalizados y flujos BIM optimizados. Mi objetivo es claro: que tus modelos
+        sean más rápidos de producir, más precisos y totalmente adaptados a tus necesidades reales.
+      </p>
+    </section>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
 ============================================================
 
@@ -607,40 +1160,39 @@ export default function Footer() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
 ============================================================
 
-export default function Hero() {
-  return (
-    <section className="py-32 text-center max-w-4xl mx-auto">
-      <h1 className="text-4xl md:text-5xl font-bold mb-6">
-        Especialista en Tekla Structures con más de 23 años de experiencia real
-      </h1>
+{/* HERO VISUAL CORRECTO */}
+<section
+  className="relative h-[70vh] w-full flex items-center justify-center text-center px-6"
+  style={{
+    backgroundImage: "url('/images/hero-tekla.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }}
+>
+  {/* Overlay adaptado a tema */}
+  <div className="absolute inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm"></div>
 
-      <p className="text-[#1f2937] text-lg mb-8">
-        Ayudo a ingenierías, constructoras y oficinas técnicas a modelar, documentar y optimizar sus proyectos mediante automatizaciones y plugins personalizados.
-      </p>
+  {/* Contenido */}
+  <div className="relative max-w-4xl mx-auto text-white">
+    <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 drop-shadow-xl">
+      Plugins, automatizaciones y modelado 3D <br />
+      para Tekla Structures
+    </h1>
 
-      <p className="text-xl font-semibold mb-10">
-        Experiencia real de obra + desarrollo avanzado para Tekla.
-      </p>
+    <p className="text-lg md:text-2xl opacity-90 leading-relaxed mb-10 drop-shadow-lg">
+      Acelera tu flujo BIM con herramientas profesionales creadas desde la experiencia real
+      en obra, fabricación y modelado avanzado.
+    </p>
 
-      <div className="flex justify-center gap-4">
-        <a
-          href="#contacto"
-          className="px-6 py-3 bg-blue-600 text-black rounded-lg font-semibold hover:bg-blue-700 transition"
-        >
-          Contactar
-        </a>
-
-        <a
-          href="#servicios"
-          className="px-6 py-3 border border-gray-400 rounded-lg font-semibold hover:bg-[#f3f4f6] transition"
-        >
-          Ver servicios
-        </a>
-      </div>
-    </section>
-  );
-}
-
+    <Link
+      href="/contacto"
+      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-lg transition"
+    >
+      Solicitar demo personalizada →
+    </Link>
+  </div>
+</section>
+``
 
 
 ============================================================
@@ -1019,19 +1571,41 @@ export default function TestimonialsSection() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
 ============================================================
 
-
 "use client";
 
 export default function TrustSection() {
   return (
-    <section className='reveal max-w-4xl mx-auto grid md:grid-cols-3 gap-10 text-center mb-24 px-6'>
-      <div><h3 className='text-xl font-semibold mb-2'>+10 años de experiencia</h3><p>Desarrollando soluciones BIM…</p></div>
-      <div><h3 className='text-xl font-semibold mb-2'>Software usado por empresas reales</h3><p>Más de 40 empresas usan…</p></div>
-      <div><h3 className='text-xl font-semibold mb-2'>Soluciones a medida</h3><p>Automatizaciones personalizadas…</p></div>
+    <section className="py-16 max-w-6xl mx-auto px-6 reveal">
+      <div className="grid md:grid-cols-3 gap-10 text-center">
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">+10 años de experiencia</h4>
+          <p className="opacity-80">
+            Desarrollando soluciones BIM para estructuras metálicas y de hormigón,
+            con enfoque práctico y orientado al trabajo real.
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">Software usado por empresas reales</h4>
+          <p className="opacity-80">
+            Más de 40 empresas utilizan mis herramientas y automatizaciones para acelerar
+            su producción y mejorar sus flujos internos.
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">Soluciones a medida</h4>
+          <p className="opacity-80">
+            Desarrollo herramientas totalmente personalizadas adaptadas a las necesidades
+            reales de cada empresa.
+          </p>
+        </div>
+
+      </div>
     </section>
   );
 }
-
 
 
 ============================================================

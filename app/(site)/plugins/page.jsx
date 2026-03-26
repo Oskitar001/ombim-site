@@ -1,66 +1,93 @@
-// app/(site)/plugins/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+export default function PluginsPage() {
+  const [plugins, setPlugins] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-export default async function PluginsPage() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/plugin`,
-    { cache: "no-store" }
-  );
+  useEffect(() => {
+    async function load() {
+      try {
+        // Plugins
+        const r1 = await fetch("/api/plugin", { cache: "no-store" });
+        const d1 = await r1.json();
+        setPlugins(Array.isArray(d1) ? d1 : []);
 
-  let plugins = [];
+        // Usuario
+        const r2 = await fetch("/api/auth/me");
+        const d2 = await r2.json();
+        setUser(d2.user ?? null);
+      } catch {
+        setPlugins([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
-  try {
-    const data = await res.json();
-    plugins = Array.isArray(data) ? data : [];
-  } catch {
-    plugins = [];
-  }
+  if (loading) return <p>Cargando plugins...</p>;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 p-4">
-      {/* AQUI EL ARREGLO REAL */}
-      <h1 className="text-3xl font-bold mt-16">Plugins OMBIM</h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <h2 className="text-3xl font-bold mb-6">Plugins OMBIM</h2>
 
-      {!plugins.length && (
-        <p className="text-gray-500 text-lg">
-          No hay plugins disponibles todavía.
-        </p>
-      )}
+      {!plugins.length && <p>No hay plugins disponibles todavía.</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => (
           <div
             key={p.id}
-            className="bg-gray-200 dark:bg-gray-800 p-5 rounded-lg shadow flex flex-col gap-4"
+            className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg shadow"
           >
+            {/* Imagen */}
             {p.imagen_url && (
               <img
                 src={p.imagen_url}
                 alt={p.nombre}
-                className="w-full rounded-md object-cover"
+                className="w-full h-40 object-cover rounded mb-3"
               />
             )}
 
-            <h3 className="text-xl font-semibold">{p.nombre}</h3>
+            <h4 className="text-xl font-bold mb-2">{p.nombre}</h4>
 
             {p.descripcion && (
-              <p className="text-sm opacity-80">{p.descripcion}</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
+                {p.descripcion}
+              </p>
             )}
 
-            <p className="font-bold">
+            <p className="font-semibold mb-4">
               {p.precio > 0 ? `${p.precio} €` : "Gratis"}
             </p>
 
-            <div className="flex gap-3 mt-auto">
-              <Link
-                href={`/plugins/${p.id}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-center w-full"
+            {/* Descargar Trial */}
+            {user ? (
+              <a
+                href={`/api/plugin/download?plugin_id=${p.id}`}
+                className="bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
               >
-                Ver plugin
+                Descargar versión Trial
+              </a>
+            ) : (
+              <Link
+                href="/login"
+                className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
+              >
+                Inicia sesión para descargar
               </Link>
-            </div>
+            )}
+
+            {/* Ver plugin */}
+            <Link
+              href={`/plugins/${p.id}`}
+              className="text-blue-600 underline text-sm inline-block mt-2"
+            >
+              Más información →
+            </Link>
           </div>
         ))}
       </div>

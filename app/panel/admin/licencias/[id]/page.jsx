@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
@@ -18,9 +18,8 @@ function EstadoBadge({ estado }) {
 }
 
 export default function AdminLicenciaDetallePage({ params }) {
-
-  // ❗ AQUI ESTÁ EL FIX REAL:
-  const id = params?.id;  
+  // 🔥 Next.js 16: params es una PROMESA → hay que usar use()
+  const { id } = use(params);   // ✔ FIX REAL
 
   const [licencia, setLicencia] = useState(null);
 
@@ -28,7 +27,7 @@ export default function AdminLicenciaDetallePage({ params }) {
     if (!id) return; // ← Evita llamadas con undefined
 
     async function load() {
-      const r = await fetch(`/api/admin/licencias/${id}`);
+      const r = await fetch(`/api/admin/licencias/${id}`, { credentials: "include" });
       const d = await r.json();
       setLicencia(d.licencia ?? null);
     }

@@ -1,5 +1,253 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
+============================================================
+
+// app/api/pagos/guardar-emails/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function POST(req) {
+  const supabase = await supabaseServer();
+  const body = await req.json();
+
+  const { pago_id, emails } = body;
+
+  if (!pago_id || !emails?.length) {
+    return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
+  }
+
+  for (const entry of emails) {
+    await supabase
+      .from("licencias")
+      .update({ email_tekla: entry.email_tekla })
+      .eq("id", entry.licencia_id)
+      .eq("pago_id", pago_id);
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
+============================================================
+
+// app/api/pagos/notificar-transferencia/route.js
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendEmail } from "@/lib/email";
+
+export async function POST(req) {
+  const { pago_id } = await req.json();
+  if (!pago_id) return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+
+  // Cliente Supabase correcto para Next.js 16
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return req.cookies.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Usuario logueado
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  // Recuperar email de empresa
+  const { data: empresa } = await supabaseAdmin
+    .from("empresa")
+    .select("email,nombre")
+    .eq("id", 1)
+    .single();
+
+  const destino = empresa?.email ?? "o.martinez@ombim.com";
+
+  const html = `
+    <h2>Notificación de transferencia recibida</h2>
+    <p>El usuario <strong>${user.email}</strong> ha indicado que ya ha realizado la transferencia bancaria.</p>
+    <p><strong>Pago ID:</strong> ${pago_id}</p>
+    <p>Revisa la banca online y activa las licencias cuando lo confirmes.</p>
+  `;
+
+  await sendEmail({
+    to: destino,
+    subject: `Transferencia recibida – Pago ${pago_id}`,
+    html,
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const { pago_id } = await req.json();
+
+  // 1. Obtener pago
+  const { data: pago, error } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  if (error || !pago) {
+    return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  // 2. Crear licencias por cada email tekla
+  const licencias = pago.emails_tekla.map(email => ({
+    plugin_id: pago.plugin_id,
+    email_tekla: email,
+    estado: "activa",
+    max_activaciones: 1,
+    activaciones_usadas: 0,
+    fecha_creacion: new Date().toISOString(),
+    pago_id: pago_id
+  }));
+
+  const { error: licenciasError } = await supabaseAdmin
+    .from("licencias")
+    .insert(licencias);
+
+  if (licenciasError) {
+    return Response.json({ error: "Error creando licencias" }, { status: 500 });
+  }
+
+  // 3. Cambiar estado del pago
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "validado" })
+    .eq("id", pago_id);
+
+  // 4. TODO: enviar email al usuario notificando activación
+
+  return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
+============================================================
+
+// app/api/plugin/download/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req) {
+  const supabase = await supabaseServer();
+
+  // Usuario autenticado
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // Obtener plugin_id
+  const plugin_id = new URL(req.url).searchParams.get("plugin_id");
+  if (!plugin_id) {
+    return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
+  }
+
+  // Obtener plugin
+  const { data: plugin, error } = await supabaseAdmin
+    .from("plugins")
+    .select("archivo_url, precio")
+    .eq("id", plugin_id)
+    .single();
+
+  if (error || !plugin?.archivo_url) {
+    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
+  }
+
+  // ¿Tiene el usuario un pago validado?
+  const { data: pagoValido } = await supabase
+    .from("pagos")
+    .select("id")
+    .eq("plugin_id", plugin_id)
+    .eq("user_id", userData.user.id)
+    .eq("estado", "validado")
+    .maybeSingle();
+
+  const esTrial = !pagoValido;
+
+  // Registrar descarga
+  await supabase.from("descargas").insert({
+    user_id: userData.user.id,
+    plugin_id,
+    fecha: new Date().toISOString(),
+  });
+
+  // URL firmada segura desde STORAGE
+  const { data: signed } = await supabaseAdmin.storage
+    .from("plugins")
+    .createSignedUrl(plugin.archivo_url, 60); // 60s
+
+  if (!signed) {
+    return NextResponse.json(
+      { error: "No se pudo generar enlace seguro" },
+      { status: 500 }
+    );
+  }
+
+  // JSON si es fetch
+  const wantsJSON = req.headers.get("accept")?.includes("application/json");
+
+  if (wantsJSON) {
+    return NextResponse.json({
+      ok: true,
+      trial: esTrial,
+      mensaje: esTrial
+        ? "Descarga en modo TRIAL registrada."
+        : "Descarga completa registrada.",
+      url: signed.signedUrl,
+    });
+  }
+
+  // Navegación normal → redirigir al archivo firmado
+  return NextResponse.redirect(signed.signedUrl);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\route.js
+============================================================
+
+// app/api/plugin/route.js
+
+export const runtime = "nodejs";  // ⬅⬅⬅ ESTA LÍNEA ES LA CLAVE
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("plugins")
+    .select("id, nombre, descripcion, precio, archivo_url, video_url, imagen_url, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error cargando plugins:", error);
+    return NextResponse.json([], { status: 500 });
+  }
+
+  return NextResponse.json(data ?? []);
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
 ============================================================
 
@@ -968,27 +1216,27 @@ export default function AdminHome() {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CreditCard, CheckCircle, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 
 export default function AdminPagosPage() {
   const [pagos, setPagos] = useState([]);
 
   useEffect(() => {
     async function load() {
-      const r = await fetch("/api/admin/pagos", { credentials: "include" });
+      const r = await fetch("/api/admin/pagos/list", { credentials: "include" });
       const d = await r.json();
-      setPagos(d ?? []);
+      setPagos(Array.isArray(d) ? d : []);
     }
     load();
   }, []);
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Pagos</h2>
+    <>
+      <h3>Pagos</h3>
 
-      <table className="w-full border border-gray-400">
+      <table>
         <thead>
-          <tr className="bg-gray-300 dark:bg-gray-700">
+          <tr>
             <th>ID</th>
             <th>Usuario</th>
             <th>Plugin</th>
@@ -1001,51 +1249,24 @@ export default function AdminPagosPage() {
 
         <tbody>
           {pagos.map((p) => (
-            <tr key={p.id} className="text-center border-b border-gray-300 dark:border-gray-700">
+            <tr key={p.id}>
               <td>{p.id}</td>
-              <td>{p.user_email}</td>
+              <td>{p.user_id}</td>
               <td>{p.plugin_id}</td>
               <td>{p.cantidad_licencias}</td>
-
-              {/* ESTADO */}
-              <td>
-                {p.estado === "pendiente" && (
-                  <span className="text-yellow-600 font-semibold">Pendiente</span>
-                )}
-                {p.estado === "validado" && (
-                  <span className="text-green-600 font-semibold">Validado</span>
-                )}
-              </td>
-
+              <td>{p.estado}</td>
               <td>{new Date(p.fecha).toLocaleString()}</td>
-
-              {/* ACCIONES */}
-              <td className="flex justify-center gap-4 py-2">
-                <Link href={`/panel/admin/pagos/${p.id}`}>
-                  <Eye className="text-blue-600 hover:text-blue-800" />
-                </Link>
-
-                {p.estado !== "validado" && (
-                  <button
-                    onClick={async () => {
-                      await fetch(`/api/admin/pagos/validar/${p.id}`, {
-                        method: "POST",
-                        credentials: "include",
-                      });
-                      window.location.reload();
-                    }}
-                  >
-                    <CheckCircle className="text-green-600 hover:text-green-800" />
-                  </button>
-                )}
+              <td>
+                <Link href={`/panel/admin/pagos/${p.id}`}>Ver</Link>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </>
   );
 }
+
 
 
 ============================================================
@@ -1054,38 +1275,49 @@ export default function AdminPagosPage() {
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 
 export default function AdminPagoDetallePage({ params }) {
-  const { id } = params;
+  // 🔵 Next.js 16: params es UNA PROMESA
+  const { id } = use(params);
+
   const [pago, setPago] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const r = await fetch(`/api/admin/pagos/${id}`, { credentials: "include" });
-      const d = await r.json();
-      setPago(d.pago ?? null);
-      setLoading(false);
+      try {
+        const r = await fetch(`/api/admin/pagos/${id}`, { credentials: "include" });
+        const d = await r.json();
+        setPago(d?.pago ?? null);
+      } catch (err) {
+        console.error("Error cargando pago admin:", err);
+      } finally {
+        setLoading(false);
+      }
     }
+
     load();
   }, [id]);
 
-  if (loading) return <p>Cargando pago...</p>;
-  if (!pago) return <p>Pago no encontrado.</p>;
+  if (loading) return <p className="p-6">Cargando pago...</p>;
+  if (!pago) return <p className="p-6">Pago no encontrado.</p>;
 
   const validar = async () => {
     await fetch(`/api/admin/pagos/validar/${pago.id}`, {
       method: "POST",
       credentials: "include",
     });
-    window.location.reload();
+
+    // Actualizar visualmente sin recargar toda la página
+    setPago({ ...pago, estado: "validado" });
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
+
       {/* VOLVER */}
       <Link href="/panel/admin/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
         <ArrowLeft size={18} /> Volver
@@ -1093,13 +1325,11 @@ export default function AdminPagoDetallePage({ params }) {
 
       <h2 className="text-2xl font-bold">Pago #{pago.id}</h2>
 
-      {/* CARD INFO */}
       <div className="p-4 rounded bg-gray-200 dark:bg-gray-800 shadow space-y-2">
-        <p><strong>Usuario:</strong> {pago.user_email}</p>
+        <p><strong>Usuario:</strong> {pago.user_email ?? "(sin email)"}</p>
         <p><strong>Plugin:</strong> {pago.plugin_id}</p>
         <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
 
-        {/* ESTADO */}
         <p>
           <strong>Estado:</strong>{" "}
           {pago.estado === "pendiente" ? (
@@ -1112,9 +1342,9 @@ export default function AdminPagoDetallePage({ params }) {
         <p><strong>Fecha:</strong> {new Date(pago.fecha).toLocaleString()}</p>
       </div>
 
-      {/* VALIDAR PAGO */}
       {pago.estado !== "validado" && (
         <button
+          title="Validar este pago y activar sus licencias"
           onClick={validar}
           className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-green-700"
         >
@@ -1127,13 +1357,18 @@ export default function AdminPagoDetallePage({ params }) {
         <h3 className="text-xl font-bold mt-6">Licencias generadas</h3>
 
         {!pago.licencias?.length ? (
-          <p>No hay licencias generadas para este pago.</p>
+          <p>No hay licencias para este pago.</p>
         ) : (
           <ul className="space-y-2">
             {pago.licencias.map((l) => (
-              <li key={l.id} className="p-3 bg-gray-200 dark:bg-gray-700 rounded">
-                Email Tekla: <strong>{l.email_tekla}</strong> — Estado:{" "}
-                <strong>{l.estado}</strong>
+              <li
+                key={l.id}
+                title="Licencia creada automáticamente al validar"
+                className="p-3 bg-gray-200 dark:bg-gray-700 rounded"
+              >
+                <strong>ID:</strong> {l.id} —  
+                <strong>Email Tekla:</strong> {l.email_tekla} —  
+                <strong>Estado:</strong> {l.estado}
               </li>
             ))}
           </ul>
@@ -1215,7 +1450,7 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-export default function EditarPlugin({ params }) {
+export default function EditarPluginPage({ params }) {
   const { id } = use(params);
 
   const [form, setForm] = useState({
@@ -1229,11 +1464,11 @@ export default function EditarPlugin({ params }) {
 
   const [loading, setLoading] = useState(true);
 
-  function update(key, value) {
-    setForm((p) => ({ ...p, [key]: value }));
+  function update(k, v) {
+    setForm((p) => ({ ...p, [k]: v }));
   }
 
-  // ==== CARGAR PLUGIN ====
+  // Cargar datos del plugin real
   useEffect(() => {
     async function load() {
       const r = await fetch(`/api/plugin/${id}`);
@@ -1253,13 +1488,12 @@ export default function EditarPlugin({ params }) {
     load();
   }, [id]);
 
-  // ==== SUBIR IMAGEN ====
+  // Subir imagen
   async function subirImagen(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop();
-    const name = `${Date.now()}.${ext}`;
+    const name = file.name;
 
     const upload = await fetch(`/api/admin/upload-image?name=${name}`, {
       method: "POST",
@@ -1270,17 +1504,17 @@ export default function EditarPlugin({ params }) {
     update("imagen_url", json.url);
   }
 
-  // ==== SUBIR .TSEP ====
+  // Subir TSEP con nombre original
   async function subirTsep(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!file.name.endsWith(".tsep")) {
-      alert("Debe ser .tsep");
+      alert("Debe ser un archivo .tsep");
       return;
     }
 
-    const name = `${Date.now()}.tsep`;
+    const name = file.name;
 
     const upload = await fetch(`/api/admin/upload-tsep?name=${name}`, {
       method: "POST",
@@ -1291,7 +1525,7 @@ export default function EditarPlugin({ params }) {
     update("archivo_url", json.url);
   }
 
-  // ==== GUARDAR CAMBIOS ====
+  // Guardar cambios
   async function guardar() {
     await fetch("/api/admin/plugins/editar", {
       method: "POST",
@@ -1302,7 +1536,27 @@ export default function EditarPlugin({ params }) {
     window.location.href = "/panel/admin/plugins";
   }
 
-  if (loading) return <p>Cargando plugin...</p>;
+  // Notificar versión
+  async function notificarVersion() {
+    if (!form.archivo_url) {
+      alert("Primero sube un archivo .tsep");
+      return;
+    }
+
+    const archivo_nombre = form.archivo_url.split("/").pop();
+
+    const res = await fetch("/api/admin/plugins/notificar-version", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plugin_id: id, archivo_nombre }),
+    });
+
+    const data = await res.json();
+
+    alert(`Notificados ${data.enviados} usuarios`);
+  }
+
+  if (loading) return <p className="mt-10">Cargando...</p>;
 
   return (
     <div className="space-y-6 p-4 max-w-xl mx-auto">
@@ -1313,6 +1567,7 @@ export default function EditarPlugin({ params }) {
       <h1 className="text-3xl font-bold">Editar Plugin</h1>
 
       <div className="space-y-4">
+
         <div>
           <label>Nombre</label>
           <input
@@ -1342,6 +1597,7 @@ export default function EditarPlugin({ params }) {
           />
         </div>
 
+        {/* TSEP */}
         <div>
           <label>Archivo del plugin (.tsep)</label>
           <input
@@ -1350,10 +1606,17 @@ export default function EditarPlugin({ params }) {
             className="w-full p-2 rounded border dark:bg-gray-900"
             onChange={subirTsep}
           />
+
+          {form.archivo_url && (
+            <p className="text-sm text-green-600">
+              Archivo actual: {form.archivo_url.split("/").pop()}
+            </p>
+          )}
         </div>
 
+        {/* Video */}
         <div>
-          <label>Video URL</label>
+          <label>Video URL (YouTube)</label>
           <input
             className="w-full p-2 rounded border dark:bg-gray-900"
             value={form.video_url}
@@ -1361,6 +1624,7 @@ export default function EditarPlugin({ params }) {
           />
         </div>
 
+        {/* Imagen */}
         <div>
           <label>Imagen del plugin</label>
           <input
@@ -1371,17 +1635,24 @@ export default function EditarPlugin({ params }) {
           />
         </div>
 
+        {/* BOTONES */}
         <button
           onClick={guardar}
-          className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
         >
           Guardar cambios
+        </button>
+
+        <button
+          onClick={notificarVersion}
+          className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
+        >
+          Notificar nueva versión a compradores
         </button>
       </div>
     </div>
   );
 }
-
 
 
 ============================================================
@@ -2465,10 +2736,14 @@ export default function PagosClient({ pagos }) {
 ============================================================
 
 // /app/panel/mis-pagos/[id]/page.jsx
+import { use } from "react";
 import PagoClient from "./PagoClient";
 
 export default function PagoPage({ params }) {
-  return <PagoClient pagoId={params.id} />;
+  // ⬇⬇⬇ FIX OBLIGATORIO EN NEXT 16
+  const { id } = use(params);
+
+  return <PagoClient pagoId={id} />;
 }
 
 
@@ -3196,140 +3471,4 @@ export default function UserLicenciaDetallePage({ params }) {
     </div>
   );
 }
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  KeyRound,
-  CreditCard,
-  Download,
-  User,
-  CheckCircle,
-  Clock,
-  Ban,
-} from "lucide-react";
-
-export default function UserDashboardPage() {
-  const [licencias, setLicencias] = useState([]);
-  const [pagos, setPagos] = useState([]);
-  const [plugins, setPlugins] = useState([]);
-  const [userEmail, setUserEmail] = useState("");
-
-  useEffect(() => {
-    async function load() {
-      const r1 = await fetch("/api/user/licencias");
-      setLicencias((await r1.json()).licencias || []);
-
-      const r2 = await fetch("/api/user/pagos");
-      setPagos((await r2.json()).pagos || []);
-
-      const r3 = await fetch("/api/user/plugins");
-      setPlugins((await r3.json()).plugins || []);
-
-      const me = await fetch("/api/auth/me");
-      const user = await me.json();
-      setUserEmail(user?.user?.email || "");
-    }
-    load();
-  }, []);
-
-  const activas = licencias.filter((l) => l.estado === "activa").length;
-  const trials = licencias.filter((l) => l.estado === "trial").length;
-  const bloqueadas = licencias.filter((l) => l.estado === "bloqueada").length;
-  const totalCompras = pagos.length;
-
-  return (
-    <div className="space-y-10">
-
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <User size={30} /> Bienvenido, {userEmail}
-        </h1>
-      </div>
-
-      {/* TARJETAS PRINCIPALES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        <Card title="Licencias activas" value={activas} icon={<CheckCircle className="text-green-500" />} />
-        <Card title="Trials" value={trials} icon={<Clock className="text-yellow-500" />} />
-        <Card title="Bloqueadas" value={bloqueadas} icon={<Ban className="text-red-500" />} />
-        <Card title="Total compras" value={totalCompras} icon={<CreditCard className="text-blue-500" />} />
-
-      </div>
-
-      {/* ÚLTIMAS LICENCIAS */}
-      <Section title="Últimas licencias">
-        {licencias.length === 0 && <p className="text-gray-500">No tienes licencias todavía.</p>}
-
-        {licencias.slice(0, 5).map((l) => (
-          <Row key={l.id}>
-            <div>
-              <p className="font-semibold">{l.plugin_id}</p>
-              <p className="text-sm opacity-70">Email Tekla: {l.email_tekla}</p>
-            </div>
-            <Link href={`/panel/user/licencias/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-              Ver
-            </Link>
-          </Row>
-        ))}
-      </Section>
-
-      {/* ÚLTIMOS PAGOS */}
-      <Section title="Últimos pagos">
-        {pagos.length === 0 && <p className="text-gray-500">Aún no hay pagos.</p>}
-
-        {pagos.slice(0, 5).map((p) => (
-          <Row key={p.id}>
-            <div>
-              <p className="font-semibold">Pago #{p.id}</p>
-              <p className="text-sm opacity-70">Estado: {p.estado}</p>
-            </div>
-            <Link href={`/panel/user/pagos/${p.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-              Ver
-            </Link>
-          </Row>
-        ))}
-      </Section>
-
-    </div>
-  );
-}
-
-function Card({ title, value, icon }) {
-  return (
-    <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="font-bold text-lg">{title}</h2>
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">{title}</h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Row({ children }) {
-  return (
-    <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded shadow flex justify-between">
-      {children}
-    </div>
-  );
-}
-``
 

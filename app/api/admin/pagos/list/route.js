@@ -1,6 +1,5 @@
-// app/api/admin/pagos/route.js
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";   // ✔ IMPORTACIÓN CORRECTA
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
@@ -9,10 +8,14 @@ export async function GET() {
     return NextResponse.json(admin, { status: 403 });
   }
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("pagos")
-    .select("*")
+    .select("id, user_id, plugin_id, cantidad_licencias, estado, fecha")
     .order("fecha", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json(data ?? []);
 }

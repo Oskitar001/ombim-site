@@ -1,19 +1,28 @@
-// app/api/admin/licencias/[id]/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(req, ctx) {
-  const { params } = await ctx;  // <<<<<< CLAVE
-  const id = params.id;
+  // 🚨 Next 16: params ES UNA PROMESA
+  const { id } = await ctx.params;   // ← FIX REAL
 
-  const { data: licencia } = await supabaseAdmin
+  // Cargar la licencia
+  const { data: licencia, error } = await supabaseAdmin
     .from("licencias")
     .select("*, plugins(nombre)")
     .eq("id", id)
-    .single();
+    .maybeSingle();  // ← mejor que .single()
 
+  if (error) {
+    console.error("ERROR SUPABASE (licencia):", error);
+    return NextResponse.json({ error: "Error consultando la BD" }, { status: 500 });
+  }
+
+  // Si no existe
+  if (!licencia) {
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+  }
+
+  // Cargar activaciones de la licencia
   const { data: activaciones } = await supabaseAdmin
     .from("activaciones")
     .select("*")
@@ -24,3 +33,4 @@ export async function GET(req, ctx) {
     activaciones: activaciones ?? [],
   });
 }
+``

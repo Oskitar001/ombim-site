@@ -1518,19 +1518,31 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\[id]\route.js
 ============================================================
 
-// app/api/admin/licencias/[id]/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, { params }) {
-  const { id } = params; // <-- FIX
+export async function GET(req, ctx) {
+  // 🚨 Next 16: params ES UNA PROMESA
+  const { id } = await ctx.params;   // ← FIX REAL
 
-  const { data: licencia } = await supabaseAdmin
+  // Cargar la licencia
+  const { data: licencia, error } = await supabaseAdmin
     .from("licencias")
     .select("*, plugins(nombre)")
     .eq("id", id)
-    .single();
+    .maybeSingle();  // ← mejor que .single()
 
+  if (error) {
+    console.error("ERROR SUPABASE (licencia):", error);
+    return NextResponse.json({ error: "Error consultando la BD" }, { status: 500 });
+  }
+
+  // Si no existe
+  if (!licencia) {
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+  }
+
+  // Cargar activaciones de la licencia
   const { data: activaciones } = await supabaseAdmin
     .from("activaciones")
     .select("*")
@@ -1538,9 +1550,10 @@ export async function GET(req, { params }) {
 
   return NextResponse.json({
     licencia,
-    activaciones: activaciones ?? []
+    activaciones: activaciones ?? [],
   });
 }
+``
 
 
 ============================================================
@@ -1607,9 +1620,58 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, ctx) {
-  const { id } = await ctx.params;
+export async function GET(req, context) {
+  const { id } = await context.params;
 
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(admin, { status: 403 });
+  }
+
+  // 1) Obtener el pago y sus licencias
+  const { data: pago, error: pagoError } = await supabaseAdmin
+    .from("pagos")
+    .select("*, licencias(*)")  
+    .eq("id", id)
+    .maybeSingle();
+
+  if (pagoError) {
+    console.error("SUPABASE ERROR (pago):", pagoError);
+    return NextResponse.json({ error: "Error consultando BD" }, { status: 500 });
+  }
+
+  if (!pago) {
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  // 2) Obtener la facturación POR user_id del pago
+  const { data: facturacion, error: factError } = await supabaseAdmin
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", pago.user_id)
+    .maybeSingle();
+
+  if (factError) {
+    console.error("SUPABASE ERROR (facturacion):", factError);
+  }
+
+  return NextResponse.json({
+    pago,
+    facturacion: facturacion ?? null
+  });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\list\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";   // ✔ IMPORTACIÓN CORRECTA
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json(admin, { status: 403 });
@@ -1617,39 +1679,12 @@ export async function GET(req, ctx) {
 
   const { data, error } = await supabaseAdmin
     .from("pagos")
-    .select("*, licencias(*), facturacion(*)")
-    .eq("id", id)
-    .single();
-
-  if (!data) {
-    return NextResponse.json(
-      { error: "Pago no encontrado" },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({ pago: data });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\list\route.js
-============================================================
-
-// app/api/admin/pagos/route.js
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export async function GET() {
-  const admin = await requireAdmin();
-  if (!admin.ok)
-    return NextResponse.json(admin, { status: 403 });
-
-  const { data, error } = await supabaseAdmin
-    .from("pagos")
     .select("id, user_id, plugin_id, cantidad_licencias, estado, fecha")
-    .order("id", { ascending: true });  // 👈 ordena por ID real
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json(data ?? []);
 }
@@ -1659,7 +1694,7 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\validar\[id]\route.js
 ============================================================
 
-// app/api/admin/pagos/validar/[id]/route.js
+// /app/api/admin/pagos/validar/[id]/route.js
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
@@ -1671,55 +1706,158 @@ export async function POST(req, { params }) {
     return Response.json({ error: "Falta pago_id" }, { status: 400 });
   }
 
-  // Obtener pago completo
-  const { data: pago, error } = await supabaseAdmin
-    .from("pagos")
-    .select("*")
-    .eq("id", pago_id)
-    .single();
+  try {
+    // =====================================================
+    // 1. CARGAR EL PAGO
+    // =====================================================
+    const { data: pago, error: pagoError } = await supabaseAdmin
+      .from("pagos")
+      .select("*")
+      .eq("id", pago_id)
+      .single();
 
-  if (error || !pago) {
-    return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+    if (pagoError || !pago) {
+      return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+    }
+
+    // =====================================================
+    // 2. VALIDAR EMAILS TEKLA
+    // =====================================================
+    if (!Array.isArray(pago.emails_tekla) || pago.emails_tekla.length === 0) {
+      return Response.json(
+        { error: "Este pago no tiene emails Tekla asignados" },
+        { status: 400 }
+      );
+    }
+
+    // =====================================================
+    // 3. VALIDAR QUE NO EXISTAN LICENCIAS DUPLICADAS
+    // (No se puede comprar el mismo plugin dos veces para el mismo email)
+    // =====================================================
+    const { data: existentes, error: dupError } = await supabaseAdmin
+      .from("licencias")
+      .select("email_tekla")
+      .in("email_tekla", pago.emails_tekla)
+      .eq("plugin_id", pago.plugin_id);
+
+    if (dupError) {
+      return Response.json(
+        { error: "Error verificando duplicados" },
+        { status: 500 }
+      );
+    }
+
+    if (existentes.length > 0) {
+      const repetidos = existentes.map((l) => l.email_tekla);
+      return Response.json(
+        {
+          error:
+            "No se puede comprar el mismo plugin para estos emails (ya tienen licencia):",
+          emails: repetidos,
+        },
+        { status: 400 }
+      );
+    }
+
+    // =====================================================
+    // 4. DETERMINAR CONFIGURACIÓN SEGÚN TIPO DE LICENCIA
+    // =====================================================
+    let max_activaciones = 1;
+    let soporte_dias = 0;
+
+    switch (pago.tipo_licencia) {
+      case "anual":
+        max_activaciones = 1;
+        soporte_dias = pago.soporte_dias ?? 0; // viene desde la tabla licencias_tipos
+        break;
+
+      case "completa":
+        max_activaciones = 5;
+        soporte_dias = 0;
+        break;
+
+      default:
+        return Response.json(
+          { error: "Tipo de licencia desconocido" },
+          { status: 400 }
+        );
+    }
+
+    // =====================================================
+    // 5. CREAR LAS LICENCIAS
+    // =====================================================
+    const ahora = new Date().toISOString();
+
+    const licencias = pago.emails_tekla.map((email) => ({
+      plugin_id: pago.plugin_id,
+      email_tekla: email,
+      estado: "activa",
+      max_activaciones,
+      activaciones_usadas: 0,
+      soporte_dias,
+      fecha_creacion: ahora,
+      pago_id,
+      user_id: pago.user_id,
+    }));
+
+    const { error: licError } = await supabaseAdmin
+      .from("licencias")
+      .insert(licencias);
+
+    if (licError) {
+      return Response.json(
+        { error: "Error creando licencias", detalle: licError },
+        { status: 500 }
+      );
+    }
+
+    // =====================================================
+    // 6. MARCAR EL PAGO COMO VALIDADO
+    // =====================================================
+    await supabaseAdmin
+      .from("pagos")
+      .update({ estado: "validado" })
+      .eq("id", pago_id);
+
+    // =====================================================
+    // 7. ELIMINAR PAGOS DUPLICADOS
+    // =====================================================
+    await supabaseAdmin
+      .from("pagos")
+      .delete()
+      .neq("id", pago_id)
+      .eq("payment_uid", pago.payment_uid);
+
+    // =====================================================
+    // 8. OBTENER EMAIL REAL DEL USUARIO
+    // =====================================================
+    const { data: userData } =
+      await supabaseAdmin.auth.admin.getUserById(pago.user_id);
+
+    const userEmail = userData?.user?.email;
+
+    // =====================================================
+    // 9. ENVIAR EMAIL DE ACTIVACIÓN
+    // =====================================================
+    if (userEmail) {
+      const siteURL = process.env.NEXT_PUBLIC_SITE_URL;
+
+      await fetch(`${siteURL}/api/email/licencias/activadas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userEmail,
+          emails_tekla: pago.emails_tekla,
+          tipo_licencia: pago.tipo_licencia,
+        }),
+      });
+    }
+
+    return Response.json({ ok: true });
+  } catch (err) {
+    console.error("ERROR EN VALIDAR PAGO:", err);
+    return Response.json({ error: "Error interno" }, { status: 500 });
   }
-
-  // Verificar emails Tekla
-  if (!Array.isArray(pago.emails_tekla) || pago.emails_tekla.length === 0) {
-    return Response.json(
-      { error: "Este pago no tiene emails Tekla asignados" },
-      { status: 400 }
-    );
-  }
-
-  // Crear licencias
-  const nuevasLicencias = pago.emails_tekla.map((email) => ({
-    plugin_id: pago.plugin_id,
-    email_tekla: email,
-    estado: "activa", // activas directamente
-    max_activaciones: 1,
-    activaciones_usadas: 0,
-    fecha_creacion: new Date().toISOString(),
-    pago_id: pago.id,
-    user_id: pago.user_id,
-  }));
-
-  const { error: licError } = await supabaseAdmin
-    .from("licencias")
-    .insert(nuevasLicencias);
-
-  if (licError) {
-    return Response.json(
-      { error: "No se pudieron crear las licencias" },
-      { status: 500 }
-    );
-  }
-
-  // Marcar pago como validado
-  await supabaseAdmin
-    .from("pagos")
-    .update({ estado: "validado" })
-    .eq("id", pago_id);
-
-  return Response.json({ ok: true });
 }
 
 
@@ -3209,169 +3347,4 @@ export async function POST(req) {
     }
   });
 }
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
-============================================================
-
-// app/api/licencias/verificar/route.js
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export async function GET(req) {
-  const url = new URL(req.url);
-  const email_tekla = url.searchParams.get("email");
-  const plugin_id = url.searchParams.get("plugin_id");
-
-  if (!email_tekla) {
-    return Response.json({ ok: false, motivo: "sin_email" });
-  }
-
-  if (!plugin_id) {
-    return Response.json({ ok: false, motivo: "sin_plugin" });
-  }
-
-  // Buscar licencia concreta por email + plugin
-  const { data: licencia, error } = await supabaseAdmin
-    .from("licencias")
-    .select("*")
-    .eq("email_tekla", email_tekla)
-    .eq("plugin_id", plugin_id)
-    .order("fecha_creacion", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error || !licencia) {
-    return Response.json({ ok: false, motivo: "no_existe" });
-  }
-
-  // Estado bloqueado
-  if (licencia.estado === "bloqueada") {
-    return Response.json({ ok: false, motivo: "bloqueada" });
-  }
-
-  // Trial expirado
-  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1) {
-    return Response.json({ ok: false, motivo: "trial_expirado" });
-  }
-
-  // Respuesta limpia
-  return Response.json({
-    ok: true,
-    plugin_id: licencia.plugin_id,
-    estado: licencia.estado,
-    activaciones_usadas: licencia.activaciones_usadas,
-    max_activaciones: licencia.max_activaciones
-  });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
-============================================================
-
-import { supabaseRoute } from "@/lib/supabaseRoute";
-
-export async function POST(req) {
-  const supabase = supabaseRoute();
-
-  // 1. Usuario real
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return Response.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  const { plugin_id, emails_tekla } = await req.json();
-
-  // VALIDACIÓN
-  if (!plugin_id || !emails_tekla?.length) {
-    return Response.json({ error: "Datos incompletos" }, { status: 400 });
-  }
-
-  // 2. Crear el PAGO sin emails_tekla
-  const { data: pago, error } = await supabase
-    .from("pagos")
-    .insert({
-      user_id: user.id,
-      plugin_id,
-      cantidad_licencias: emails_tekla.length,
-      estado: "pendiente",
-      fecha: new Date().toISOString(),
-    })
-    .select()
-    .single();
-
-  if (error) return Response.json({ error }, { status: 500 });
-
-  // 3. Crear LICENCIAS (una por email)
-  const licencias = emails_tekla.map((email) => ({
-    plugin_id,
-    email_tekla: email,      // la asignación inicial
-    estado: "trial",         // comienzan trial
-    pago_id: pago.id,
-    user_id: user.id,
-    fecha_creacion: new Date().toISOString(),
-    activaciones_usadas: 0,
-    max_activaciones: 1
-  }));
-
-  const { error: licError } = await supabase
-    .from("licencias")
-    .insert(licencias);
-
-  if (licError) {
-    return Response.json({ error: licError }, { status: 500 });
-  }
-
-  return Response.json({ ok: true, pago });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\detalle\route.js
-============================================================
-
-// app/api/pagos/detalle/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export async function GET(req) {
-  const supabase = await supabaseServer();
-
-  // Usuario logueado
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  const pago_id = new URL(req.url).searchParams.get("pago_id");
-  if (!pago_id) {
-    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
-  }
-
-  // Cargar pago + licencias + precio del plugin
-  const { data: pago, error } = await supabase
-    .from("pagos")
-    .select("*, licencias(*), plugins(precio,nombre)")
-    .eq("id", pago_id)
-    .eq("user_id", userData.user.id)
-    .single();
-
-  if (error || !pago) {
-    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
-  }
-
-  // Cargar facturación
-  const { data: facturacion } = await supabase
-    .from("facturacion")
-    .select("*")
-    .eq("user_id", pago.user_id)
-    .single();
-
-  return NextResponse.json({
-    ...pago,
-    facturacion: facturacion ?? null,
-  });
-}
-
 

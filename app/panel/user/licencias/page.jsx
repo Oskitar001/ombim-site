@@ -2,138 +2,106 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { KeyRound, CheckCircle, Clock, Ban, Eye } from "lucide-react";
-
-/* Tooltip PRO */
-function Tooltip({ label, children }) {
-  return (
-    <div className="relative group flex items-center">
-      {children}
-
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          pointer-events-none whitespace-nowrap
-        "
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
+import { KeyRound, Clock, Star, Calendar, Ban, Eye } from "lucide-react";
 
 export default function UserLicenciasPage() {
-  const [licencias, setLicencias] = useState(null);
+    const [licencias, setLicencias] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/user/licencias", {
-          credentials: "include",
-        });
+    useEffect(() => {
+        async function load() {
+            const res = await fetch("/api/user/licencias", {
+                credentials: "include",
+            });
+            const data = await res.json();
+            setLicencias(data.licencias ?? []);
+        }
+        load();
+    }, []);
 
-        const data = await res.json();
-        setLicencias(data.licencias || []);
-      } catch (err) {
-        console.error("Error cargando licencias:", err);
-        setLicencias([]);
-      }
+    if (licencias === null) {
+        return <p>Cargando licencias...</p>;
     }
 
-    load();
-  }, []);
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Mis licencias</h2>
 
-  if (licencias === null) {
-    return <p>Cargando licencias...</p>;
-  }
+            {licencias.length === 0 && <p>Todavía no tienes licencias.</p>}
 
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+            <table className="min-w-full border border-gray-300 dark:border-gray-700">
+                <thead>
+                    <tr className="bg-gray-200 dark:bg-gray-700">
+                        <th className="p-2">Plugin</th>
+                        <th className="p-2">Email Tekla</th>
+                        <th className="p-2">Tipo</th>
+                        <th className="p-2">Estado</th>
+                        <th className="p-2">Activaciones</th>
+                        <th className="p-2">Expira</th>
+                        <th className="p-2"></th>
+                    </tr>
+                </thead>
 
-      {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <KeyRound size={30} /> Mis Licencias
-      </h1>
+                <tbody>
+                    {licencias.map((l) => (
+                        <tr key={l.id} className="border-b dark:border-gray-700">
+                            <td className="p-2">{l.plugin_nombre ?? l.plugin_id}</td>
+                            <td className="p-2">{l.email_tekla}</td>
 
-      {/* SIN LICENCIAS */}
-      {licencias.length === 0 && (
-        <p className="text-gray-500">Aún no tienes licencias activas.</p>
-      )}
+                            <td className="p-2">
+                                {l.tipo === "trial" && (
+                                    <span className="px-2 py-1 text-xs bg-blue-200 text-blue-800 rounded flex items-center gap-1 w-fit">
+                                        <Clock size={14} /> Trial
+                                    </span>
+                                )}
+                                {l.tipo === "anual" && (
+                                    <span className="px-2 py-1 text-xs bg-yellow-200 text-yellow-800 rounded flex items-center gap-1 w-fit">
+                                        <Calendar size={14} /> Anual
+                                    </span>
+                                )}
+                                {l.tipo === "completa" && (
+                                    <span className="px-2 py-1 text-xs bg-purple-200 text-purple-800 rounded flex items-center gap-1 w-fit">
+                                        <Star size={14} /> Completa
+                                    </span>
+                                )}
+                            </td>
 
-      {/* TABLA */}
-      <div className="overflow-x-auto rounded shadow-sm">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700">
-              <th>Plugin</th>
-              <th>Email Tekla</th>
-              <th>Estado</th>
-              <th>Activaciones</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
+                            <td className="p-2">
+                                {l.estado === "activa" && (
+                                    <span className="text-green-700 font-semibold">Activa</span>
+                                )}
+                                {l.estado === "bloqueada" && (
+                                    <span className="text-red-700 font-semibold">Bloqueada</span>
+                                )}
+                                {l.estado === "trial" && (
+                                    <span className="text-blue-700 font-semibold">Trial</span>
+                                )}
+                                {l.estado === "expirada" && (
+                                    <span className="text-orange-700 font-semibold">Expirada</span>
+                                )}
+                            </td>
 
-          <tbody>
-            {licencias.map((l) => (
-              <tr key={l.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <td className="p-2">
+                                {l.activaciones_usadas}/{l.max_activaciones}
+                            </td>
 
-                {/* PLUGIN */}
-                <td>{l.plugin_id}</td>
+                            <td className="p-2">
+                                {l.tipo === "anual" && l.fecha_expiracion
+                                    ? new Date(l.fecha_expiracion).toLocaleDateString()
+                                    : "—"}
+                            </td>
 
-                {/* EMAIL TEKLA */}
-                <td>{l.email_tekla}</td>
-
-                {/* ESTADO */}
-                <td>
-                  {l.estado === "activa" && (
-                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                      <CheckCircle size={14} /> Activa
-                    </span>
-                  )}
-
-                  {l.estado === "trial" && (
-                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                      <Clock size={14} /> Trial
-                    </span>
-                  )}
-
-                  {l.estado === "bloqueada" && (
-                    <span className="bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                      <Ban size={14} /> Bloqueada
-                    </span>
-                  )}
-                </td>
-
-                {/* ACTIVACIONES */}
-                <td>
-                  {l.activaciones_usadas} / {l.max_activaciones}
-                </td>
-
-                {/* FECHA */}
-                <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
-
-                {/* ACCIONES */}
-                <td>
-                  <Tooltip label="Ver detalles de la licencia">
-                    <Link
-                      href={`/panel/user/licencias/${l.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    >
-                      <Eye size={16} /> Ver
-                    </Link>
-                  </Tooltip>
-                </td>
-
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
-
-    </div>
-  );
+                            <td className="p-2">
+                                <Link
+                                    href={`/panel/user/licencias/${l.id}`}
+                                    className="flex items-center gap-1 text-blue-600 hover:underline"
+                                >
+                                    <Eye size={16} /> Ver
+                                </Link>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
 }

@@ -1,5 +1,324 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
+============================================================
+
+// app/api/licencias/verificar/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req) {
+  const url = new URL(req.url);
+  const email_tekla = url.searchParams.get("email");
+  const plugin_id = url.searchParams.get("plugin_id");
+
+  // ------------------------------------------------------
+  // 1. Validaciones básicas
+  // ------------------------------------------------------
+  if (!email_tekla) {
+    return Response.json({ ok: false, motivo: "sin_email" });
+  }
+
+  if (!plugin_id) {
+    return Response.json({ ok: false, motivo: "sin_plugin" });
+  }
+
+  // ------------------------------------------------------
+  // 2. Buscar la licencia más reciente (email + plugin)
+  // ------------------------------------------------------
+  const { data: licencia, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("email_tekla", email_tekla)
+    .eq("plugin_id", plugin_id)
+    .order("fecha_creacion", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !licencia) {
+    return Response.json({ ok: false, motivo: "no_existe" });
+  }
+
+  // ------------------------------------------------------
+  // 3. Estado bloqueado
+  // ------------------------------------------------------
+  if (licencia.estado === "bloqueada") {
+    return Response.json({ ok: false, motivo: "bloqueada" });
+  }
+
+  // ------------------------------------------------------
+  // 4. Chequear expiración de soporte ANUAL (si aplica)
+  //    → Solo afecta al soporte, no a la licencia.
+  // ------------------------------------------------------
+  let soporte_activo = true;
+
+  if (licencia.fecha_soporte_hasta) {
+    const ahora = Date.now();
+    const finSoporte = new Date(licencia.fecha_soporte_hasta).getTime();
+
+    if (ahora > finSoporte) {
+      soporte_activo = false;
+    }
+  }
+
+  // ------------------------------------------------------
+  // 5. Verificar activaciones restantes
+  // ------------------------------------------------------
+  const activaciones_restantes =
+    licencia.max_activaciones - licencia.activaciones_usadas;
+
+  if (activaciones_restantes <= 0) {
+    return Response.json({ ok: false, motivo: "sin_activaciones" });
+  }
+
+  // ------------------------------------------------------
+  // 6. Respuesta limpia para el plugin Tekla
+  // ------------------------------------------------------
+  return Response.json({
+    ok: true,
+    plugin_id: licencia.plugin_id,
+    estado: licencia.estado, // "activa"
+    activaciones_usadas: licencia.activaciones_usadas,
+    max_activaciones: licencia.max_activaciones,
+    soporte_activo,
+    activaciones_restantes
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
+============================================================
+
+// /app/api/pagos/crear/route.js
+import { supabaseRoute } from "@/lib/supabaseRoute";
+
+export async function POST(req) {
+  const supabase = supabaseRoute();
+
+  try {
+    // =====================================================
+    // 1. USUARIO AUTENTICADO
+    // =====================================================
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return Response.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    // =====================================================
+    // 2. LEER DATOS DEL BODY
+    // =====================================================
+    const body = await req.json();
+    const { plugin_id, emails_tekla, payment_uid, tipo_id } = body;
+
+    if (!plugin_id || !emails_tekla?.length || !payment_uid || !tipo_id) {
+      return Response.json({ error: "Datos incompletos" }, { status: 400 });
+    }
+
+    // =====================================================
+    // 3. VALIDAR DUPLICADOS (EVITAR COMPRAR 2 VECES MISMO PLUGIN+EMAIL)
+    // =====================================================
+    const { data: licExistentes, error: checkError } = await supabase
+      .from("licencias")
+      .select("email_tekla")
+      .eq("plugin_id", plugin_id)
+      .in("email_tekla", emails_tekla);
+
+    if (checkError) {
+      return Response.json(
+        { error: "Error verificando licencias existentes" },
+        { status: 500 }
+      );
+    }
+
+    if (licExistentes?.length > 0) {
+      const repetidos = licExistentes.map((l) => l.email_tekla);
+      return Response.json(
+        {
+          error: "Ya existe una licencia para estos emails.",
+          emails: repetidos
+        },
+        { status: 400 }
+      );
+    }
+
+    // =====================================================
+    // 4. CARGAR TIPO DE LICENCIA
+    // =====================================================
+    const { data: tipoLicencia, error: tipoError } = await supabase
+      .from("licencias_tipos")
+      .select("*")
+      .eq("id", tipo_id)
+      .maybeSingle();
+
+    if (tipoError || !tipoLicencia) {
+      return Response.json(
+        { error: "Tipo de licencia no encontrado." },
+        { status: 400 }
+      );
+    }
+
+    // =====================================================
+    // 5. CREAR REGISTRO DEL PAGO
+    // =====================================================
+    const { data: pago, error: pagoError } = await supabase
+      .from("pagos")
+      .insert({
+        user_id: user.id,
+        plugin_id,
+        cantidad_licencias: emails_tekla.length,
+        estado: "pendiente",
+        fecha: new Date().toISOString(),
+        payment_uid,
+        tipo_id
+      })
+      .select()
+      .single();
+
+    if (pagoError) {
+      console.error("Error creando pago:", pagoError);
+      return Response.json(
+        { error: "Error creando el pago" },
+        { status: 500 }
+      );
+    }
+
+    // =====================================================
+    // 6. CREAR LICENCIAS (NO TRIAL → SOLO REALES)
+    // =====================================================
+    const ahora = new Date().toISOString();
+    let licencias = [];
+
+    for (const email of emails_tekla) {
+      let fecha_soporte_hasta = null;
+
+      if (tipoLicencia.nombre === "anual") {
+        const diasSoporte =
+          typeof tipoLicencia.soporte_dias === "number"
+            ? tipoLicencia.soporte_dias
+            : 365;
+
+        fecha_soporte_hasta = new Date();
+        fecha_soporte_hasta.setDate(
+          fecha_soporte_hasta.getDate() + diasSoporte
+        );
+        fecha_soporte_hasta = fecha_soporte_hasta.toISOString();
+      }
+
+      const max_activaciones =
+        tipoLicencia.nombre === "completa"
+          ? 5
+          : tipoLicencia.nombre === "anual"
+          ? 1
+          : 1;
+
+      licencias.push({
+        plugin_id,
+        user_id: user.id,
+        pago_id: pago.id,
+        email_tekla: email,
+        estado: "activa",
+        tipo_id,
+        fecha_creacion: ahora,
+        fecha_soporte_hasta,
+        fecha_expiracion: null, // no usamos trial aquí
+        activaciones_usadas: 0,
+        max_activaciones
+      });
+    }
+
+    const { error: licError } = await supabase
+      .from("licencias")
+      .insert(licencias);
+
+    if (licError) {
+      console.error("Error creando licencias:", licError);
+      return Response.json(
+        { error: "Error creando licencias" },
+        { status: 500 }
+      );
+    }
+
+    // =====================================================
+    // 7. RESPUESTA
+    // =====================================================
+    return Response.json(
+      {
+        ok: true,
+        pago: {
+          id: pago.id,
+          plugin_id,
+          cantidad_licencias: emails_tekla.length,
+          estado: "pendiente",
+          fecha: pago.fecha,
+          payment_uid,
+          tipo_id
+        },
+        mensaje:
+          "Pago registrado correctamente. Las licencias serán validadas cuando se confirme el pago."
+      },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("ERROR INTERNO PAGOS/CREAR:", err);
+    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\detalle\route.js
+============================================================
+
+// app/api/pagos/detalle/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function GET(req) {
+  const supabase = await supabaseServer();
+
+  // Usuario logueado
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) {
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  const pago_id = new URL(req.url).searchParams.get("pago_id");
+  if (!pago_id) {
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  }
+
+  // Cargar pago + licencias + precio del plugin
+  const { data: pago, error } = await supabase
+    .from("pagos")
+    .select("*, licencias(*), plugins(precio,nombre)")
+    .eq("id", pago_id)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (error || !pago) {
+    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
+  }
+
+  // Cargar facturación
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", pago.user_id)
+    .single();
+
+  return NextResponse.json({
+    ...pago,
+    facturacion: facturacion ?? null,
+  });
+}
+
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
 ============================================================
 
@@ -1025,7 +1344,7 @@ export default function AdminLicenciasPage() {
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
@@ -1043,9 +1362,8 @@ function EstadoBadge({ estado }) {
 }
 
 export default function AdminLicenciaDetallePage({ params }) {
-
-  // ❗ AQUI ESTÁ EL FIX REAL:
-  const id = params?.id;  
+  // 🔥 Next.js 16: params es una PROMESA → hay que usar use()
+  const { id } = use(params);   // ✔ FIX REAL
 
   const [licencia, setLicencia] = useState(null);
 
@@ -1053,7 +1371,7 @@ export default function AdminLicenciaDetallePage({ params }) {
     if (!id) return; // ← Evita llamadas con undefined
 
     async function load() {
-      const r = await fetch(`/api/admin/licencias/${id}`);
+      const r = await fetch(`/api/admin/licencias/${id}`, { credentials: "include" });
       const d = await r.json();
       setLicencia(d.licencia ?? null);
     }
@@ -1216,7 +1534,6 @@ export default function AdminHome() {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye } from "lucide-react";
 
 export default function AdminPagosPage() {
   const [pagos, setPagos] = useState([]);
@@ -1243,12 +1560,12 @@ export default function AdminPagosPage() {
             <th>Licencias</th>
             <th>Estado</th>
             <th>Fecha</th>
-            <th>Acciones</th>
+            <th></th>
           </tr>
         </thead>
 
         <tbody>
-          {pagos.map((p) => (
+          {pagos.map(p => (
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.user_id}</td>
@@ -1268,7 +1585,6 @@ export default function AdminPagosPage() {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
 ============================================================
@@ -1277,106 +1593,46 @@ export default function AdminPagosPage() {
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle } from "lucide-react";
 
 export default function AdminPagoDetallePage({ params }) {
-  // 🔵 Next.js 16: params es UNA PROMESA
   const { id } = use(params);
 
   const [pago, setPago] = useState(null);
+  const [facturacion, setFacturacion] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      try {
-        const r = await fetch(`/api/admin/pagos/${id}`, { credentials: "include" });
-        const d = await r.json();
-        setPago(d?.pago ?? null);
-      } catch (err) {
-        console.error("Error cargando pago admin:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
+      const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
+        credentials: "include"
+      });
 
+      const data = await r.json();
+
+      setPago(data?.pago ?? null);
+      setFacturacion(data?.facturacion ?? null);
+      setLoading(false);
+    }
     load();
   }, [id]);
 
-  if (loading) return <p className="p-6">Cargando pago...</p>;
-  if (!pago) return <p className="p-6">Pago no encontrado.</p>;
-
-  const validar = async () => {
-    await fetch(`/api/admin/pagos/validar/${pago.id}`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    // Actualizar visualmente sin recargar toda la página
-    setPago({ ...pago, estado: "validado" });
-  };
+  if (loading) return <p>Cargando…</p>;
+  if (!pago) return <p>Pago no encontrado.</p>;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
+    <div>
+      <Link href="/panel/admin/pagos">← Volver</Link>
 
-      {/* VOLVER */}
-      <Link href="/panel/admin/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
-        <ArrowLeft size={18} /> Volver
-      </Link>
+      <h2>Pago #{pago.id}</h2>
 
-      <h2 className="text-2xl font-bold">Pago #{pago.id}</h2>
+      <pre>{JSON.stringify(pago, null, 2)}</pre>
 
-      <div className="p-4 rounded bg-gray-200 dark:bg-gray-800 shadow space-y-2">
-        <p><strong>Usuario:</strong> {pago.user_email ?? "(sin email)"}</p>
-        <p><strong>Plugin:</strong> {pago.plugin_id}</p>
-        <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
-
-        <p>
-          <strong>Estado:</strong>{" "}
-          {pago.estado === "pendiente" ? (
-            <span className="text-yellow-600 font-semibold">Pendiente</span>
-          ) : (
-            <span className="text-green-600 font-semibold">Validado</span>
-          )}
-        </p>
-
-        <p><strong>Fecha:</strong> {new Date(pago.fecha).toLocaleString()}</p>
-      </div>
-
-      {pago.estado !== "validado" && (
-        <button
-          title="Validar este pago y activar sus licencias"
-          onClick={validar}
-          className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-green-700"
-        >
-          <CheckCircle size={18} /> Validar pago
-        </button>
-      )}
-
-      {/* LICENCIAS */}
-      <div className="space-y-3">
-        <h3 className="text-xl font-bold mt-6">Licencias generadas</h3>
-
-        {!pago.licencias?.length ? (
-          <p>No hay licencias para este pago.</p>
-        ) : (
-          <ul className="space-y-2">
-            {pago.licencias.map((l) => (
-              <li
-                key={l.id}
-                title="Licencia creada automáticamente al validar"
-                className="p-3 bg-gray-200 dark:bg-gray-700 rounded"
-              >
-                <strong>ID:</strong> {l.id} —  
-                <strong>Email Tekla:</strong> {l.email_tekla} —  
-                <strong>Estado:</strong> {l.estado}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <h3>Facturación</h3>
+      <pre>{JSON.stringify(facturacion, null, 2)}</pre>
     </div>
   );
 }
+
 
 
 ============================================================
@@ -2947,172 +3203,25 @@ export default async function PanelAuth({ children }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\comprar\page.jsx
 ============================================================
 
-"use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { CreditCard, MailPlus } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
-export default function ComprarPage() {
-  const router = useRouter();
+const paymentUID = useRef(uuidv4());   // se genera UNA VEZ
 
-  const [pluginId, setPluginId] = useState("");
-  const [plugins, setPlugins] = useState([]);
-  const [cantidad, setCantidad] = useState(1);
-  const [emails, setEmails] = useState([""]);
-  const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+async function comprar(e) {
+  e.preventDefault();
 
-  // ===========================
-  // CARGAR PLUGINS REALES
-  // ===========================
-  useEffect(() => {
-    async function load() {
-      try {
-        const r = await fetch("/api/user/plugins", {
-          credentials: "include",
-        });
-
-        const d = await r.json();
-        setPlugins(d.plugins ?? []);
-      } catch (err) {
-        console.error("Error cargando plugins:", err);
-        setPlugins([]);
-      }
-    }
-    load();
-  }, []);
-
-  // ===========================
-  // CAMBIA CANTIDAD → AJUSTAR EMAILS
-  // ===========================
-  function actualizarCantidad(e) {
-    const n = parseInt(e.target.value);
-    setCantidad(n);
-
-    const nuevos = [...emails];
-    while (nuevos.length < n) nuevos.push("");
-    while (nuevos.length > n) nuevos.pop();
-
-    setEmails(nuevos);
-  }
-
-  // ===========================
-  // ACTUALIZAR EMAIL INDIVIDUAL
-  // ===========================
-  function actualizarEmail(i, val) {
-    const nuevos = [...emails];
-    nuevos[i] = val;
-    setEmails(nuevos);
-  }
-
-  // ===========================
-  // ENVIAR COMPRA
-  // ===========================
-  async function comprar(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMensaje("");
-
-    const res = await fetch("/api/pagos/create", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plugin_id: pluginId,
-        emails_tekla: emails,
-      }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setMensaje("Error al procesar la compra.");
-      return;
-    }
-
-    setMensaje(
-      "Compra registrada. Revisa tu email con instrucciones para la transferencia."
-    );
-  }
-
-  return (
-    <div>
-      {/* TÍTULO */}
-      <h2 className="text-2xl font-bold mb-4">Comprar Licencias</h2>
-      <p className="mb-4">
-        Selecciona un plugin, indica cuántas licencias necesitas y escribe el email de Tekla para cada una.
-      </p>
-
-      {/* FORMULARIO */}
-      <form onSubmit={comprar} className="space-y-4">
-
-        {/* PLUGIN */}
-        <div>
-          <label className="block mb-1">Plugin</label>
-          <select
-            className="border p-2 rounded w-full"
-            value={pluginId}
-            onChange={(e) => setPluginId(e.target.value)}
-            required
-          >
-            <option value="">Seleccionar plugin…</option>
-
-            {plugins.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre} (v{p.version})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* CANTIDAD */}
-        <div>
-          <label className="block mb-1">Cantidad de licencias</label>
-          <input
-            type="number"
-            className="border p-2 rounded w-full"
-            min="1"
-            value={cantidad}
-            onChange={actualizarCantidad}
-            required
-          />
-        </div>
-
-        {/* EMAILS */}
-        <div>
-          <label className="block mb-2">Emails Tekla (uno por licencia)</label>
-
-          {emails.map((email, i) => (
-            <div key={i} className="mb-2">
-              <input
-                type="email"
-                className="flex-1 border p-2 rounded w-full"
-                placeholder={`Email Tekla #${i + 1}`}
-                value={email}
-                onChange={(e) => actualizarEmail(i, e.target.value)}
-                required
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* BOTÓN */}
-        <button
-          className="w-full bg-blue-600 text-white py-2 rounded"
-          disabled={loading}
-        >
-          {loading ? "Procesando..." : "Finalizar compra"}
-        </button>
-      </form>
-
-      {/* MENSAJE */}
-      {mensaje && (
-        <p className="mt-4 p-2 bg-green-200 text-green-800 rounded">{mensaje}</p>
-      )}
-    </div>
-  );
+  const res = await fetch("/api/pagos/crear", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plugin_id: pluginId,
+      emails_tekla: emails,
+      payment_uid: paymentUID.current
+    })
+  });
 }
+
 
 
 ============================================================
@@ -3239,235 +3348,6 @@ export default function UserLayout({ children }) {
         {children}
       </main>
 
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { KeyRound, CheckCircle, Clock, Ban, Eye } from "lucide-react";
-
-/* Tooltip PRO */
-function Tooltip({ label, children }) {
-  return (
-    <div className="relative group flex items-center">
-      {children}
-
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          pointer-events-none whitespace-nowrap
-        "
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
-
-export default function UserLicenciasPage() {
-  const [licencias, setLicencias] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/user/licencias", {
-          credentials: "include",
-        });
-
-        const data = await res.json();
-        setLicencias(data.licencias || []);
-      } catch (err) {
-        console.error("Error cargando licencias:", err);
-        setLicencias([]);
-      }
-    }
-
-    load();
-  }, []);
-
-  if (licencias === null) {
-    return <p>Cargando licencias...</p>;
-  }
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-
-      {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <KeyRound size={30} /> Mis Licencias
-      </h1>
-
-      {/* SIN LICENCIAS */}
-      {licencias.length === 0 && (
-        <p className="text-gray-500">Aún no tienes licencias activas.</p>
-      )}
-
-      {/* TABLA */}
-      <div className="overflow-x-auto rounded shadow-sm">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700">
-              <th>Plugin</th>
-              <th>Email Tekla</th>
-              <th>Estado</th>
-              <th>Activaciones</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {licencias.map((l) => (
-              <tr key={l.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-
-                {/* PLUGIN */}
-                <td>{l.plugin_id}</td>
-
-                {/* EMAIL TEKLA */}
-                <td>{l.email_tekla}</td>
-
-                {/* ESTADO */}
-                <td>
-                  {l.estado === "activa" && (
-                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                      <CheckCircle size={14} /> Activa
-                    </span>
-                  )}
-
-                  {l.estado === "trial" && (
-                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                      <Clock size={14} /> Trial
-                    </span>
-                  )}
-
-                  {l.estado === "bloqueada" && (
-                    <span className="bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-300 px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
-                      <Ban size={14} /> Bloqueada
-                    </span>
-                  )}
-                </td>
-
-                {/* ACTIVACIONES */}
-                <td>
-                  {l.activaciones_usadas} / {l.max_activaciones}
-                </td>
-
-                {/* FECHA */}
-                <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
-
-                {/* ACCIONES */}
-                <td>
-                  <Tooltip label="Ver detalles de la licencia">
-                    <Link
-                      href={`/panel/user/licencias/${l.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    >
-                      <Eye size={16} /> Ver
-                    </Link>
-                  </Tooltip>
-                </td>
-
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
-
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { use, useEffect, useState } from "react";
-import Link from "next/link";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
-
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
-
-export default function UserLicenciaDetallePage({ params }) {
-  const { id } = use(params);
-
-  const [licencia, setLicencia] = useState(null);
-  const [open, setOpen] = useState(false);
-  const [accion, setAccion] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      const r = await fetch(`/api/user/licencia?id=${id}`);
-      const d = await r.json();
-      setLicencia(d.licencia ?? null);
-    }
-    load();
-  }, [id]);
-
-  if (!licencia) return <p className="p-4">Cargando licencia...</p>;
-
-  return (
-    <div className="p-4">
-      <Link
-        href="/panel/user/licencias"
-        className="flex items-center gap-2 text-blue-600 mb-4"
-      >
-        <ArrowLeft size={18} /> Volver
-      </Link>
-
-      <h2 className="text-2xl font-bold mb-4">Licencia #{licencia.id}</h2>
-
-      <p><strong>Plugin:</strong> {licencia.plugin_nombre}</p>
-      <p><strong>Email Tekla:</strong> {licencia.email_tekla}</p>
-
-      <p>
-        <strong>Estado:</strong>{" "}
-        {licencia.estado === "pendiente" && (
-          <span className="text-yellow-500">Pendiente</span>
-        )}
-        {licencia.estado === "activa" && (
-          <span className="text-green-600">Activa</span>
-        )}
-        {licencia.estado === "trial" && (
-          <span className="text-blue-600">Trial</span>
-        )}
-        {licencia.estado === "bloqueada" && (
-          <span className="text-red-600">Bloqueada</span>
-        )}
-      </p>
-
-      <p>
-        <strong>Activaciones:</strong>{" "}
-        {licencia.activaciones_usadas} / {licencia.max_activaciones}
-      </p>
-
-      <p>
-        <strong>Creada:</strong>{" "}
-        {new Date(licencia.fecha_creacion).toLocaleString()}
-      </p>
     </div>
   );
 }

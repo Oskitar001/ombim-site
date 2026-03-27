@@ -1,55 +1,74 @@
+// /app/api/pagos/crear/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  const supabase = supabaseRoute();
+    const supabase = supabaseRoute();
 
-  // 1. Usuario real
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return Response.json({ error: "No autenticado" }, { status: 401 });
-  }
+    // 1. Usuario autenticado
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return Response.json({ error: "no_autenticado" }, { status: 401 });
+    }
 
-  const { plugin_id, emails_tekla } = await req.json();
+    const body = await req.json();
+    const { plugin_id, emails_tekla, tipo } = body;
 
-  // VALIDACIÓN
-  if (!plugin_id || !emails_tekla?.length) {
-    return Response.json({ error: "Datos incompletos" }, { status: 400 });
-  }
+    if (!plugin_id || !emails_tekla?.length || !tipo) {
+        return Response.json({ error: "faltan_datos" }, { status: 400 });
+    }
 
-  // 2. Crear el PAGO sin emails_tekla
-  const { data: pago, error } = await supabase
-    .from("pagos")
-    .insert({
-      user_id: user.id,
-      plugin_id,
-      cantidad_licencias: emails_tekla.length,
-      estado: "pendiente",
-      fecha: new Date().toISOString(),
-    })
-    .select()
-    .single();
+    // 2. Validar tipo válido
+    if (!["anual", "completa"].includes(tipo)) {
+        return Response.json({ error: "tipo_invalido" }, { status: 400 });
+    }
 
-  if (error) return Response.json({ error }, { status: 500 });
+    // 3. Comprobar duplicados de email+plugin
+    const { data: existentes } = await supabase
+        .from("licencias")
+        .select("email_tekla")
+        .eq("plugin_id", plugin_id)
+        .in("email_tekla", emails_tekla)
+        .neq("estado", "bloqueada");
 
-  // 3. Crear LICENCIAS (una por email)
-  const licencias = emails_tekla.map((email) => ({
-    plugin_id,
-    email_tekla: email,      // la asignación inicial
-    estado: "trial",         // comienzan trial
-    pago_id: pago.id,
-    user_id: user.id,
-    fecha_creacion: new Date().toISOString(),
-    activaciones_usadas: 0,
-    max_activaciones: 1
-  }));
+    if (existentes?.length > 0) {
+        return Response.json({
+            error: "ya_existe_licencia",
+            emails: existentes.map(x => x.email_tekla)
+        }, { status: 400 });
+    }
 
-  const { error: licError } = await supabase
-    .from("licencias")
-    .insert(licencias);
+    // 4. Cargar plugin → precio
+    const { data: plugin } = await supabase
+        .from("plugins")
+        .select("precio")
+        .eq("id", plugin_id)
+        .single();
 
-  if (licError) {
-    return Response.json({ error: licError }, { status: 500 });
-  }
+    const importe = (plugin?.precio ?? 0) * emails_tekla.length;
 
-  return Response.json({ ok: true, pago });
+    // 5. Crear pago
+    const { data: pago, error: pagoError } = await supabase
+        .from("pagos")
+        .insert({
+            user_id: user.id,
+            plugin_id,
+            cantidad_licencias: emails_tekla.length,
+            estado: "pendiente",
+            tipo,
+            fecha: new Date(),
+            importe
+        })
+        .select()
+        .single();
+
+    if (pagoError) {
+        console.error(pagoError);
+        return Response.json({ error: "error_creando_pago" }, { status: 500 });
+    }
+
+    return Response.json({
+        ok: true,
+        pago_id: pago.id,
+        importe
+    });
 }

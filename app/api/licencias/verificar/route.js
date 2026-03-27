@@ -6,6 +6,9 @@ export async function GET(req) {
   const email_tekla = url.searchParams.get("email");
   const plugin_id = url.searchParams.get("plugin_id");
 
+  // ------------------------------------------------------
+  // 1. Validaciones básicas
+  // ------------------------------------------------------
   if (!email_tekla) {
     return Response.json({ ok: false, motivo: "sin_email" });
   }
@@ -14,7 +17,9 @@ export async function GET(req) {
     return Response.json({ ok: false, motivo: "sin_plugin" });
   }
 
-  // Buscar licencia concreta por email + plugin
+  // ------------------------------------------------------
+  // 2. Buscar la licencia más reciente (email + plugin)
+  // ------------------------------------------------------
   const { data: licencia, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
@@ -22,28 +27,54 @@ export async function GET(req) {
     .eq("plugin_id", plugin_id)
     .order("fecha_creacion", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error || !licencia) {
     return Response.json({ ok: false, motivo: "no_existe" });
   }
 
-  // Estado bloqueado
+  // ------------------------------------------------------
+  // 3. Estado bloqueado
+  // ------------------------------------------------------
   if (licencia.estado === "bloqueada") {
     return Response.json({ ok: false, motivo: "bloqueada" });
   }
 
-  // Trial expirado
-  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1) {
-    return Response.json({ ok: false, motivo: "trial_expirado" });
+  // ------------------------------------------------------
+  // 4. Chequear expiración de soporte ANUAL (si aplica)
+  //    → Solo afecta al soporte, no a la licencia.
+  // ------------------------------------------------------
+  let soporte_activo = true;
+
+  if (licencia.fecha_soporte_hasta) {
+    const ahora = Date.now();
+    const finSoporte = new Date(licencia.fecha_soporte_hasta).getTime();
+
+    if (ahora > finSoporte) {
+      soporte_activo = false;
+    }
   }
 
-  // Respuesta limpia
+  // ------------------------------------------------------
+  // 5. Verificar activaciones restantes
+  // ------------------------------------------------------
+  const activaciones_restantes =
+    licencia.max_activaciones - licencia.activaciones_usadas;
+
+  if (activaciones_restantes <= 0) {
+    return Response.json({ ok: false, motivo: "sin_activaciones" });
+  }
+
+  // ------------------------------------------------------
+  // 6. Respuesta limpia para el plugin Tekla
+  // ------------------------------------------------------
   return Response.json({
     ok: true,
     plugin_id: licencia.plugin_id,
-    estado: licencia.estado,
+    estado: licencia.estado, // "activa"
     activaciones_usadas: licencia.activaciones_usadas,
-    max_activaciones: licencia.max_activaciones
+    max_activaciones: licencia.max_activaciones,
+    soporte_activo,
+    activaciones_restantes
   });
 }

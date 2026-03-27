@@ -3,60 +3,52 @@
 import { useState } from "react";
 
 export default function LicenciaAcciones({ id, onUpdated }) {
-  const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-  async function call(endpoint, body = {}) {
-    setLoading(true);
-
-    const res = await fetch(`/api/admin/licencias/${endpoint}`, {
-      method: "POST",
-      body: JSON.stringify({ id, ...body }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (data.error) {
-      alert(data.error);
-      return;
+    async function call(endpoint) {
+        setLoading(true);
+        const res = await fetch(`/api/admin/licencias/${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id }),
+        });
+        setLoading(false);
+        if (!res.ok) {
+            alert("Error ejecutando acción");
+            return;
+        }
+        onUpdated();
     }
 
-    onUpdated();
-  }
+    return (
+        <div className="flex flex-col gap-3 max-w-sm">
 
-  return (
-    <div className="mt-6 flex flex-wrap gap-3">
-      <button
-        className="bg-red-600 text-white px-4 py-2 rounded"
-        onClick={() => call("bloquear")}
-        disabled={loading}
-      >
-        Bloquear
-      </button>
+            <button onClick={() => call("activar")} disabled={loading}
+                className="bg-green-600 text-white px-4 py-2 rounded">
+                Activar
+            </button>
 
-      <button
-        className="bg-yellow-600 text-white px-4 py-2 rounded"
-        onClick={() => call("trial")}
-        disabled={loading}
-      >
-        Activar Trial
-      </button>
+            <button onClick={() => call("bloquear")} disabled={loading}
+                className="bg-red-600 text-white px-4 py-2 rounded">
+                Bloquear
+            </button>
 
-      <button
-        className="bg-green-600 text-white px-4 py-2 rounded"
-        onClick={() => call("ampliar")}
-        disabled={loading}
-      >
-        Ampliar 30 días
-      </button>
+            <button onClick={() => call("reset-activaciones")} disabled={loading}
+                className="bg-purple-600 text-white px-4 py-2 rounded">
+                Reset activaciones
+            </button>
 
-      <button
-        className="bg-purple-600 text-white px-4 py-2 rounded"
-        onClick={() => call("reset-activaciones")}
-        disabled={loading}
-      >
-        Reset Activaciones
-      </button>
-    </div>
-  );
+            {/* NUEVOS BOTONES */}
+            <button onClick={() => call("hacer-anual")} disabled={loading}
+                className="bg-yellow-600 text-white px-4 py-2 rounded">
+                Hacer anual
+            </button>
+
+            <button onClick={() => call("hacer-completa")} disabled={loading}
+                className="bg-indigo-600 text-white px-4 py-2 rounded">
+                Hacer completa
+            </button>
+
+        </div>
+    );
 }

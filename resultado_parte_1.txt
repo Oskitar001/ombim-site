@@ -1486,74 +1486,204 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\activar\route.js
 ============================================================
 
-// app/api/admin/licencias/route.js
+// /app/api/admin/licencias/activar/route.js
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json(admin, { status: 403 });
-  }
+export async function POST(req) {
+    const admin = await requireAdmin();
+    if (!admin.ok)
+        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
 
-  const { data, error } = await supabaseAdmin
-    .from("licencias")
-    .select("*, plugins(nombre)")
-    .order("fecha_creacion", { ascending: false });
+    const { id } = await req.json();
+    if (!id)
+        return NextResponse.json({ error: "falta_id" }, { status: 400 });
 
-  if (error) {
-    return NextResponse.json({ error: "Error DB" }, { status: 500 });
-  }
+    await supabaseAdmin
+        .from("licencias")
+        .update({ estado: "activa" })
+        .eq("id", id);
 
-  return NextResponse.json({ licencias: data ?? [] });
+    return NextResponse.json({ ok: true });
 }
 
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\bloquear\route.js
+============================================================
+
+// /app/api/admin/licencias/bloquear/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+    const admin = await requireAdmin();
+    if (!admin.ok)
+        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+
+    const { id } = await req.json();
+    if (!id)
+        return NextResponse.json({ error: "falta_id" }, { status: 400 });
+
+    await supabaseAdmin
+        .from("licencias")
+        .update({ estado: "bloqueada" })
+        .eq("id", id);
+
+    return NextResponse.json({ ok: true });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\hacer-anual\route.js
+============================================================
+
+// /app/api/admin/licencias/hacer-anual/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+    const admin = await requireAdmin();
+    if (!admin.ok) return Response.json({ error: "no_autorizado" }, { status: 403 });
+
+    const { id } = await req.json();
+    if (!id) return Response.json({ error: "falta_id" }, { status: 400 });
+
+    const exp = new Date();
+    exp.setFullYear(exp.getFullYear() + 1);
+
+    await supabaseAdmin
+        .from("licencias")
+        .update({
+            tipo: "anual",
+            max_activaciones: 1,
+            fecha_expiracion: exp.toISOString()
+        })
+        .eq("id", id);
+
+    return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\hacer-completa\route.js
+============================================================
+
+// /app/api/admin/licencias/hacer-completa/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+    const admin = await requireAdmin();
+    if (!admin.ok) return Response.json({ error: "no_autorizado" }, { status: 403 });
+
+    const { id } = await req.json();
+    if (!id) return Response.json({ error: "falta_id" }, { status: 400 });
+
+    await supabaseAdmin
+        .from("licencias")
+        .update({
+            tipo: "completa",
+            max_activaciones: 5,
+            fecha_expiracion: null
+        })
+        .eq("id", id);
+
+    return Response.json({ ok: true });
+}
+``
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\reset-activaciones\route.js
+============================================================
+
+// /app/api/admin/licencias/reset-activaciones/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+    const admin = await requireAdmin();
+    if (!admin.ok)
+        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+
+    const { id } = await req.json();
+    if (!id)
+        return NextResponse.json({ error: "falta_id" }, { status: 400 });
+
+    await supabaseAdmin
+        .from("licencias")
+        .update({ activaciones_usadas: 0 })
+        .eq("id", id);
+
+    return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\route.js
+============================================================
+
+// /app/api/admin/licencias/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+    const admin = await requireAdmin();
+    if (!admin.ok) {
+        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from("licencias")
+        .select("*, plugins(nombre)")
+        .order("fecha_creacion", { ascending: false });
+
+    if (error) {
+        console.error(error);
+        return NextResponse.json({ error: "error_db" }, { status: 500 });
+    }
+
+    return NextResponse.json({ licencias: data ?? [] });
+}
 
 
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\[id]\route.js
 ============================================================
 
+// /app/api/admin/licencias/[id]/route.js
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, ctx) {
-  // 🚨 Next 16: params ES UNA PROMESA
-  const { id } = await ctx.params;   // ← FIX REAL
+export async function GET(req, { params }) {
+    const admin = await requireAdmin();
+    if (!admin.ok)
+        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
 
-  // Cargar la licencia
-  const { data: licencia, error } = await supabaseAdmin
-    .from("licencias")
-    .select("*, plugins(nombre)")
-    .eq("id", id)
-    .maybeSingle();  // ← mejor que .single()
+    const id = params.id;
 
-  if (error) {
-    console.error("ERROR SUPABASE (licencia):", error);
-    return NextResponse.json({ error: "Error consultando la BD" }, { status: 500 });
-  }
+    const { data: licencia, error } = await supabaseAdmin
+        .from("licencias")
+        .select("*, plugins(nombre)")
+        .eq("id", id)
+        .single();
 
-  // Si no existe
-  if (!licencia) {
-    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
-  }
+    if (error || !licencia) {
+        return NextResponse.json({ error: "licencia_no_encontrada" }, { status: 404 });
+    }
 
-  // Cargar activaciones de la licencia
-  const { data: activaciones } = await supabaseAdmin
-    .from("activaciones")
-    .select("*")
-    .eq("licencia_id", id);
-
-  return NextResponse.json({
-    licencia,
-    activaciones: activaciones ?? [],
-  });
+    return NextResponse.json({ licencia });
 }
-``
 
 
 ============================================================
@@ -2320,7 +2450,7 @@ import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function POST(req) {
   const { email, password } = await req.json();
-
+  const cookieHeader = req.headers.get("cookie") ?? "";
   const response = NextResponse.json({ ok: true });
 
   const supabase = createServerClient(
@@ -2328,21 +2458,24 @@ export async function POST(req) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get: (name) => req.cookies.get(name)?.value,
-        set: (name, value, options) =>
-          response.cookies.set(name, value, {
-            ...options,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-          }),
-        remove: (name, options) =>
-          response.cookies.set(name, "", {
-            ...options,
-            maxAge: 0,
-            path: "/",
-          }),
+        get(name) {
+          const match = cookieHeader
+            .split("; ")
+            .find((c) => c.startsWith(name + "="));
+          return match ? match.split("=")[1] : undefined;
+        },
+        set(name, value, options) {
+          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
+            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
+          }`;
+          response.headers.append("Set-Cookie", cookie);
+        },
+        remove(name) {
+          response.headers.append(
+            "Set-Cookie",
+            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
+          );
+        },
       },
     }
   );
@@ -2358,12 +2491,11 @@ export async function POST(req) {
 
   const role = data.user.user_metadata?.role ?? "user";
 
-  response.cookies.set("sb-user-role", role, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  // Cookie para middleware
+  response.headers.append(
+    "Set-Cookie",
+    `sb-user-role=${role}; Path=/; SameSite=Lax`
+  );
 
   return response;
 }
@@ -2404,18 +2536,33 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function GET(req) {
+  const cookieHeader = req.headers.get("cookie") ?? "";
   const response = NextResponse.json({});
 
+  // Cliente Supabase compatible con Node 16 / Vercel
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get: (name) => req.cookies.get(name)?.value,
-        set: (name, value, options) =>
-          response.cookies.set(name, value, { ...options }),
-        remove: (name, options) =>
-          response.cookies.set(name, "", { ...options, maxAge: 0 }),
+        get(name) {
+          const match = cookieHeader
+            .split("; ")
+            .find((c) => c.startsWith(name + "="));
+          return match ? match.split("=")[1] : undefined;
+        },
+        set(name, value, options) {
+          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
+            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
+          }`;
+          response.headers.append("Set-Cookie", cookie);
+        },
+        remove(name) {
+          response.headers.append(
+            "Set-Cookie",
+            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
+          );
+        },
       },
     }
   );
@@ -3185,166 +3332,5 @@ export async function GET(req) {
   }
 
   return NextResponse.json({ licencia: data });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
-============================================================
-
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requireAdmin } from "@/lib/checkAdmin";
-
-export async function POST(req) {
-  const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-
-  const { licencia_id } = await req.json();
-  if (!licencia_id)
-    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
-
-  const { data: lic } = await supabaseAdmin
-    .from("licencias")
-    .select("id")
-    .eq("id", licencia_id)
-    .single();
-
-  if (!lic)
-    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
-
-  await supabaseAdmin.from("licencias").update({ estado: "trial" }).eq("id", licencia_id);
-
-  return NextResponse.json({ ok: true });
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\validar\route.js
-============================================================
-
-// app/api/licencias/validar/route.js
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { NextResponse } from "next/server";
-
-export const dynamic = "force-dynamic";
-
-export async function POST(req) {
-  // ============================
-  // 1. Validar payload
-  // ============================
-  let payload;
-  try {
-    payload = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "payload_invalido" });
-  }
-
-  const { email_tekla, plugin_id, hardware_id } = payload;
-
-  if (!email_tekla || !plugin_id || !hardware_id) {
-    return NextResponse.json({ ok: false, error: "faltan_datos" });
-  }
-
-  // ============================
-  // 2. Rate limit por IP
-  // ============================
-  const ip = req.headers.get("x-forwarded-for") ?? "0.0.0.0";
-  const key = `rate_${ip}`;
-
-  const rate = globalThis[key] ?? { count: 0, time: Date.now() };
-  if (Date.now() - rate.time > 60000) {
-    rate.count = 0;
-    rate.time = Date.now();
-  }
-  rate.count++;
-  globalThis[key] = rate;
-
-  if (rate.count > 30) {
-    return NextResponse.json({ ok: false, error: "rate_limit" });
-  }
-
-  // ============================
-  // 3. Buscar licencia
-  // ============================
-  const { data: licencia, error: licError } = await supabaseAdmin
-    .from("licencias")
-    .select("*")
-    .eq("email_tekla", email_tekla)
-    .eq("plugin_id", plugin_id)
-    .single();
-
-  if (licError || !licencia) {
-    return NextResponse.json({ ok: false, error: "no_existe" });
-  }
-
-  // ============================
-  // 4. Licencia bloqueada
-  // ============================
-  if (licencia.estado === "bloqueada") {
-    return NextResponse.json({ ok: false, error: "bloqueada" });
-  }
-
-  // ============================
-  // 5. Trial expirado por activaciones
-  // ============================
-  if (licencia.estado === "trial" && licencia.activaciones_usadas >= 1) {
-    return NextResponse.json({ ok: false, error: "trial_expirado" });
-  }
-
-  // ============================
-  // 6. Primera activación → guardar hardware_id
-  // ============================
-  if (!licencia.hardware_id) {
-    const { error: hardwareError } = await supabaseAdmin
-      .from("licencias")
-      .update({ hardware_id })
-      .eq("id", licencia.id);
-
-    if (hardwareError) {
-      return NextResponse.json({ ok: false, error: "error_guardar_hardware" });
-    }
-
-    // Actualizar objeto local en memoria
-    licencia.hardware_id = hardware_id;
-  }
-
-  // ============================
-  // 7. Hardware diferente → sharing detectado
-  // ============================
-  if (licencia.hardware_id && licencia.hardware_id !== hardware_id) {
-    return NextResponse.json({ ok: false, error: "hardware_diferente" });
-  }
-
-  // ============================
-  // 8. Incrementar activaciones
-  // ============================
-  const nuevasActivaciones = licencia.activaciones_usadas + 1;
-
-  const { error: activacionError } = await supabaseAdmin
-    .from("licencias")
-    .update({
-      activaciones_usadas: nuevasActivaciones,
-      ultima_activacion: new Date().toISOString()
-    })
-    .eq("id", licencia.id);
-
-  if (activacionError) {
-    return NextResponse.json({ ok: false, error: "error_activacion" });
-  }
-
-  // ============================
-  // 9. Respuesta final (DTO limpio)
-  // ============================
-  return NextResponse.json({
-    ok: true,
-    licencia: {
-      estado: licencia.estado,
-      activaciones_usadas: nuevasActivaciones,
-      max_activaciones: licencia.max_activaciones
-      // NOTA: no devolvemos fecha_expiracion porque no existe en tu BD
-    }
-  });
 }
 

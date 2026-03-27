@@ -1,5 +1,111 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
+  const { licencia_id } = await req.json();
+  if (!licencia_id)
+    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
+
+  const { data: lic } = await supabaseAdmin
+    .from("licencias")
+    .select("id")
+    .eq("id", licencia_id)
+    .single();
+
+  if (!lic)
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+
+  await supabaseAdmin.from("licencias").update({ estado: "trial" }).eq("id", licencia_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\validar\route.js
+============================================================
+
+// /app/api/licencias/validar/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export async function POST(req) {
+    let payload;
+    try {
+        payload = await req.json();
+    } catch {
+        return NextResponse.json({ ok: false, error: "json_invalido" });
+    }
+
+    const { email_tekla, plugin_id } = payload;
+
+    if (!email_tekla || !plugin_id) {
+        return NextResponse.json({ ok: false, error: "faltan_datos" });
+    }
+
+    // 1. Buscar licencia existente
+    const { data: lic, error } = await supabaseAdmin
+        .from("licencias")
+        .select("*")
+        .eq("email_tekla", email_tekla)
+        .eq("plugin_id", plugin_id)
+        .single();
+
+    if (error || !lic) {
+        return NextResponse.json({ ok: false, error: "no_existe" });
+    }
+
+    // 2. Bloqueada
+    if (lic.estado === "bloqueada") {
+        return NextResponse.json({ ok: false, error: "bloqueada" });
+    }
+
+    // 3. Licencia anual expirada
+    if (lic.tipo === "anual" && lic.fecha_expiracion) {
+        const ahora = new Date();
+        const expira = new Date(lic.fecha_expiracion);
+        if (expira < ahora) {
+            return NextResponse.json({ ok: false, error: "expirada" });
+        }
+    }
+
+    // 4. Activaciones disponibles
+    if (lic.activaciones_usadas >= lic.max_activaciones) {
+        return NextResponse.json({ ok: false, error: "sin_activaciones" });
+    }
+
+    // 5. Incrementar activaciones
+    const nuevas = lic.activaciones_usadas + 1;
+
+    await supabaseAdmin
+        .from("licencias")
+        .update({
+            activaciones_usadas: nuevas
+        })
+        .eq("id", lic.id);
+
+    // 6. Respuesta para el plugin
+    return NextResponse.json({
+        ok: true,
+        licencia: {
+            estado: lic.estado,
+            fecha_expiracion: lic.fecha_expiracion // null o fecha en anual
+        }
+    });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
 ============================================================
 
@@ -93,179 +199,75 @@ export async function GET(req) {
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  const supabase = supabaseRoute();
+    const supabase = supabaseRoute();
 
-  try {
-    // =====================================================
-    // 1. USUARIO AUTENTICADO
-    // =====================================================
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return Response.json({ error: "No autenticado" }, { status: 401 });
+    // 1. Usuario autenticado
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return Response.json({ error: "no_autenticado" }, { status: 401 });
     }
 
-    // =====================================================
-    // 2. LEER DATOS DEL BODY
-    // =====================================================
     const body = await req.json();
-    const { plugin_id, emails_tekla, payment_uid, tipo_id } = body;
+    const { plugin_id, emails_tekla, tipo } = body;
 
-    if (!plugin_id || !emails_tekla?.length || !payment_uid || !tipo_id) {
-      return Response.json({ error: "Datos incompletos" }, { status: 400 });
+    if (!plugin_id || !emails_tekla?.length || !tipo) {
+        return Response.json({ error: "faltan_datos" }, { status: 400 });
     }
 
-    // =====================================================
-    // 3. VALIDAR DUPLICADOS (EVITAR COMPRAR 2 VECES MISMO PLUGIN+EMAIL)
-    // =====================================================
-    const { data: licExistentes, error: checkError } = await supabase
-      .from("licencias")
-      .select("email_tekla")
-      .eq("plugin_id", plugin_id)
-      .in("email_tekla", emails_tekla);
-
-    if (checkError) {
-      return Response.json(
-        { error: "Error verificando licencias existentes" },
-        { status: 500 }
-      );
+    // 2. Validar tipo válido
+    if (!["anual", "completa"].includes(tipo)) {
+        return Response.json({ error: "tipo_invalido" }, { status: 400 });
     }
 
-    if (licExistentes?.length > 0) {
-      const repetidos = licExistentes.map((l) => l.email_tekla);
-      return Response.json(
-        {
-          error: "Ya existe una licencia para estos emails.",
-          emails: repetidos
-        },
-        { status: 400 }
-      );
+    // 3. Comprobar duplicados de email+plugin
+    const { data: existentes } = await supabase
+        .from("licencias")
+        .select("email_tekla")
+        .eq("plugin_id", plugin_id)
+        .in("email_tekla", emails_tekla)
+        .neq("estado", "bloqueada");
+
+    if (existentes?.length > 0) {
+        return Response.json({
+            error: "ya_existe_licencia",
+            emails: existentes.map(x => x.email_tekla)
+        }, { status: 400 });
     }
 
-    // =====================================================
-    // 4. CARGAR TIPO DE LICENCIA
-    // =====================================================
-    const { data: tipoLicencia, error: tipoError } = await supabase
-      .from("licencias_tipos")
-      .select("*")
-      .eq("id", tipo_id)
-      .maybeSingle();
+    // 4. Cargar plugin → precio
+    const { data: plugin } = await supabase
+        .from("plugins")
+        .select("precio")
+        .eq("id", plugin_id)
+        .single();
 
-    if (tipoError || !tipoLicencia) {
-      return Response.json(
-        { error: "Tipo de licencia no encontrado." },
-        { status: 400 }
-      );
-    }
+    const importe = (plugin?.precio ?? 0) * emails_tekla.length;
 
-    // =====================================================
-    // 5. CREAR REGISTRO DEL PAGO
-    // =====================================================
+    // 5. Crear pago
     const { data: pago, error: pagoError } = await supabase
-      .from("pagos")
-      .insert({
-        user_id: user.id,
-        plugin_id,
-        cantidad_licencias: emails_tekla.length,
-        estado: "pendiente",
-        fecha: new Date().toISOString(),
-        payment_uid,
-        tipo_id
-      })
-      .select()
-      .single();
+        .from("pagos")
+        .insert({
+            user_id: user.id,
+            plugin_id,
+            cantidad_licencias: emails_tekla.length,
+            estado: "pendiente",
+            tipo,
+            fecha: new Date(),
+            importe
+        })
+        .select()
+        .single();
 
     if (pagoError) {
-      console.error("Error creando pago:", pagoError);
-      return Response.json(
-        { error: "Error creando el pago" },
-        { status: 500 }
-      );
+        console.error(pagoError);
+        return Response.json({ error: "error_creando_pago" }, { status: 500 });
     }
 
-    // =====================================================
-    // 6. CREAR LICENCIAS (NO TRIAL → SOLO REALES)
-    // =====================================================
-    const ahora = new Date().toISOString();
-    let licencias = [];
-
-    for (const email of emails_tekla) {
-      let fecha_soporte_hasta = null;
-
-      if (tipoLicencia.nombre === "anual") {
-        const diasSoporte =
-          typeof tipoLicencia.soporte_dias === "number"
-            ? tipoLicencia.soporte_dias
-            : 365;
-
-        fecha_soporte_hasta = new Date();
-        fecha_soporte_hasta.setDate(
-          fecha_soporte_hasta.getDate() + diasSoporte
-        );
-        fecha_soporte_hasta = fecha_soporte_hasta.toISOString();
-      }
-
-      const max_activaciones =
-        tipoLicencia.nombre === "completa"
-          ? 5
-          : tipoLicencia.nombre === "anual"
-          ? 1
-          : 1;
-
-      licencias.push({
-        plugin_id,
-        user_id: user.id,
-        pago_id: pago.id,
-        email_tekla: email,
-        estado: "activa",
-        tipo_id,
-        fecha_creacion: ahora,
-        fecha_soporte_hasta,
-        fecha_expiracion: null, // no usamos trial aquí
-        activaciones_usadas: 0,
-        max_activaciones
-      });
-    }
-
-    const { error: licError } = await supabase
-      .from("licencias")
-      .insert(licencias);
-
-    if (licError) {
-      console.error("Error creando licencias:", licError);
-      return Response.json(
-        { error: "Error creando licencias" },
-        { status: 500 }
-      );
-    }
-
-    // =====================================================
-    // 7. RESPUESTA
-    // =====================================================
-    return Response.json(
-      {
+    return Response.json({
         ok: true,
-        pago: {
-          id: pago.id,
-          plugin_id,
-          cantidad_licencias: emails_tekla.length,
-          estado: "pendiente",
-          fecha: pago.fecha,
-          payment_uid,
-          tipo_id
-        },
-        mensaje:
-          "Pago registrado correctamente. Las licencias serán validadas cuando se confirme el pago."
-      },
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error("ERROR INTERNO PAGOS/CREAR:", err);
-    return Response.json({ error: "Error interno del servidor" }, { status: 500 });
-  }
+        pago_id: pago.id,
+        importe
+    });
 }
 
 
@@ -409,50 +411,69 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\route.js
 ============================================================
 
+// /app/api/pagos/validar/route.js
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-  const { pago_id } = await req.json();
+    const { pago_id, emails_tekla } = await req.json();
 
-  // 1. Obtener pago
-  const { data: pago, error } = await supabaseAdmin
-    .from("pagos")
-    .select("*")
-    .eq("id", pago_id)
-    .single();
+    if (!pago_id || !emails_tekla?.length) {
+        return Response.json({ error: "faltan_datos" }, { status: 400 });
+    }
 
-  if (error || !pago) {
-    return Response.json({ error: "Pago no encontrado" }, { status: 404 });
-  }
+    // 1. Obtener pago
+    const { data: pago } = await supabaseAdmin
+        .from("pagos")
+        .select("*")
+        .eq("id", pago_id)
+        .single();
 
-  // 2. Crear licencias por cada email tekla
-  const licencias = pago.emails_tekla.map(email => ({
-    plugin_id: pago.plugin_id,
-    email_tekla: email,
-    estado: "activa",
-    max_activaciones: 1,
-    activaciones_usadas: 0,
-    fecha_creacion: new Date().toISOString(),
-    pago_id: pago_id
-  }));
+    if (!pago) {
+        return Response.json({ error: "pago_no_encontrado" }, { status: 404 });
+    }
 
-  const { error: licenciasError } = await supabaseAdmin
-    .from("licencias")
-    .insert(licencias);
+    // 2. Config tipo
+    let max = pago.tipo === "completa" ? 5 : 1;
+    let fechaExp = null;
 
-  if (licenciasError) {
-    return Response.json({ error: "Error creando licencias" }, { status: 500 });
-  }
+    if (pago.tipo === "anual") {
+        const f = new Date();
+        f.setFullYear(f.getFullYear() + 1);
+        fechaExp = f.toISOString();
+    }
 
-  // 3. Cambiar estado del pago
-  await supabaseAdmin
-    .from("pagos")
-    .update({ estado: "validado" })
-    .eq("id", pago_id);
+    const ahora = new Date().toISOString();
 
-  // 4. TODO: enviar email al usuario notificando activación
+    // 3. Crear licencias
+    const licencias = emails_tekla.map(email => ({
+        pago_id,
+        plugin_id: pago.plugin_id,
+        user_id: pago.user_id,
+        email_tekla: email,
+        tipo: pago.tipo,
+        estado: "activa",
+        max_activaciones: max,
+        activaciones_usadas: 0,
+        fecha_creacion: ahora,
+        fecha_expiracion: fechaExp
+    }));
 
-  return Response.json({ ok: true });
+    const { error: licError } = await supabaseAdmin
+        .from("licencias")
+        .insert(licencias);
+
+    if (licError) {
+        console.error(licError);
+        return Response.json({ error: "error_creando_licencias" }, { status: 500 });
+    }
+
+    // 4. Marcar pago como aprobado
+    await supabaseAdmin
+        .from("pagos")
+        .update({ estado: "aprobado" })
+        .eq("id", pago_id);
+
+    return Response.json({ ok: true });
 }
 
 
@@ -460,83 +481,89 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
 ============================================================
 
-// app/api/plugin/download/route.js
+// /app/api/plugin/download/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
-  const supabase = await supabaseServer();
+    const supabase = await supabaseServer();
 
-  // Usuario autenticado
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+    // Usuario logueado
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+        return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
+    }
 
-  // Obtener plugin_id
-  const plugin_id = new URL(req.url).searchParams.get("plugin_id");
-  if (!plugin_id) {
-    return NextResponse.json({ error: "Falta plugin_id" }, { status: 400 });
-  }
+    const user_id = userData.user.id;
 
-  // Obtener plugin
-  const { data: plugin, error } = await supabaseAdmin
-    .from("plugins")
-    .select("archivo_url, precio")
-    .eq("id", plugin_id)
-    .single();
+    // plugin_id
+    const plugin_id = new URL(req.url).searchParams.get("plugin_id");
+    if (!plugin_id) {
+        return NextResponse.json({ error: "falta_plugin_id" }, { status: 400 });
+    }
 
-  if (error || !plugin?.archivo_url) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
-  }
+    // Plugin
+    const { data: plugin } = await supabaseAdmin
+        .from("plugins")
+        .select("archivo_url, precio")
+        .eq("id", plugin_id)
+        .single();
 
-  // ¿Tiene el usuario un pago validado?
-  const { data: pagoValido } = await supabase
-    .from("pagos")
-    .select("id")
-    .eq("plugin_id", plugin_id)
-    .eq("user_id", userData.user.id)
-    .eq("estado", "validado")
-    .maybeSingle();
+    if (!plugin) {
+        return NextResponse.json({ error: "plugin_no_encontrado" }, { status: 404 });
+    }
 
-  const esTrial = !pagoValido;
+    // Licencia FULL
+    const { data: lic } = await supabaseAdmin
+        .from("licencias")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("plugin_id", plugin_id)
+        .eq("estado", "activa")
+        .maybeSingle();
 
-  // Registrar descarga
-  await supabase.from("descargas").insert({
-    user_id: userData.user.id,
-    plugin_id,
-    fecha: new Date().toISOString(),
-  });
+    let trial = true;
 
-  // URL firmada segura desde STORAGE
-  const { data: signed } = await supabaseAdmin.storage
-    .from("plugins")
-    .createSignedUrl(plugin.archivo_url, 60); // 60s
+    if (lic) {
+        if (lic.tipo === "completa") trial = false;
+        if (lic.tipo === "anual" && lic.fecha_expiracion) {
+            if (new Date(lic.fecha_expiracion) > new Date()) trial = false;
+        }
+    }
 
-  if (!signed) {
-    return NextResponse.json(
-      { error: "No se pudo generar enlace seguro" },
-      { status: 500 }
-    );
-  }
+    // Rutas en bucket
+    const filePath = trial
+        ? `trial/${plugin_id}.tsep`
+        : plugin.archivo_url;
 
-  // JSON si es fetch
-  const wantsJSON = req.headers.get("accept")?.includes("application/json");
+    // Firmar URL
+    const { data: signed } = await supabaseAdmin.storage
+        .from("plugins")
+        .createSignedUrl(filePath, 60);
 
-  if (wantsJSON) {
-    return NextResponse.json({
-      ok: true,
-      trial: esTrial,
-      mensaje: esTrial
-        ? "Descarga en modo TRIAL registrada."
-        : "Descarga completa registrada.",
-      url: signed.signedUrl,
+    if (!signed?.signedUrl) {
+        return NextResponse.json({ error: "no_se_puede_firmar" }, { status: 500 });
+    }
+
+    // Registrar descarga
+    await supabase.from("descargas").insert({
+        user_id,
+        plugin_id,
+        fecha: new Date().toISOString()
     });
-  }
 
-  // Navegación normal → redirigir al archivo firmado
-  return NextResponse.redirect(signed.signedUrl);
+    // JSON o redirección
+    const wantsJSON = req.headers.get("accept")?.includes("application/json");
+    if (wantsJSON) {
+        return NextResponse.json({
+            ok: true,
+            trial,
+            url: signed.signedUrl
+        });
+    }
+
+    return NextResponse.redirect(signed.signedUrl);
 }
 
 
@@ -704,46 +731,43 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencias\route.js
 ============================================================
 
-// app/api/user/licencias/route.js
+// /app/api/user/licencias/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function GET() {
-  const supabase = supabaseRoute();
+    const supabase = supabaseRoute();
 
-  // Usuario logueado
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return Response.json({ licencias: [] }, { status: 401 });
-  }
+    if (!user) {
+        return Response.json({ licencias: [] }, { status: 401 });
+    }
 
-  // Licencias del usuario
-  const { data, error } = await supabase
-    .from("licencias")
-    .select("id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)")
-    .eq("user_id", user.id)
-    .order("fecha_creacion", { ascending: false });
+    const { data, error } = await supabase
+        .from("licencias")
+        .select("*, plugins(nombre)")
+        .eq("user_id", user.id)
+        .order("fecha_creacion", { ascending: false });
 
-  if (error || !data) {
-    return Response.json({ licencias: [] });
-  }
+    if (error || !data) {
+        return Response.json({ licencias: [] });
+    }
 
-  const licencias = data.map((l) => ({
-    id: l.id,
-    email_tekla: l.email_tekla,
-    plugin_id: l.plugin_id,
-    plugin_nombre: l.plugins?.nombre ?? "",
-    estado: l.estado,
-    activaciones_usadas: l.activaciones_usadas,
-    max_activaciones: l.max_activaciones,
-    fecha_creacion: l.fecha_creacion,
-  }));
+    const licencias = data.map(l => ({
+        id: l.id,
+        email_tekla: l.email_tekla,
+        plugin_id: l.plugin_id,
+        plugin_nombre: l.plugins?.nombre ?? "",
+        estado: l.estado,
+        tipo: l.tipo,
+        activaciones_usadas: l.activaciones_usadas,
+        max_activaciones: l.max_activaciones,
+        fecha_creacion: l.fecha_creacion,
+        fecha_expiracion: l.fecha_expiracion
+    }));
 
-  return Response.json({ licencias });
+    return Response.json({ licencias });
 }
-
 
 
 ============================================================
@@ -1249,92 +1273,67 @@ export default function AdminLayout({ children }) {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Ticket, CheckCircle, Ban, RefreshCw, Clock, Eye } from "lucide-react";
+import { Ticket, Eye } from "lucide-react";
 
 export default function AdminLicenciasPage() {
-  const [licencias, setLicencias] = useState([]);
+    const [licencias, setLicencias] = useState([]);
 
-  useEffect(() => {
-    async function load() {
-      const r = await fetch("/api/admin/licencias", {
-        credentials: "include",
-      });
-      const d = await r.json();
-      setLicencias(d.licencias ?? []);
-    }
-    load();
-  }, []);
+    useEffect(() => {
+        async function load() {
+            const r = await fetch("/api/admin/licencias", { credentials: "include" });
+            const d = await r.json();
+            setLicencias(d.licencias ?? []);
+        }
+        load();
+    }, []);
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Ticket size={28} /> Licencias
-      </h1>
+    return (
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Ticket size={28} /> Licencias
+            </h1>
 
-      <div className="overflow-x-auto shadow rounded">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-              <th>ID</th>
-              <th>Plugin</th>
-              <th>Email Tekla</th>
-              <th>Estado</th>
-              <th>Activaciones</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
+            <div className="overflow-x-auto shadow rounded">
+                <table className="min-w-full border border-gray-300 dark:border-gray-700">
+                    <thead>
+                        <tr className="bg-gray-200 dark:bg-gray-700 text-left">
+                            <th className="p-2">Email</th>
+                            <th className="p-2">Plugin</th>
+                            <th className="p-2">Tipo</th>
+                            <th className="p-2">Estado</th>
+                            <th className="p-2">Activaciones</th>
+                            <th className="p-2">Expira</th>
+                            <th className="p-2"></th>
+                        </tr>
+                    </thead>
 
-          <tbody>
-            {licencias.map((l) => (
-              <tr
-                key={l.id}
-                className="border-b border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td>{l.id}</td>
-                <td>{l.plugin_id}</td>
-                <td>{l.email_tekla}</td>
-
-                {/* ESTADO */}
-                <td>
-                  {l.estado === "activa" && (
-                    <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-semibold flex items-center gap-1 w-fit">
-                      <CheckCircle size={14} /> Activa
-                    </span>
-                  )}
-                  {l.estado === "trial" && (
-                    <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold flex items-center gap-1 w-fit">
-                      <Clock size={14} /> Trial
-                    </span>
-                  )}
-                  {l.estado === "bloqueada" && (
-                    <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-semibold flex items-center gap-1 w-fit">
-                      <Ban size={14} /> Bloqueada
-                    </span>
-                  )}
-                </td>
-
-                <td>
-                  {l.activaciones_usadas}/{l.max_activaciones}
-                </td>
-
-                <td>{new Date(l.fecha_creacion).toLocaleString()}</td>
-
-                <td>
-                  <Link
-                    href={`/panel/admin/licencias/${l.id}`}
-                    className="text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    <Eye size={16} /> Ver
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+                    <tbody>
+                        {licencias.map((l) => (
+                            <tr key={l.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <td className="p-2">{l.email_tekla}</td>
+                                <td className="p-2">{l.plugins?.nombre ?? l.plugin_id}</td>
+                                <td className="p-2">{l.tipo}</td>
+                                <td className="p-2">{l.estado}</td>
+                                <td className="p-2">{l.activaciones_usadas}/{l.max_activaciones}</td>
+                                <td className="p-2">
+                                  {l.fecha_expiracion
+                                    ? new Date(l.fecha_expiracion).toLocaleDateString()
+                                    : "—"}
+                                </td>
+                                <td className="p-2">
+                                    <Link 
+                                      href={`/panel/admin/licencias/${l.id}`}
+                                      className="text-blue-600 flex items-center gap-1">
+                                        <Eye size={16} /> Ver
+                                    </Link>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 }
 
 
@@ -1345,100 +1344,178 @@ export default function AdminLicenciasPage() {
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
 import Link from "next/link";
-
-function EstadoBadge({ estado }) {
-  if (estado === "activa")
-    return <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-semibold">Activa</span>;
-
-  if (estado === "trial")
-    return <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold">Trial</span>;
-
-  if (estado === "bloqueada")
-    return <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-semibold">Bloqueada</span>;
-
-  return <span className="px-2 py-1 bg-gray-200 text-gray-800 rounded text-xs font-semibold">—</span>;
-}
+import {
+    ArrowLeft,
+    KeyRound,
+    CheckCircle,
+    Ban,
+    RefreshCw,
+    Calendar,
+    Star
+} from "lucide-react";
 
 export default function AdminLicenciaDetallePage({ params }) {
-  // 🔥 Next.js 16: params es una PROMESA → hay que usar use()
-  const { id } = use(params);   // ✔ FIX REAL
+    // Next.js 16 fix (params es Promise)
+    const { id } = use(params);
 
-  const [licencia, setLicencia] = useState(null);
+    const [licencia, setLicencia] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!id) return; // ← Evita llamadas con undefined
+    useEffect(() => {
+        if (!id) return;
 
-    async function load() {
-      const r = await fetch(`/api/admin/licencias/${id}`, { credentials: "include" });
-      const d = await r.json();
-      setLicencia(d.licencia ?? null);
+        async function load() {
+            const r = await fetch(`/api/admin/licencias/${id}`, {
+                credentials: "include",
+            });
+            const d = await r.json();
+            setLicencia(d.licencia ?? null);
+            setLoading(false);
+        }
+        load();
+    }, [id]);
+
+    if (!id) return <p>ID inválido</p>;
+    if (loading) return <p>Cargando licencia…</p>;
+    if (!licencia) return <p>Licencia no encontrada</p>;
+
+    async function accion(endpoint) {
+        await fetch(`/api/admin/licencias/${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: licencia.id }),
+        });
+        location.reload();
     }
 
-    load();
-  }, [id]);
+    return (
+        <div className="space-y-6 p-4">
+            <Link
+                href="/panel/admin/licencias"
+                className="text-blue-600 hover:underline flex items-center gap-1"
+            >
+                <ArrowLeft size={20} /> Volver
+            </Link>
 
-  if (!id) return <p className="p-4">ID no válido</p>;
-  if (!licencia) return <p className="p-4">Cargando licencia...</p>;
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+                <KeyRound size={28} /> Licencia #{licencia.id}
+            </h1>
 
-  async function accion(tipo) {
-    const endpoint = {
-      activar: "/api/licencias/activar",
-      trial: "/api/licencias/trial",
-      bloquear: "/api/licencias/bloquear",
-      reset: "/api/licencias/reset-activaciones",
-    }[tipo];
+            {/* DATOS DE LA LICENCIA */}
+            <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow space-y-3">
+                <p>
+                    <strong>Plugin:</strong> {licencia.plugins?.nombre ?? licencia.plugin_id}
+                </p>
 
-    await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ licencia_id: licencia.id }),
-    });
+                <p>
+                    <strong>Email Tekla:</strong> {licencia.email_tekla}
+                </p>
 
-    location.reload();
-  }
+                <p>
+                    <strong>Tipo:</strong>{" "}
+                    {licencia.tipo === "anual" && (
+                        <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            <Calendar size={14} /> Anual
+                        </span>
+                    )}
+                    {licencia.tipo === "completa" && (
+                        <span className="px-2 py-1 bg-purple-200 text-purple-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            <Star size={14} /> Completa
+                        </span>
+                    )}
+                    {licencia.tipo === "trial" && (
+                        <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            Trial
+                        </span>
+                    )}
+                </p>
 
-  return (
-    <div className="space-y-6 p-4">
+                <p>
+                    <strong>Estado:</strong>{" "}
+                    {licencia.estado === "activa" && (
+                        <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            <CheckCircle size={14} /> Activa
+                        </span>
+                    )}
+                    {licencia.estado === "bloqueada" && (
+                        <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            <Ban size={14} /> Bloqueada
+                        </span>
+                    )}
+                    {licencia.estado === "trial" && (
+                        <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            Trial
+                        </span>
+                    )}
+                    {licencia.estado === "expirada" && (
+                        <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded text-xs font-semibold inline-flex items-center gap-1">
+                            Expirada
+                        </span>
+                    )}
+                </p>
 
-      <Link href="/panel/admin/licencias" className="text-blue-600 hover:underline flex items-center gap-1">
-        <ArrowLeft size={20} /> Volver
-      </Link>
+                <p>
+                    <strong>Activaciones:</strong>{" "}
+                    {licencia.activaciones_usadas}/{licencia.max_activaciones}
+                </p>
 
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <KeyRound size={28} /> Licencia #{licencia.id}
-      </h1>
+                {/* NUEVO: Expiración solo para anual */}
+                <p>
+                    <strong>Expira:</strong>{" "}
+                    {licencia.fecha_expiracion
+                        ? new Date(licencia.fecha_expiracion).toLocaleString()
+                        : "—"}
+                </p>
 
-      <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow space-y-3">
-        <p><strong>Plugin:</strong> {licencia.plugin_id}</p>
-        <p><strong>Email Tekla:</strong> {licencia.email_tekla}</p>
-        <p><strong>Estado:</strong> <EstadoBadge estado={licencia.estado} /></p>
-        <p><strong>Activaciones:</strong> {licencia.activaciones_usadas}/{licencia.max_activaciones}</p>
-        <p><strong>Creada:</strong> {new Date(licencia.fecha_creacion).toLocaleString()}</p>
-      </div>
+                <p>
+                    <strong>Creada:</strong>{" "}
+                    {new Date(licencia.fecha_creacion).toLocaleString()}
+                </p>
+            </div>
 
-      <div className="flex flex-col gap-3 max-w-sm">
-        <button onClick={() => accion("activar")} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2">
-          <CheckCircle size={18} /> Activar
-        </button>
+            {/* ACCIONES */}
+            <div className="flex flex-col gap-3 max-w-sm">
+                <button
+                    onClick={() => accion("activar")}
+                    className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"
+                >
+                    <CheckCircle size={18} /> Activar
+                </button>
 
-        <button onClick={() => accion("trial")} className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2">
-          <Clock size={18} /> Trial
-        </button>
+                <button
+                    onClick={() => accion("bloquear")}
+                    className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2"
+                >
+                    <Ban size={18} /> Bloquear
+                </button>
 
-        <button onClick={() => accion("bloquear")} className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2">
-          <Ban size={18} /> Bloquear
-        </button>
+                <button
+                    onClick={() => accion("reset-activaciones")}
+                    className="bg-purple-600 text-white px-4 py-2 rounded flex items-center gap-2"
+                >
+                    <RefreshCw size={18} /> Reset activaciones
+                </button>
 
-        <button onClick={() => accion("reset")} className="bg-purple-600 text-white px-4 py-2 rounded flex items-center gap-2">
-          <RefreshCw size={18} /> Reset activaciones
-        </button>
-      </div>
+                {/* NUEVOS BOTONES */}
+                <button
+                    onClick={() => accion("hacer-anual")}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded flex items-center gap-2"
+                >
+                    <Calendar size={18} /> Hacer anual
+                </button>
 
-    </div>
-  );
+                <button
+                    onClick={() => accion("hacer-completa")}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center gap-2"
+                >
+                    <Star size={18} /> Hacer completa
+                </button>
+            </div>
+        </div>
+    );
 }
+
 
 
 ============================================================
@@ -2285,136 +2362,132 @@ export default function PluginDetalleAdmin({ params }) {
 ============================================================
 
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, Pencil, Trash2, Eye } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
-
 export default function AdminUsuariosPage() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [me, setMe] = useState(null);
+    const [usuarios, setUsuarios] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [me, setMe] = useState(null);
 
-  // Obtener lista de usuarios
-  useEffect(() => {
-    async function load() {
-      const r = await fetch("/api/admin/usuarios", {
-        credentials: "include"
-      });
-      const d = await r.json();
-      setUsuarios(d.users ?? []);
-    }
-    load();
-  }, []);
+    // Obtener lista de usuarios
+    useEffect(() => {
+        async function load() {
+            const r = await fetch("/api/admin/usuarios", { credentials: "include" });
+            const d = await r.json();
+            setUsuarios(d.users ?? []);
+        }
+        load();
+    }, []);
 
-  // Obtener datos del admin actual (para evitar autodestruirse)
-  useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => setMe(d.user ?? null));
-  }, []);
+    // Obtener datos del admin actual
+    useEffect(() => {
+        fetch("/api/auth/me", { credentials: "include" })
+            .then((r) => r.json())
+            .then((d) => setMe(d.user ?? null));
+    }, []);
 
-  return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Usuarios</h2>
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">Usuarios</h2>
 
-      <table className="w-full">
-        <tr>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Último login</th>
-          <th>Acciones</th>
-        </tr>
+            <table className="w-full border border-gray-300 dark:border-gray-700">
+                <thead>
+                    <tr className="bg-gray-200 dark:bg-gray-700">
+                        <th className="p-2">Email</th>
+                        <th className="p-2">Rol</th>
+                        <th className="p-2">Último login</th>
+                        <th className="p-2">Acciones</th>
+                    </tr>
+                </thead>
 
-        {usuarios.map((u) => (
-          <tr key={u.id}>
-            {/* EMAIL */}
-            <td>{u.email}</td>
+                <tbody>
+                    {usuarios.map((u) => (
+                        <tr key={u.id} className="border-b dark:border-gray-700">
+                            <td className="p-2">{u.email}</td>
 
-            {/* ROL */}
-            <td>{u.user_metadata?.role ?? "user"}</td>
+                            <td className="p-2">{u.user_metadata?.role ?? "user"}</td>
 
-            {/* ULTIMO LOGIN */}
-            <td>
-              {u.last_sign_in_at
-                ? new Date(u.last_sign_in_at).toLocaleString()
-                : "—"}
-            </td>
+                            <td className="p-2">
+                                {u.last_sign_in_at
+                                    ? new Date(u.last_sign_in_at).toLocaleString()
+                                    : "—"}
+                            </td>
 
-            {/* ACCIONES */}
-            <td className="flex gap-4">
+                            <td className="flex gap-4 p-2">
 
-              {/* VER */}
-              <Link href={`/panel/admin/usuarios/${u.id}`}>
-                <Eye className="text-blue-500 hover:text-blue-700" />
-              </Link>
+                                <Link href={`/panel/admin/usuarios/${u.id}`}>
+                                    <Eye className="text-blue-500 hover:text-blue-700" />
+                                </Link>
 
-              {/* CAMBIAR ROL — NO permitirse a sí mismo */}
-              {me && me.id !== u.id && (
-                <button
-                  onClick={async () => {
-                    await fetch("/api/admin/usuarios/editar", {
-                      method: "POST",
-                      credentials: "include",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        id: u.id,
-                        role: u.user_metadata?.role === "admin" ? "user" : "admin"
-                      })
+                                {me && me.id !== u.id && (
+                                    <>
+                                        <button
+                                            onClick={async () => {
+                                                await fetch("/api/admin/usuarios/editar", {
+                                                    method: "POST",
+                                                    credentials: "include",
+                                                    headers: {
+                                                        "Content-Type": "application/json",
+                                                    },
+                                                    body: JSON.stringify({
+                                                        id: u.id,
+                                                        role:
+                                                            u.user_metadata?.role === "admin"
+                                                                ? "user"
+                                                                : "admin",
+                                                    }),
+                                                });
+                                                location.reload();
+                                            }}
+                                        >
+                                            <Pencil className="text-yellow-500 hover:text-yellow-600" />
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setSelectedUser(u.id);
+                                                setOpen(true);
+                                            }}
+                                        >
+                                            <Trash2 className="text-red-600 hover:text-red-800" />
+                                        </button>
+                                    </>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+
+                    {usuarios.length === 0 && (
+                        <tr>
+                            <td colSpan={4} className="p-4 text-center opacity-70">
+                                No hay usuarios.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+
+            <ConfirmDialog
+                open={open}
+                onCancel={() => setOpen(false)}
+                onConfirm={async () => {
+                    await fetch("/api/admin/usuarios/borrar", {
+                        method: "POST",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: selectedUser }),
                     });
+                    setOpen(false);
                     location.reload();
-                  }}
-                >
-                  <Pencil className="text-yellow-500 hover:text-yellow-600" />
-                </button>
-              )}
-
-              {/* BORRAR — NO permitirse a sí mismo */}
-              {me && me.id !== u.id && (
-                <button
-                  onClick={() => {
-                    setSelectedUser(u.id);
-                    setOpen(true);
-                  }}
-                >
-                  <Trash2 className="text-red-600 hover:text-red-800" />
-                </button>
-              )}
-            </td>
-          </tr>
-        ))}
-      </table>
-
-      {/* CONFIRMAR BORRADO */}
-      <ConfirmDialog
-        open={open}
-        onCancel={() => setOpen(false)}
-        onConfirm={async () => {
-          await fetch("/api/admin/usuarios/borrar", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: selectedUser })
-          });
-
-          setOpen(false);
-          location.reload();
-        }}
-      />
-    </div>
-  );
+                }}
+            />
+        </div>
+    );
 }
 
 
@@ -3294,60 +3367,6 @@ export default function DescargasUserPage() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
-============================================================
-
-import Link from "next/link";
-import { Home, KeyRound, CreditCard, Download } from "lucide-react";
-
-export default function UserLayout({ children }) {
-  return (
-    <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100">
-
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-gray-200 dark:bg-gray-800 p-6 shadow-xl flex flex-col gap-6">
-
-        <div className="text-2xl font-bold tracking-tight">
-          Panel Usuario
-        </div>
-
-        <nav className="flex flex-col gap-3">
-
-          <Link href="/panel/user" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <Home size={20} /> Inicio
-          </Link>
-
-          <Link href="/panel/user/licencias" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <KeyRound size={20} /> Mis licencias
-          </Link>
-
-          <Link href="/panel/user/pagos" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <CreditCard size={20} /> Mis pagos
-          </Link>
-
-          <Link href="/panel/user/descargas" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <Download size={20} /> Descargas
-          </Link>
-
-          <Link href="/" className="mt-6 text-sm opacity-80 hover:opacity-100">
-            ← Volver a ombim.site
-          </Link>
-
-        </nav>
-
-      </aside>
-
-      {/* CONTENIDO */}
-      <main className="flex-1 p-10">
-        {children}
-      </main>
-
     </div>
   );
 }

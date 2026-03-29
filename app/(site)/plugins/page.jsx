@@ -11,12 +11,10 @@ export default function PluginsPage() {
   useEffect(() => {
     async function load() {
       try {
-        // Plugins
-        const r1 = await fetch("/api/plugin", { cache: "no-store" });
+        const r1 = await fetch("/api/plugins", { cache: "no-store" });
         const d1 = await r1.json();
         setPlugins(Array.isArray(d1) ? d1 : []);
 
-        // Usuario
         const r2 = await fetch("/api/auth/me");
         const d2 = await r2.json();
         setUser(d2.user ?? null);
@@ -38,58 +36,71 @@ export default function PluginsPage() {
       {!plugins.length && <p>No hay plugins disponibles todavía.</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {plugins.map((p) => (
-          <div
-            key={p.id}
-            className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg shadow"
-          >
-            {/* Imagen */}
-            {p.imagen_url && (
-              <img
-                src={p.imagen_url}
-                alt={p.nombre}
-                className="w-full h-40 object-cover rounded mb-3"
-              />
-            )}
+        {plugins.map((p) => {
+          // ⭐ Lógica correcta de visualización de precio
+          const precioNormal = Number(p.precio) || 0;
+          const precioCompleta = Number(p.precio_completa) || 0;
+          const precioAnual = Number(p.precio_anual) || 0;
 
-            <h4 className="text-xl font-bold mb-2">{p.nombre}</h4>
+          const precioMostrar =
+  precioNormal > 0
+    ? precioNormal
+    : precioCompleta > 0
+    ? precioCompleta
+    : precioAnual > 0
+    ? precioAnual
+    : 0;
 
-            {p.descripcion && (
-              <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
-                {p.descripcion}
-              </p>
-            )}
-
-            <p className="font-semibold mb-4">
-              {p.precio > 0 ? `${p.precio} €` : "Gratis"}
-            </p>
-
-            {/* Descargar Trial */}
-            {user ? (
-              <a
-                href={`/api/plugin/download?plugin_id=${p.id}`}
-                className="bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
-              >
-                Descargar versión Trial
-              </a>
-            ) : (
-              <Link
-                href="/login"
-                className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
-              >
-                Inicia sesión para descargar
-              </Link>
-            )}
-
-            {/* Ver plugin */}
-            <Link
-              href={`/plugins/${p.id}`}
-              className="text-blue-600 underline text-sm inline-block mt-2"
+          return (
+            <div
+              key={p.id}
+              className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg shadow"
             >
-              Más información →
-            </Link>
-          </div>
-        ))}
+              {p.imagen_url && (
+                <img
+                  src={p.imagen_url}
+                  alt={p.nombre}
+                  className="w-full h-40 object-cover rounded mb-3"
+                />
+              )}
+
+              <h4 className="text-xl font-bold mb-2">{p.nombre}</h4>
+
+              {p.descripcion && (
+                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
+                  {p.descripcion}
+                </p>
+              )}
+
+              <p className="font-semibold mb-4">
+                {precioMostrar > 0 ? `${precioMostrar} €` : "Gratis"}
+              </p>
+
+              {user ? (
+                <a
+                  href={`/api/plugin/download?plugin_id=${p.id}`}
+                  className="bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
+                >
+                  Descargar versión Trial
+                </a>
+              ) : (
+                <Link
+                  href="/login"
+                  className="bg-gray-500 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
+                >
+                  Inicia sesión para descargar
+                </Link>
+              )}
+
+              <Link
+                href={`/plugins/${p.id}`}
+                className="text-blue-600 underline text-sm inline-block mt-2"
+              >
+                Más información →
+              </Link>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

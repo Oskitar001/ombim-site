@@ -2,63 +2,71 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-    const { pago_id, emails_tekla } = await req.json();
+  const { pago_id, emails_tekla } = await req.json();
 
-    if (!pago_id || !emails_tekla?.length) {
-        return Response.json({ error: "faltan_datos" }, { status: 400 });
-    }
+  if (!pago_id || !emails_tekla?.length) {
+    return Response.json({ error: "faltan_datos" }, { status: 400 });
+  }
 
-    // 1. Obtener pago
-    const { data: pago } = await supabaseAdmin
-        .from("pagos")
-        .select("*")
-        .eq("id", pago_id)
-        .single();
+  // 1. Obtener pago
+  const { data: pago, error: pagoError } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
 
-    if (!pago) {
-        return Response.json({ error: "pago_no_encontrado" }, { status: 404 });
-    }
+  if (pagoError || !pago) {
+    return Response.json({ error: "pago_no_encontrado" }, { status: 404 });
+  }
 
-    // 2. Config tipo
-    let max = pago.tipo === "completa" ? 5 : 1;
-    let fechaExp = null;
+  // ⭐ Asegurar que el tipo es válido (anual / completa)
+  if (!["anual", "completa"].includes(pago.tipo)) {
+    return Response.json({ error: "tipo_invalido" }, { status: 400 });
+  }
 
-    if (pago.tipo === "anual") {
-        const f = new Date();
-        f.setFullYear(f.getFullYear() + 1);
-        fechaExp = f.toISOString();
-    }
+  // 2. Configuración según tipo
+  const maxActivaciones = pago.tipo === "completa" ? 5 : 1;
 
-    const ahora = new Date().toISOString();
+  let fechaExp = null;
+  if (pago.tipo === "anual") {
+    const f = new Date();
+    f.setFullYear(f.getFullYear() + 1);
+    fechaExp = f.toISOString();
+  }
 
-    // 3. Crear licencias
-    const licencias = emails_tekla.map(email => ({
-        pago_id,
-        plugin_id: pago.plugin_id,
-        user_id: pago.user_id,
-        email_tekla: email,
-        tipo: pago.tipo,
-        estado: "activa",
-        max_activaciones: max,
-        activaciones_usadas: 0,
-        fecha_creacion: ahora,
-        fecha_expiracion: fechaExp
-    }));
+  const ahora = new Date().toISOString();
 
-    const { error: licError } = await supabaseAdmin
-        .from("licencias")
-        .insert(licencias);
+  // 3. Crear licencias limpias
+  const licencias = emails_tekla.map((email) => ({
+    pago_id,
+    plugin_id: pago.plugin_id,
+    user_id: pago.user_id,
+    email_tekla: email,
+    tipo: pago.tipo,
+    estado: "activa",
+    max_activaciones: maxActivaciones,
+    activaciones_usadas: 0,
+    fecha_creacion: ahora,
+    fecha_expiracion: fechaExp,
+  }));
 
-    if (licError) {
-        console.error(licError);
-        return Response.json({ error: "error_creando_licencias" }, { status: 500 });
-    }
+  const { error: licenciasError } = await supabaseAdmin
+    .from("licencias")
+    .insert(licencias);
 
-    // 4. Marcar pago como aprobado
-    await supabaseAdmin
-        .from("pagos")
-        .update({ estado: "aprobado" })
-        .eq("id", pago_id);
+  if (licenciasError) {
+    console.error("❌ Error creando licencias:", licenciasError);
+    return Response.json(
+      { error: "error_creando_licencias" },
+      { status: 500 }
+    );
+  }
 
-    return Response.json({ ok: true });
+  // 4. Marcar pago como aprobado + guardar fecha_validacion
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "aprobado", fecha_validacion: ahora })
+    .eq("id", pago_id);
+
+  return Response.json({ ok: true });
 }

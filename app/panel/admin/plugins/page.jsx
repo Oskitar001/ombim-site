@@ -15,7 +15,9 @@ export default function AdminPluginsPage() {
       // Obtener plugins
       const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
       const d1 = await r1.json();
-      setPlugins(d1.plugins ?? d1);
+
+      // 🔥 FIX: ahora la API SIEMPRE devuelve { plugins: [...] }
+      setPlugins(Array.isArray(d1.plugins) ? d1.plugins : []);
 
       // Obtener descargas por plugin
       const r2 = await fetch("/api/admin/dashboard");
@@ -58,7 +60,7 @@ export default function AdminPluginsPage() {
           <tr className="bg-gray-300 dark:bg-gray-700">
             <th>Imagen</th>
             <th>Nombre</th>
-            <th>Precio</th>
+            <th>Precios</th>
             <th>Descargas</th>
             <th>Acciones</th>
           </tr>
@@ -66,7 +68,10 @@ export default function AdminPluginsPage() {
 
         <tbody>
           {plugins.map((p) => (
-            <tr key={p.id} className="border-b border-gray-300 dark:border-gray-700">
+            <tr
+              key={p.id}
+              className="border-b border-gray-300 dark:border-gray-700"
+            >
               <td className="p-2 text-center">
                 {p.imagen_url ? (
                   <img
@@ -75,12 +80,27 @@ export default function AdminPluginsPage() {
                     className="w-16 h-16 object-cover rounded"
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-gray-400 rounded"></div>
+                  <div className="w-16 h-16 bg-gray-400 rounded" />
                 )}
               </td>
 
               <td className="font-semibold">{p.nombre}</td>
-              <td>{p.precio} €</td>
+
+              {/* Mostrar precios */}
+              <td className="p-2 text-sm">
+                <div>
+                  <strong>Estándar:</strong>{" "}
+                  {p.precio > 0 ? `${p.precio} €` : "—"}
+                </div>
+                <div>
+                  <strong>Anual:</strong>{" "}
+                  {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
+                </div>
+                <div>
+                  <strong>Completa:</strong>{" "}
+                  {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
+                </div>
+              </td>
 
               <td className="text-center">
                 <span className="flex items-center gap-1 justify-center">
@@ -104,6 +124,14 @@ export default function AdminPluginsPage() {
               </td>
             </tr>
           ))}
+
+          {!plugins.length && (
+            <tr>
+              <td colSpan="5" className="text-center p-4 opacity-70">
+                No hay plugins creados.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 

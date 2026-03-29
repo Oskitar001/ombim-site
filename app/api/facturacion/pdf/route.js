@@ -1,114 +1,228 @@
-// app/api/facturacion/pdf/route.js
+// /app/api/facturacion/pdf/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
+import { pdf } from "@/lib/pdf"; // tu helper HTML → PDF
 
-export async function GET(req) {
+export const runtime = "nodejs";
+
+export async function POST(req) {
   const supabase = await supabaseServer();
-  const { searchParams } = new URL(req.url);
-  const pago_id = searchParams.get("pago_id");
+  const body = await req.json();
 
-  if (!pago_id) {
-    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
-  }
+  const pagoId = body.pagoId;
+  if (!pagoId)
+    return NextResponse.json({ error: "pagoId_missing" }, { status: 400 });
 
+  // ----------------------------------------------------------
+  // 1. Datos del pago
+  // ----------------------------------------------------------
   const { data: pago } = await supabase
     .from("pagos")
-    .select("*, licencias(*)")
-    .eq("id", pago_id)
+    .select("*")
+    .eq("id", pagoId)
     .single();
 
-  if (!pago) {
-    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
-  }
+  if (!pago)
+    return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
 
-  if (!pago.numero_factura) {
-    return NextResponse.json(
-      { error: "Falta número de factura" },
-      { status: 400 }
-    );
-  }
+  const userId = pago.user_id;
 
-  const { data: facturacion } = await supabase
+  // ----------------------------------------------------------
+  // 2. Datos de facturación
+  // ----------------------------------------------------------
+  const { data: fact } = await supabase
     .from("facturacion")
     .select("*")
-    .eq("user_id", pago.user_id)
-    .single();
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (!facturacion) {
-    return NextResponse.json(
-      { error: "No hay datos de facturación" },
-      { status: 400 }
-    );
-  }
+  const f = fact ?? {};
 
-  const { data: empresa } = await supabase
-    .from("empresa")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  // ----------------------------------------------------------
+  // 3. Datos del usuario
+  // ----------------------------------------------------------
+  const { data: u } = await supabase.auth.admin.getUserById(userId);
+  const user = u?.user;
 
-  if (!empresa) {
-    return NextResponse.json(
-      { error: "Datos fiscales no configurados" },
-      { status: 500 }
-    );
-  }
+  const nombreUsuario = user?.user_metadata?.nombre ?? "";
+  const empresaUsuario = user?.user_metadata?.empresa ?? "";
+  const telefonoUsuario = user?.user_metadata?.telefono ?? "";
+  const paisUsuario = user?.user_metadata?.pais ?? "";
 
-  const base = pago.importe;
-  const iva = (base * 0.21).toFixed(2);
-  const total = (base * 1.21).toFixed(2);
+  // ----------------------------------------------------------
+  // 4. FALLBACKS PREMIUM
+  // ----------------------------------------------------------
+  const razonSocial =
+    f.nombre?.trim()
+      ? f.nombre
+      : empresaUsuario?.trim()
+      ? empresaUsuario
+      : nombreUsuario;
 
+  const niffinal = f.nif ?? "";
+  const direccion = f.direccion ?? "";
+  const ciudad = f.ciudad ?? "";
+  const cp = f.cp ?? "";
+  const pais = f.pais ?? paisUsuario;
+  const telefono = f.telefono ?? telefonoUsuario;
+  const email = user?.email ?? "";
+
+  // ----------------------------------------------------------
+  // 5. PLANTILLA HTML PREMIUM
+  // ----------------------------------------------------------
   const html = `
-  <h2>Factura #${pago.numero_factura}</h2>
-  <p>Fecha: ${new Date().toLocaleDateString()}</p>
+  <html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+        color: #333;
+      }
 
-  <h3>Cliente</h3>
-  ${facturacion.nombre}<br>
-  ${facturacion.direccion}<br>
-  ${facturacion.cp} ${facturacion.ciudad}<br>
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 3px solid #0A84FF;
+        padding-bottom: 20px;
+      }
 
-  <h3>Detalle</h3>
-  <table border="1">
-    <tr><th>Concepto</th><th>Cant</th><th>Base</th><th>IVA</th><th>Total</th></tr>
-    <tr>
-      <td>${pago.plugin_id}</td>
-      <td>${pago.cantidad_licencias}</td>
-      <td>${base} €</td>
-      <td>${iva} €</td>
-      <td>${total} €</td>
-    </tr>
-  </table>
+      .logo {
+        font-size: 26px;
+        font-weight: bold;
+        color: #0A84FF;
+      }
 
-  <h3>Licencias</h3>
-  ${pago.licencias.map((l) => `Email Tekla: ${l.email_tekla}`).join("<br>")}
+      .company-info {
+        text-align: right;
+        font-size: 14px;
+        color: #555;
+      }
 
-  <h3>Total: ${total} €</h3>
+      h1 {
+        text-align: center;
+        margin-top: 40px;
+        font-size: 28px;
+        color: #0A84FF;
+      }
 
-  <h4>${empresa.nombre}</h4>
-  ${empresa.cif}<br>
-  ${empresa.direccion}
+      .section-title {
+        font-weight: bold;
+        font-size: 18px;
+        margin-top: 35px;
+        color: #0A84FF;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+      }
+
+      td {
+        padding: 6px 0;
+      }
+
+      .factura-table {
+        margin-top: 20px;
+        border: 1px solid #ddd;
+      }
+
+      .factura-table th {
+        background: #0A84FF;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      .factura-table td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .total {
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 25px;
+        text-align: right;
+      }
+
+      .footer {
+        margin-top: 40px;
+        font-size: 12px;
+        color: #777;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- CABECERA -->
+    <div class="header">
+      <div class="logo">OMBIM</div>
+      <div class="company-info">
+        OMBIM<br>
+        info@ombim.com<br>
+        https://ombim.com<br>
+      </div>
+    </div>
+
+    <h1>Factura</h1>
+
+    <!-- DATOS DE FACTURACIÓN -->
+    <div class="section-title">Datos de facturación</div>
+    <table>
+      <tr><td><b>Razón social:</b></td><td>${razonSocial}</td></tr>
+      <tr><td><b>NIF / CIF:</b></td><td>${niffinal}</td></tr>
+      <tr><td><b>Dirección:</b></td><td>${direccion}</td></tr>
+      <tr><td><b>Ciudad:</b></td><td>${ciudad}</td></tr>
+      <tr><td><b>CP:</b></td><td>${cp}</td></tr>
+      <tr><td><b>País:</b></td><td>${pais}</td></tr>
+      <tr><td><b>Teléfono:</b></td><td>${telefono}</td></tr>
+      <tr><td><b>Email:</b></td><td>${email}</td></tr>
+    </table>
+
+    <!-- DETALLES FACTURA -->
+    <div class="section-title">Detalles de la factura</div>
+
+    <table class="factura-table">
+      <tr>
+        <th>Concepto</th>
+        <th>Precio</th>
+      </tr>
+      <tr>
+        <td>${pago.producto}</td>
+        <td>${pago.precio} €</td>
+      </tr>
+    </table>
+
+    <div class="total">
+      Total: ${pago.precio} €
+    </div>
+
+    <!-- PIE -->
+    <div class="footer">
+      Esta factura ha sido generada automáticamente.<br>
+      Para cualquier duda contacte con soporte: info@ombim.com
+    </div>
+
+  </body>
+  </html>
   `;
 
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-  });
+  // ----------------------------------------------------------
+  // 6. GENERAR PDF
+  // ----------------------------------------------------------
+  const pdfBuffer = await pdf(html);
 
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: "networkidle0" });
-
-  const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
-  await browser.close();
-
-  return new NextResponse(pdfBuffer, {
+  return new Response(pdfBuffer, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename=factura-${pago.numero_factura}.pdf`,
+      "Content-Disposition": "inline; filename=\"factura-" + pago.id + ".pdf\"",
     },
   });
 }

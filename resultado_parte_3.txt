@@ -1,53 +1,844 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
+============================================================
+
+// /app/panel/facturacion/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+import FacturacionClient from "./FacturacionClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
+  const supabase = await supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return <p>No autenticado</p>;
+  }
+
+  const { data: facturacion } = await supabase
+    .from("facturacion")
+    .select("*")
+    .eq("user_id", userData.user.id)
+    .single();
+
+  return (
+    <div>
+      <h2>Datos de facturación</h2>
+      <FacturacionClient user_id={userData.user.id} datosIniciales={facturacion} />
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-descargas\page.jsx
+============================================================
+
+// /app/panel/mis-descargas/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function MisDescargas() {
+  const [user, setUser] = useState(null);
+  const [descargas, setDescargas] = useState([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.user) router.push("/login");
+        else setUser(data.user);
+      });
+
+    fetch("/api/download/history")
+      .then((res) => res.json())
+      .then((data) => setDescargas(data ?? []));
+  }, [router]);
+
+  if (!user) return <p>Cargando…</p>;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis descargas</h1>
+
+      {!descargas.length && <p>No has descargado nada todavía.</p>}
+
+      {descargas.map((d) => (
+        <div key={d.id}>
+          <p><strong>Plugin:</strong> {d.plugin_nombre}</p>
+          <p><strong>Fecha:</strong> {d.fecha}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-facturas\page.jsx
+============================================================
+
+// /app/panel/mis-facturas/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisFacturasPage() {
+  const supabase = await supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) {
+    return <p>Debes iniciar sesión para ver tus facturas.</p>;
+  }
+
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("id, plugin_id, fecha, estado, plugins(nombre)")
+    .eq("user_id", userData.user.id)
+    .eq("estado", "aprobado")
+    .order("fecha", { ascending: false });
+
+  return (
+    <div>
+      <h2>Mis facturas</h2>
+
+      {!pagos?.length && <p>No tienes facturas todavía.</p>}
+
+      {pagos?.map((p) => (
+        <div key={p.id}>
+          <p>Plugin: {p.plugins?.nombre ?? p.plugin_id}</p>
+          <p>Fecha: {new Date(p.fecha).toLocaleString()}</p>
+
+          <a
+            href={`/api/facturacion/pdf?pago_id=${p.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Descargar factura
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-licencias\page.jsx
+============================================================
+
+// /app/panel/mis-licencias/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function MisLicenciasPage() {
+  const [licencias, setLicencias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/licencias/mias");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error ?? "Error cargando licencias");
+          return;
+        }
+
+        const data = await res.json();
+        setLicencias(data);
+      } catch {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    cargar();
+  }, []);
+
+  if (loading) return <p>Cargando licencias…</p>;
+  if (error) return <p>{error}</p>;
+
+  if (!licencias.length) {
+    return (
+      <div>
+        <h1 className="text-xl font-bold mb-4">Mis licencias</h1>
+        <p>No tienes licencias todavía.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Mis licencias</h1>
+
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th>Plugin</th>
+            <th>Email Tekla</th>
+            <th>Estado</th>
+            <th>Activaciones</th>
+            <th>Creada</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {licencias.map((l) => (
+            <tr key={l.id}>
+              <td>{l.plugin_nombre}</td>
+              <td>{l.email_tekla || "—"}</td>
+              <td>{l.estado}</td>
+              <td>{l.activaciones_usadas}/{l.max_activaciones}</td>
+              <td>{new Date(l.fecha_creacion).toLocaleDateString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\page.jsx
+============================================================
+
+// /app/panel/mis-pagos/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+import PagosClient from "./PagosClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisPagosPage() {
+  const supabase = await supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) return <p>No autenticado</p>;
+
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("*, plugins(nombre)")
+    .eq("user_id", userData.user.id)
+    .order("fecha", { ascending: false });
+
+  return (
+    <div>
+      <h2>Mis pagos</h2>
+      <PagosClient pagos={pagos ?? []} />
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\PagosClient.jsx
+============================================================
+
+// /app/panel/mis-pagos/PagosClient.jsx
+"use client";
+import Link from "next/link";
+
+export default function PagosClient({ pagos }) {
+  if (!pagos.length) return <p>No tienes pagos registrados.</p>;
+
+  return (
+    <div className="space-y-4">
+      {pagos.map((pago) => (
+        <div key={pago.id} className="border p-4 rounded">
+          <p><strong>Plugin:</strong> {pago.plugins?.nombre ?? pago.plugin_id}</p>
+          <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
+          <p><strong>Estado:</strong> {pago.estado}</p>
+          <p>{new Date(pago.fecha).toLocaleString()}</p>
+
+          <Link
+            href={`/panel/mis-pagos/${pago.id}`}
+            className="underline text-blue-600"
+          >
+            Ver detalles
+          </Link>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\page.jsx
+============================================================
+
+// /app/panel/mis-pagos/[id]/page.jsx
+import { use } from "react";
+import PagoClient from "./PagoClient";
+
+export default function PagoPage({ params }) {
+  // ⬇⬇⬇ FIX OBLIGATORIO EN NEXT 16
+  const { id } = use(params);
+
+  return <PagoClient pagoId={id} />;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\PagoClient.jsx
+============================================================
+
+// /app/panel/mis-pagos/[id]/PagoClient.jsx
+"use client";
+import { useEffect, useState } from "react";
+
+export default function PagoClient({ pagoId }) {
+  const [pago, setPago] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          setError(data.error ?? "Error cargando pago");
+          return;
+        }
+
+        setPago(data);
+      } catch {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    cargar();
+  }, [pagoId]);
+
+  if (loading) return <p>Cargando pago…</p>;
+  if (error) return <p>{error}</p>;
+  if (!pago) return <p>Pago no encontrado.</p>;
+
+  const { licencias = [], facturacion } = pago;
+
+  return (
+    <div>
+      <h1 className="text-xl font-bold mb-4">Detalle del pago</h1>
+
+      <p><strong>ID:</strong> {pago.id}</p>
+      <p><strong>Estado:</strong> {pago.estado}</p>
+      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
+      {pago.fecha && (
+        <p><strong>Fecha:</strong> {new Date(pago.fecha).toLocaleString()}</p>
+      )}
+
+      <h3 className="mt-6 font-bold">Licencias</h3>
+      {!licencias.length ? (
+        <p>No hay licencias asociadas.</p>
+      ) : (
+        <ul>
+          {licencias.map((l) => (
+            <li key={l.id}>
+              Email Tekla: {l.email_tekla ?? "—"} — Estado: {l.estado}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="mt-6 font-bold">Datos de facturación</h3>
+      {!facturacion ? (
+        <p>No hay datos guardados.</p>
+      ) : (
+        <div>
+          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
+          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
+          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
+          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
+          <p><strong>País:</strong> {facturacion.pais}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-plugins\page.jsx
+============================================================
+
+// /app/panel/mis-plugins/page.jsx
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export const dynamic = "force-dynamic";
+
+export default async function MisPluginsPage() {
+  const supabase = await supabaseServer();
+
+  const { data: userData } = await supabase.auth.getUser();
+
+  if (!userData?.user) return <p>Debes iniciar sesión para ver tus plugins.</p>;
+
+  const { data: pagos } = await supabase
+    .from("pagos")
+    .select("id, plugin_id, estado, fecha, cantidad_licencias, plugins(nombre, descripcion)")
+    .eq("user_id", userData.user.id)
+    .neq("estado", "pendiente");
+
+  const pluginIds = [...new Set((pagos ?? []).map((p) => p.plugin_id))];
+
+  const { data: licencias } = await supabase
+    .from("licencias")
+    .select("*")
+    .in("plugin_id", pluginIds.length ? pluginIds : ["00000000"]);
+
+  const licByPlugin = (licencias ?? []).reduce((acc, l) => {
+    acc[l.plugin_id] = acc[l.plugin_id] ?? [];
+    acc[l.plugin_id].push(l);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <h2>Mis plugins</h2>
+
+      {!pagos?.length && <p>No has comprado plugins todavía.</p>}
+
+      {(pagos ?? []).map((p) => {
+        const plugin = p.plugins;
+        const lic = licByPlugin[p.plugin_id] ?? [];
+
+        return (
+          <div key={p.id}>
+            <h3>{plugin?.nombre ?? "Plugin"}</h3>
+            <p>{plugin?.descripcion}</p>
+            <p>Compra: {new Date(p.fecha).toLocaleString()}</p>
+            <p>Estado: {p.estado}</p>
+
+            <h4>Licencias asociadas</h4>
+
+            {!lic.length ? (
+              <p>No hay licencias asociadas todavía.</p>
+            ) : (
+              <ul>
+                {lic.map((l) => (
+                  <li key={l.id}>
+                    {l.email_tekla} — {l.estado} — {l.activaciones_usadas}/{l.max_activaciones}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\page.jsx
+============================================================
+
+export const dynamic = "force-dynamic";
+
+export default function PanelHome() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold">Bienvenido al panel</h1>
+      <p>Selecciona una sección del menú.</p>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\panel-auth.jsx
+============================================================
+
+// app/panel/panel-auth.jsx ✔️ corregido
+"use server";
+
+import { supabaseServer } from "@/lib/supabaseServer";
+import { redirect } from "next/navigation";
+
+export default async function PanelAuth({ children }) {
+  const supabase = await supabaseServer();
+
+  const { data } = await supabase.auth.getUser();
+
+  if (!data?.user) {
+    redirect("/login");
+  }
+
+  return <>{children}</>;
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\comprar\page.jsx
+============================================================
+
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
+
+export default function ComprarPage({ params }) {
+  const router = useRouter();
+  const { plugin_id } = params;
+
+  const [plugin, setPlugin] = useState(null);
+  const [user, setUser] = useState(null);
+  const [emails, setEmails] = useState([""]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // ⭐ nuevo: tipo de licencia (anual / completa)
+  const [tipo, setTipo] = useState("completa");
+
+  const paymentUID = useRef(uuidv4());
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const rUser = await fetch("/api/auth/me");
+        const dUser = await rUser.json();
+        setUser(dUser.user ?? null);
+
+        const rPlugin = await fetch(`/api/plugin/${plugin_id}`);
+        const dPlugin = await rPlugin.json();
+        setPlugin(dPlugin?.error ? null : dPlugin);
+      } catch {
+        setError("Error cargando datos");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [plugin_id]);
+
+  function actualizarEmail(i, valor) {
+    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
+  }
+
+  function añadirFila() {
+    setEmails((prev) => [...prev, ""]);
+  }
+
+  async function comprar(e) {
+    e.preventDefault();
+    setError("");
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const emailsLimpios = emails.map((e) => e.trim());
+
+    if (emailsLimpios.some((e) => e === "")) {
+      setError("Debes completar TODOS los emails Tekla.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/pagos/crear", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plugin_id,
+          emails_tekla: emailsLimpios,
+          payment_uid: paymentUID.current,
+          tipo, // ⭐ añadido correctamente
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data?.error ?? "Error creando el pago");
+        return;
+      }
+
+      router.push(`/pago/licencias/${data.pago_id}`);
+    } catch {
+      setError("Error interno del servidor");
+    }
+  }
+
+  if (loading) return <p>Cargando…</p>;
+  if (!plugin) return <p>Plugin no encontrado.</p>;
+
+  // ============================================
+  // ⭐ CÁLCULO DE PRECIOS (ANUAL / COMPLETA)
+  // ============================================
+
+  const precioCompleta =
+    plugin.precio_completa > 0 ? plugin.precio_completa : plugin.precio;
+
+  const precioAnual = plugin.precio_anual > 0 ? plugin.precio_anual : 0;
+
+  const precioUnitario =
+    tipo === "anual" ? precioAnual : precioCompleta;
+
+  const total = precioUnitario * emails.length;
+
+  return (
+    <div className="p-4 max-w-xl mx-auto space-y-6">
+
+      <h2 className="text-3xl font-bold">Comprar licencias</h2>
+
+      <p className="text-lg">
+        Plugin: <strong>{plugin.nombre}</strong>
+      </p>
+
+      {/* ========= Selector de tipo de licencia ========= */}
+      <div className="mt-4">
+        <label className="font-semibold">Tipo de licencia:</label>
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          className="border p-2 rounded w-full dark:bg-gray-900"
+        >
+          {precioAnual > 0 && (
+            <option value="anual">Anual – {precioAnual} €</option>
+          )}
+
+          {precioCompleta > 0 && (
+            <option value="completa">Completa – {precioCompleta} €</option>
+          )}
+        </select>
+      </div>
+
+      {/* ========= Emails Tekla ========= */}
+      <div>
+        <h3 className="font-semibold mb-2">Emails Tekla:</h3>
+
+        {emails.map((email, i) => (
+          <input
+            key={i}
+            type="email"
+            value={email}
+            placeholder="usuario@empresa.com"
+            onChange={(e) => actualizarEmail(i, e.target.value)}
+            className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
+          />
+        ))}
+
+        <button
+          onClick={añadirFila}
+          className="text-blue-600 underline mb-4"
+        >
+          Añadir otro email
+        </button>
+      </div>
+
+      {/* ========= Total ========= */}
+      <p className="text-xl font-semibold">
+        Total: {total} €
+      </p>
+
+      {error && <p className="text-red-600">{error}</p>}
+
+      {/* ========= Botón comprar ========= */}
+      <button
+        onClick={comprar}
+        className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
+      >
+        Comprar
+      </button>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\descargas\page.jsx
+============================================================
+
+// app/panel/user/descargas/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { Download, Box } from "lucide-react";
+
+export default function DescargasUserPage() {
+  const [plugins, setPlugins] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/user/plugins", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        setPlugins(data.plugins ?? []);
+      } catch (err) {
+        console.error("Error cargando descargas:", err);
+        setPlugins([]);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (plugins === null) return <p>Cargando descargas...</p>;
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Download size={30} /> Descargas disponibles
+      </h1>
+
+      {plugins.length === 0 && (
+        <p className="text-gray-500">
+          No tienes plugins disponibles para descargar.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {plugins.map((p) => (
+          <div
+            key={p.id}
+            className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex justify-between items-center"
+          >
+            <div className="flex items-center gap-3">
+              <Box size={26} className="text-gray-700 dark:text-gray-300" />
+              <div>
+                <p className="font-semibold text-lg">{p.nombre}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Versión: {p.version ?? "1.0"}
+                </p>
+              </div>
+            </div>
+
+            <a
+              href={`/api/plugin/download?plugin_id=${p.id}`}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Download size={18} /> Descargar
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
 ============================================================
 
 import Link from "next/link";
-import { Home, KeyRound, CreditCard, Download } from "lucide-react";
+import {
+  Home,
+  KeyRound,
+  CreditCard,
+  Download,
+  User,
+} from "lucide-react";
 
 export default function UserLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100">
+    <div className="flex h-screen overflow-hidden">
 
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-gray-200 dark:bg-gray-800 p-6 shadow-xl flex flex-col gap-6">
+      {/* SIDEBAR FIJO */}
+      <aside
+        className="
+          w-64 
+          bg-gray-100 dark:bg-gray-900 
+          p-4 space-y-4 
+          border-r border-gray-300 dark:border-gray-700
+          flex-shrink-0
+          overflow-hidden
+          fixed
+          inset-y-0
+        "
+      >
+        <h2 className="text-xl font-bold mb-4">Panel Usuario</h2>
 
-        <div className="text-2xl font-bold tracking-tight">
-          Panel Usuario
-        </div>
+        <nav className="space-y-2">
 
-        <nav className="flex flex-col gap-3">
-
-          <Link href="/panel/user" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <Home size={20} /> Inicio
+          <Link
+            href="/panel/user"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <Home size={18} />
+            Inicio
           </Link>
 
-          <Link href="/panel/user/licencias" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <KeyRound size={20} /> Mis licencias
+          <Link
+            href="/panel/user/licencias"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <KeyRound size={18} />
+            Mis licencias
           </Link>
 
-          <Link href="/panel/user/pagos" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <CreditCard size={20} /> Mis pagos
+          <Link
+            href="/panel/user/pagos"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <CreditCard size={18} />
+            Mis pagos
           </Link>
 
-          <Link href="/panel/user/descargas" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <Download size={20} /> Descargas
+          <Link
+            href="/panel/user/mis-datos"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <User size={18} />
+            Mis datos
           </Link>
 
-          <Link href="/" className="mt-6 text-sm opacity-80 hover:opacity-100">
+          <Link
+            href="/panel/user/descargas"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <Download size={18} />
+            Descargas
+          </Link>
+
+          <Link
+            href="/"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
+          >
             ← Volver a ombim.site
           </Link>
 
         </nav>
-
       </aside>
 
-      {/* CONTENIDO */}
-      <main className="flex-1 p-10">
+      {/* CONTENIDO DESPLAZABLE */}
+      <main
+        className="
+          flex-1 
+          ml-64 
+          p-6 
+          overflow-y-auto 
+          bg-gray-50 dark:bg-gray-800
+        "
+      >
         {children}
       </main>
-
     </div>
   );
 }
@@ -248,6 +1039,331 @@ export default function UserLicenciaDetallePage({ params }) {
       </p>
     </div>
   );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\MisDatosClient.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function MisDatosClient() {
+  const [loading, setLoading] = useState(true);
+
+  // USER (AUTH)
+  const [usuario, setUsuario] = useState(null);
+  const [userForm, setUserForm] = useState({
+    nombre: "",
+    empresa: "",
+    telefono: "",
+    pais: "",
+  });
+  const [editUser, setEditUser] = useState(false);
+
+  // FACTURACION
+  const [factForm, setFactForm] = useState({
+    nombre: "",
+    nif: "",
+    direccion: "",
+    ciudad: "",
+    cp: "",
+    pais: "",
+    telefono: "",
+  });
+  const [editFact, setEditFact] = useState(false);
+
+  // Checkbox
+  const [usarMismosDatos, setUsarMismosDatos] = useState(false);
+
+  // CARGA INICIAL
+  useEffect(() => {
+    async function load() {
+      try {
+        // Usuario
+        const r1 = await fetch("/api/auth/me", { cache: "no-store" });
+        const d1 = await r1.json();
+
+        if (!d1.user) {
+          setLoading(false);
+          return;
+        }
+
+        setUsuario(d1.user);
+
+        setUserForm({
+          nombre: d1.user.user_metadata?.nombre ?? "",
+          empresa: d1.user.user_metadata?.empresa ?? "",
+          telefono: d1.user.user_metadata?.telefono ?? "",
+          pais: d1.user.user_metadata?.pais ?? "",
+        });
+
+        // Facturación
+        const r2 = await fetch("/api/user/perfil", { cache: "no-store" });
+        const d2 = await r2.json();
+
+        setFactForm({
+          nombre: d2.nombre ?? "",
+          nif: d2.nif ?? "",
+          direccion: d2.direccion ?? "",
+          ciudad: d2.ciudad ?? "",
+          cp: d2.cp ?? "",
+          pais: d2.pais ?? "",
+          telefono: d2.telefono ?? "",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  // HANDLERS — FIX TOTAL
+  const updateUserField = (key, value) =>
+    setUserForm((prev) => ({ ...prev, value }));
+
+  const updateFactField = (key, value) =>
+    setFactForm((prev) => ({ ...prev, value }));
+
+  // GUARDAR USUARIO
+  async function guardarUsuario() {
+    const res = await fetch("/api/user/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userForm),
+    });
+
+    if (res.ok) {
+      setEditUser(false);
+      location.reload();
+    }
+  }
+
+  // GUARDAR FACTURACION
+  async function guardarFacturacion() {
+    const payload = {
+      ...factForm,
+      usarDatosUsuario: usarMismosDatos,
+    };
+
+    const res = await fetch("/api/facturacion/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      setEditFact(false);
+      location.reload();
+    }
+  }
+
+  if (loading) return <p className="p-4">Cargando…</p>;
+
+  return (
+    <div className="p-4 space-y-10 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Mis datos</h1>
+
+      {/* -------------------- DATOS DE USUARIO -------------------- */}
+      <section className="p-6 rounded-lg bg-white shadow dark:bg-gray-800 space-y-4">
+        <h2 className="text-xl font-bold">Datos de usuario</h2>
+
+        <div>
+          <label className="font-semibold">Email</label>
+          <input
+            disabled
+            className="w-full p-2 border rounded bg-gray-200 dark:bg-gray-700"
+            value={usuario.email}
+          />
+        </div>
+
+        <CampoEditable
+          label="Nombre"
+          value={userForm.nombre}
+          onChange={(v) => updateUserField("nombre", v)}
+          editable={editUser}
+        />
+
+        <CampoEditable
+          label="Empresa"
+          value={userForm.empresa}
+          onChange={(v) => updateUserField("empresa", v)}
+          editable={editUser}
+        />
+
+        <CampoEditable
+          label="Teléfono"
+          value={userForm.telefono}
+          onChange={(v) => updateUserField("telefono", v)}
+          editable={editUser}
+        />
+
+        <CampoEditable
+          label="País"
+          value={userForm.pais}
+          onChange={(v) => updateUserField("pais", v)}
+          editable={editUser}
+        />
+
+        <BotonesEditarGuardar
+          editMode={editUser}
+          onEdit={() => setEditUser(true)}
+          onCancel={() => setEditUser(false)}
+          onSave={guardarUsuario}
+        />
+      </section>
+
+      {/* -------------------- FACTURACIÓN -------------------- */}
+      <section className="p-6 rounded-lg bg-white shadow dark:bg-gray-800 space-y-4">
+        <h2 className="text-xl font-bold">Datos de facturación</h2>
+
+        <CampoEditable
+          label="Nombre / Razón social"
+          value={factForm.nombre}
+          onChange={(v) => updateFactField("nombre", v)}
+          editable={editFact}
+        />
+
+        <CampoEditable
+          label="NIF / CIF"
+          value={factForm.nif}
+          onChange={(v) => updateFactField("nif", v)}
+          editable={editFact}
+        />
+
+        <CampoEditable
+          label="Dirección"
+          value={factForm.direccion}
+          onChange={(v) => updateFactField("direccion", v)}
+          editable={editFact}
+        />
+
+        <CampoEditable
+          label="Ciudad"
+          value={factForm.ciudad}
+          onChange={(v) => updateFactField("ciudad", v)}
+          editable={editFact}
+        />
+
+        <CampoEditable
+          label="Código Postal"
+          value={factForm.cp}
+          onChange={(v) => updateFactField("cp", v)}
+          editable={editFact}
+        />
+
+        <CampoEditable
+          label="País"
+          value={factForm.pais}
+          onChange={(v) => updateFactField("pais", v)}
+          editable={editFact}
+        />
+
+        <CampoEditable
+          label="Teléfono"
+          value={factForm.telefono}
+          onChange={(v) => updateFactField("telefono", v)}
+          editable={editFact}
+        />
+
+        {/* Checkbox moderno */}
+        <div className="flex items-center mt-1">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              disabled={!editFact}
+              checked={usarMismosDatos}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setUsarMismosDatos(checked);
+
+                if (checked) {
+                  setFactForm((prev) => ({
+                    ...prev,
+                    nombre: userForm.nombre || prev.nombre,
+                    pais: userForm.pais || prev.pais,
+                    telefono: userForm.telefono || prev.telefono,
+                  }));
+                }
+              }}
+              className="w-4 h-4 rounded border-gray-400 accent-blue-600"
+            />
+            Usar también los datos del usuario
+          </label>
+        </div>
+
+        <BotonesEditarGuardar
+          editMode={editFact}
+          onEdit={() => setEditFact(true)}
+          onCancel={() => setEditFact(false)}
+          onSave={guardarFacturacion}
+        />
+      </section>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// AUXILIARES
+// -----------------------------------------------------------------------------
+
+function CampoEditable({ label, value, onChange, editable }) {
+  return (
+    <div>
+      <label className="font-semibold">{label}</label>
+      <input
+        disabled={!editable}
+        className="w-full p-2 border rounded dark:bg-gray-900"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
+function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
+  if (!editMode)
+    return (
+      <button
+        onClick={onEdit}
+        className="px-4 py-2 bg-blue-600 text-white rounded"
+      >
+        Editar
+      </button>
+    );
+
+  return (
+    <div className="flex gap-3">
+      <button
+        onClick={onCancel}
+        className="px-4 py-2 bg-gray-400 text-white rounded"
+      >
+        Cancelar
+      </button>
+
+      <button
+        onClick={onSave}
+        className="px-4 py-2 bg-green-600 text-white rounded"
+      >
+        Guardar
+      </button>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\page.jsx
+============================================================
+
+// /app/panel/mis-datos/page.jsx
+import MisDatosClient from "./MisDatosClient";
+
+export default function Page() {
+  return <MisDatosClient />;
 }
 
 
@@ -634,171 +1750,85 @@ export default function UserPagoDetallePage({ params }) {
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { User, Save } from "lucide-react";
+import { useState, useEffect } from "react";
 
-export default function PerfilUsuarioPage() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  // CAMPOS DEL PERFIL
+export default function PerfilUsuario() {
+  const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [empresa, setEmpresa] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [pais, setPais] = useState("");
-
-  // CAMPOS FISCALES
-  const [direccion, setDireccion] = useState("");
-  const [ciudad, setCiudad] = useState("");
-  const [cp, setCp] = useState("");
-  const [cif, setCif] = useState("");
-
-  // IDIOMA
-  const [idioma, setIdioma] = useState("es");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    async function load() {
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        credentials: "include",
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.user) return;
+        setUser(d.user);
+        setEmail(d.user.email);
+        setName(d.user.user_metadata?.name ?? "");
       });
-
-      const data = await res.json();
-      const user = data?.user;
-
-      if (user) {
-        setEmail(user.email || "");
-        setNombre(user.user_metadata?.nombre || "");
-        setEmpresa(user.user_metadata?.empresa || "");
-        setTelefono(user.user_metadata?.telefono || "");
-        setPais(user.user_metadata?.pais || "");
-
-        // Datos fiscales
-        setDireccion(user.user_metadata?.direccion || "");
-        setCiudad(user.user_metadata?.ciudad || "");
-        setCp(user.user_metadata?.cp || "");
-        setCif(user.user_metadata?.cif || "");
-
-        // Idioma
-        setIdioma(user.user_metadata?.idioma || "es");
-      }
-
-      setLoading(false);
-    }
-
-    load();
   }, []);
 
-  async function guardar(e) {
-    e.preventDefault();
-    setSaving(true);
+  async function guardar() {
+    setMsg("");
 
-    await fetch("/api/user/perfil", {
+    const r = await fetch("/api/user/update", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre,
-        empresa,
-        telefono,
-        pais,
-        direccion,
-        ciudad,
-        cp,
-        cif,
-        idioma,
+        email,
+        password: password || undefined,
+        name,
       }),
     });
 
-    setSaving(false);
-    alert("Datos guardados correctamente.");
+    const d = await r.json();
+
+    if (!r.ok) {
+      setMsg("Error: " + d.error);
+      return;
+    }
+
+    setMsg("Datos actualizados");
   }
 
-  if (loading) return <p>Cargando datos...</p>;
+  if (!user) return <p>Cargando…</p>;
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
+    <div className="space-y-6 p-4">
+      <h2 className="text-2xl font-bold">Mi Perfil</h2>
 
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <User size={28} /> Mi Perfil
-      </h1>
+      <div>
+        <label>Email</label>
+        <input className="border p-2 w-full dark:bg-gray-900"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)} />
+      </div>
 
-      <form
-        className="space-y-6 bg-gray-200 dark:bg-gray-800 p-8 rounded-lg shadow"
-        onSubmit={guardar}
-      >
-        {/* EMAIL */}
-        <div>
-          <label className="font-semibold block mb-1">Email</label>
-          <input
-            type="email"
-            value={email}
-            disabled
-            className="w-full border p-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-          />
-        </div>
+      <div>
+        <label>Nombre</label>
+        <input className="border p-2 w-full dark:bg-gray-900"
+          value={name}
+          onChange={(e) => setName(e.target.value)} />
+      </div>
 
-        {/* NOMBRE */}
-        <Campo valor={nombre} setValor={setNombre} label="Nombre" placeholder="Tu nombre" />
+      <div>
+        <label>Nueva contraseña (opcional)</label>
+        <input type="password"
+          className="border p-2 w-full dark:bg-gray-900"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)} />
+      </div>
 
-        {/* EMPRESA */}
-        <Campo valor={empresa} setValor={setEmpresa} label="Empresa" placeholder="Nombre empresa" />
+      {msg && <p className="text-green-600">{msg}</p>}
 
-        {/* TELEFONO */}
-        <Campo valor={telefono} setValor={setTelefono} label="Teléfono" placeholder="+34..." />
-
-        {/* PAIS */}
-        <Campo valor={pais} setValor={setPais} label="País" placeholder="España" />
-
-        {/* DIRECCIÓN FISCAL */}
-        <h2 className="text-xl font-bold mt-6">Dirección fiscal</h2>
-
-        <Campo valor={direccion} setValor={setDireccion} label="Dirección" placeholder="Calle, número…" />
-
-        <Campo valor={ciudad} setValor={setCiudad} label="Ciudad" placeholder="Barcelona" />
-
-        <Campo valor={cp} setValor={setCp} label="Código postal" placeholder="08000" />
-
-        <Campo valor={cif} setValor={setCif} label="CIF / NIF / VAT" placeholder="ES12345678A" />
-
-        {/* IDIOMA */}
-        <div>
-          <label className="font-semibold block mb-1">Idioma</label>
-          <select
-            className="w-full border p-2 rounded dark:bg-gray-900"
-            value={idioma}
-            onChange={(e) => setIdioma(e.target.value)}
-          >
-            <option value="es">Español</option>
-            <option value="en">Inglés</option>
-          </select>
-        </div>
-
-        {/* BOTÓN GUARDAR */}
-        <button
-          type="submit"
-          disabled={saving}
-          className="btn-primary flex items-center justify-center gap-2 w-full"
-        >
-          <Save size={18} />
-          {saving ? "Guardando..." : "Guardar datos"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
-function Campo({ valor, setValor, label, placeholder }) {
-  return (
-    <div>
-      <label className="font-semibold block mb-1">{label}</label>
-      <input
-        className="w-full border p-2 rounded dark:bg-gray-900"
-        value={valor}
-        onChange={(e) => setValor(e.target.value)}
-        placeholder={placeholder}
-      />
+      <button
+        onClick={guardar}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        Guardar cambios
+      </button>
     </div>
   );
 }
@@ -2238,68 +3268,4 @@ export const supabaseAdmin = createClient(
     },
   }
 );
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseRoute.js
-============================================================
-
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
-
-export function supabaseRoute() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        async get(name) {
-          const store = await cookies();      // FIX: cookies() es async en Next 16
-          const cookie = store.get(name);
-          return cookie?.value;
-        },
-        async set(name, value, options) {
-          const store = await cookies();
-          store.set(name, value, options);
-        },
-        async remove(name, options) {
-          const store = await cookies();
-          store.set(name, "", { ...options, maxAge: 0 });
-        },
-      },
-    }
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseServer.js
-============================================================
-
-// lib/supabaseServer.js — Next.js 16 compatible
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-
-export async function supabaseServer() {
-  const cookieStore = await cookies(); // 🔥 AQUÍ ESTÁ LA CLAVE: AWAIT
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set() {
-          // No se permite escribir cookies desde SSR
-        },
-        remove() {
-          // No se permite borrar cookies desde SSR
-        },
-      },
-    }
-  );
-}
 

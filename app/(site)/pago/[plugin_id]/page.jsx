@@ -1,25 +1,35 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 
-export default function Page({ params }) {
-  const { plugin_id } = use(params);
+export default function Page() {
+  const { plugin_id } = useParams();
+
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ⭐ Ya NO existe "normal"
+  const planInicial = searchParams.get("plan") ?? "completa";
 
   const [plugin, setPlugin] = useState(null);
   const [user, setUser] = useState(null);
-  const [emails, setEmails] = useState([""]); 
+  const [emails, setEmails] = useState([""]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ⭐ Tipo inicial corregido
+  const [tipo, setTipo] = useState(planInicial);
 
   useEffect(() => {
     async function load() {
       try {
+        // USER
         const rUser = await fetch("/api/auth/me");
         const dUser = await rUser.json();
         setUser(dUser.user ?? null);
 
+        // PLUGIN
         const rPlugin = await fetch(`/api/plugin/${plugin_id}`);
         const dPlugin = await rPlugin.json();
         setPlugin(dPlugin?.error ? null : dPlugin);
@@ -30,17 +40,15 @@ export default function Page({ params }) {
       }
     }
 
-    load();
+    if (plugin_id) load();
   }, [plugin_id]);
 
   function actualizarEmail(i, valor) {
-    setEmails(prev =>
-      prev.map((e, idx) => (idx === i ? valor : e))
-    );
+    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
   }
 
   function añadirFila() {
-    setEmails(prev => [...prev, ""]);
+    setEmails((prev) => [...prev, ""]);
   }
 
   async function crearPago() {
@@ -49,10 +57,8 @@ export default function Page({ params }) {
       return;
     }
 
-    // VALIDACIÓN FUERTE
-    const emailsLimpios = emails.map(e => e.trim());
-
-    if (emailsLimpios.some(e => e === "")) {
+    const emailsLimpios = emails.map((e) => e.trim());
+    if (emailsLimpios.some((e) => e === "")) {
       setError("Debes completar TODOS los emails Tekla.");
       return;
     }
@@ -64,78 +70,96 @@ export default function Page({ params }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plugin_id,
-          emails_tekla: emailsLimpios,  // ✔ SOLO emails válidos
-        })
+          emails_tekla: emailsLimpios,
+          tipo, // ⭐ Ahora siempre “anual” o “completa”
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(
-          data?.error?.message ??
-          data?.error ??
-          "Error creando el pago"
-        );
+        setError(data?.error ?? "Error creando el pago");
         return;
       }
 
-      router.push(`/pago/licencias/${data.pago.id}`);
-
+      router.push(`/pago/licencias/${data.pago_id}`);
     } catch (err) {
       console.error(err);
       setError("Error interno del servidor");
     }
   }
 
-  if (loading) return <p className="p-6">Cargando...</p>;
-  if (!plugin) return <p className="p-6">Plugin no encontrado.</p>;
+  if (loading) return <p>Cargando...</p>;
+  if (!plugin) return <p>Plugin no encontrado.</p>;
 
-  const total = plugin.precio * emails.length;
+  // ⭐ PRECIOS — NORMALIZADOS A NÚMEROS
+  const precioAnual = Number(plugin.precio_anual) || 0;
+  const precioCompleta = Number(plugin.precio_completa) || 0;
+
+  // ⭐ PRECIO SEGÚN PLAN
+  const precioUnitario =
+    tipo === "anual" ? precioAnual : precioCompleta;
+
+  const total = precioUnitario * emails.length;
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold mb-4">Comprar licencias</h1>
+    <div className="p-4 max-w-xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold">Comprar licencias</h1>
 
       <p className="text-lg">
         Plugin: <strong>{plugin.nombre}</strong>
       </p>
 
-      <p>
-        Precio por licencia: <strong>{plugin.precio} €</strong>
-      </p>
+      {/* SELECTOR DE TIPO — SIN NORMAL */}
+      <div>
+        <label className="font-semibold">Tipo de licencia:</label>
 
-      <div className="space-y-3 mt-6">
-        <h3 className="font-semibold text-lg">Emails Tekla para activar:</h3>
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          className="border p-2 rounded w-full dark:bg-gray-900"
+        >
+          {precioAnual > 0 && (
+            <option value="anual">Anual – {precioAnual} €</option>
+          )}
+
+          {precioCompleta > 0 && (
+            <option value="completa">Completa – {precioCompleta} €</option>
+          )}
+        </select>
+      </div>
+
+      {/* EMAILS */}
+      <div>
+        <h3 className="font-semibold mb-2">Emails Tekla:</h3>
 
         {emails.map((email, i) => (
-          <div key={i}>
-            <label>Email Tekla #{i + 1}</label>
-            <input
-              className="w-full p-2 rounded border dark:bg-gray-900"
-              value={email}
-              onChange={(e) => actualizarEmail(i, e.target.value)}
-              placeholder="email@empresa.com"
-            />
-          </div>
+          <input
+            key={i}
+            type="email"
+            value={email}
+            placeholder="usuario@empresa.com"
+            onChange={(e) => actualizarEmail(i, e.target.value)}
+            className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
+          />
         ))}
 
         <button
           onClick={añadirFila}
-          className="bg-gray-300 dark:bg-gray-700 px-4 py-2 rounded"
+          className="text-blue-600 underline mb-4"
         >
-          Añadir fila
+          Añadir otro email
         </button>
       </div>
 
-      <p className="text-xl font-bold mt-4">
-        Total: {total} €
-      </p>
+      {/* TOTAL */}
+      <p className="text-xl font-semibold">Total: {total} €</p>
 
       {error && <p className="text-red-600">{error}</p>}
 
       <button
         onClick={crearPago}
-        className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 mt-4"
+        className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
       >
         Comprar
       </button>

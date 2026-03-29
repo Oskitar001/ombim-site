@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -9,6 +8,8 @@ export default function NuevoPluginPage() {
     nombre: "",
     descripcion: "",
     precio: 0,
+    precio_anual: 0,
+    precio_completa: 0,
     archivo_url: "",
     video_url: "",
     imagen_url: "",
@@ -18,9 +19,9 @@ export default function NuevoPluginPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  // ==========================
-  // SUBIR IMAGEN A SUPABASE
-  // ==========================
+  // ================================
+  // SUBIR IMAGEN
+  // ================================
   async function subirImagen(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -28,18 +29,24 @@ export default function NuevoPluginPage() {
     const ext = file.name.split(".").pop();
     const name = `${Date.now()}.${ext}`;
 
-    const upload = await fetch(`/api/admin/upload-image?name=${name}`, {
+    const res = await fetch(`/api/admin/upload-image?name=${name}`, {
       method: "POST",
+      credentials: "include", // 🔥 FIX
       body: file,
     });
 
-    const json = await upload.json();
+    const json = await res.json();
+    if (!json?.url) {
+      alert("Error subiendo la imagen");
+      return;
+    }
+
     update("imagen_url", json.url);
   }
 
-  // ==========================
-  // SUBIR PLUGIN .TSEP
-  // ==========================
+  // ================================
+  // SUBIR TSEP
+  // ================================
   async function subirTsep(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -52,24 +59,45 @@ export default function NuevoPluginPage() {
 
     const name = `${Date.now()}.${ext}`;
 
-    const upload = await fetch(`/api/admin/upload-tsep?name=${name}`, {
+    const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
       method: "POST",
+      credentials: "include", // 🔥 FIX
       body: file,
     });
 
-    const json = await upload.json();
+    const json = await res.json();
+    if (!json?.url) {
+      alert("Error subiendo el archivo TSEP");
+      return;
+    }
+
     update("archivo_url", json.url);
   }
 
-  // ==========================
-  // GUARDAR PLUGIN EN SUPABASE
-  // ==========================
+  // ================================
+  // GUARDAR PLUGIN
+  // ================================
   async function guardar() {
-    await fetch("/api/admin/plugins/nuevo", {
+    const payload = {
+      ...form,
+      precio: Number(form.precio) || 0,
+      precio_anual: Number(form.precio_anual) || 0,
+      precio_completa: Number(form.precio_completa) || 0,
+    };
+
+    const res = await fetch("/api/admin/plugins/nuevo", {
       method: "POST",
+      credentials: "include", // 🔥 FIX
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      alert(json.error ?? "Error guardando plugin");
+      return;
+    }
 
     window.location.href = "/panel/admin/plugins";
   }
@@ -83,7 +111,6 @@ export default function NuevoPluginPage() {
       <h1 className="text-3xl font-bold">Nuevo Plugin</h1>
 
       <div className="space-y-4">
-
         {/* Nombre */}
         <div>
           <label>Nombre</label>
@@ -105,18 +132,40 @@ export default function NuevoPluginPage() {
           />
         </div>
 
-        {/* Precio */}
+        {/* Precio por defecto */}
         <div>
-          <label>Precio (€)</label>
+          <label>Precio por defecto (€)</label>
           <input
             type="number"
             className="w-full p-2 rounded border dark:bg-gray-900"
             value={form.precio}
-            onChange={(e) => update("precio", parseFloat(e.target.value))}
+            onChange={(e) => update("precio", e.target.value)}
           />
         </div>
 
-        {/* Subir archivo TSEP */}
+        {/* Precio anual */}
+        <div>
+          <label>Precio Anual (€)</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.precio_anual}
+            onChange={(e) => update("precio_anual", e.target.value)}
+          />
+        </div>
+
+        {/* Precio completa */}
+        <div>
+          <label>Precio Completa (€)</label>
+          <input
+            type="number"
+            className="w-full p-2 rounded border dark:bg-gray-900"
+            value={form.precio_completa}
+            onChange={(e) => update("precio_completa", e.target.value)}
+          />
+        </div>
+
+        {/* Archivo TSEP */}
         <div>
           <label>Archivo (.tsep)</label>
           <input
@@ -140,7 +189,7 @@ export default function NuevoPluginPage() {
           />
         </div>
 
-        {/* Subir imagen */}
+        {/* Imagen */}
         <div>
           <label>Imagen del plugin</label>
           <input
@@ -154,14 +203,12 @@ export default function NuevoPluginPage() {
           )}
         </div>
 
-        {/* Guardar */}
         <button
           onClick={guardar}
           className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
         >
           Guardar Plugin
         </button>
-
       </div>
     </div>
   );

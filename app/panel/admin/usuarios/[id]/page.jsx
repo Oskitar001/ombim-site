@@ -1,33 +1,35 @@
 "use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft, User, Trash2 } from "lucide-react";
 
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminUsuarioDetallePage({ params }) {
-  const { id } = params; // ← REEMPLAZA use(params)
+
+  // 🔥 EN NEXT.JS 16 params ES UN PROMISE
+  const { id } = use(params);
+
   const [usuario, setUsuario] = useState(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       const r = await fetch(`/api/admin/usuarios/${id}`, {
         credentials: "include",
       });
+
+      if (!r.ok) {
+        setUsuario(null);
+        return;
+      }
+
       const d = await r.json();
       setUsuario(d.user ?? null);
     }
+
     load();
   }, [id]);
 
@@ -39,7 +41,6 @@ export default function AdminUsuarioDetallePage({ params }) {
       body: JSON.stringify({ id }),
     });
 
-    setOpen(false);
     window.location.href = "/panel/admin/usuarios";
   }
 

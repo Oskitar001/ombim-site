@@ -1,6 +1,5 @@
-// app/api/plugin/route.js
-
-export const runtime = "nodejs";  // ⬅⬅⬅ ESTA LÍNEA ES LA CLAVE
+// /app/api/plugins/route.js
+export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -8,7 +7,18 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("plugins")
-    .select("id, nombre, descripcion, precio, archivo_url, video_url, imagen_url, created_at")
+    .select(`
+      id,
+      nombre,
+      descripcion,
+      precio,
+      precio_anual,
+      precio_completa,
+      archivo_url,
+      video_url,
+      imagen_url,
+      created_at
+    `)
     .order("created_at", { ascending: false });
 
   if (error) {

@@ -1,209 +1,181 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
-export default function EditarPluginPage({ params }) {
-  const { id } = use(params);
-
-  const [form, setForm] = useState({
-    nombre: "",
-    descripcion: "",
-    precio: 0,
-    archivo_url: "",
-    video_url: "",
-    imagen_url: "",
-  });
-
+export default function EditarPluginPage() {
+  const { id } = useParams();
+  const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  function update(k, v) {
-    setForm((p) => ({ ...p, [k]: v }));
+  function update(campo, valor) {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
   }
 
-  // Cargar datos del plugin real
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
-      const r = await fetch(`/api/plugin/${id}`);
-      const d = await r.json();
+      try {
+        const res = await fetch(`/api/plugin/${id}`, {
+          credentials: "include",
+        });
 
-      setForm({
-        nombre: d.nombre,
-        descripcion: d.descripcion,
-        precio: d.precio,
-        archivo_url: d.archivo_url,
-        video_url: d.video_url,
-        imagen_url: d.imagen_url,
-      });
+        const data = await res.json();
 
-      setLoading(false);
+        if (!res.ok || data.error) {
+          console.error("Error cargando plugin:", data);
+          setForm(null);
+          return;
+        }
+
+        setForm({
+          nombre: data.nombre ?? "",
+          descripcion: data.descripcion ?? "",
+          precio: Number(data.precio) ?? 0,
+          precio_anual: Number(data.precio_anual) ?? 0,
+          precio_completa: Number(data.precio_completa) ?? 0,
+          archivo_url: data.archivo_url ?? "",
+          video_url: data.video_url ?? "",
+          imagen_url: data.imagen_url ?? "",
+        });
+      } finally {
+        setLoading(false);
+      }
     }
+
     load();
   }, [id]);
 
-  // Subir imagen
-  async function subirImagen(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const name = file.name;
-
-    const upload = await fetch(`/api/admin/upload-image?name=${name}`, {
-      method: "POST",
-      body: file,
-    });
-
-    const json = await upload.json();
-    update("imagen_url", json.url);
-  }
-
-  // Subir TSEP con nombre original
-  async function subirTsep(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.name.endsWith(".tsep")) {
-      alert("Debe ser un archivo .tsep");
-      return;
-    }
-
-    const name = file.name;
-
-    const upload = await fetch(`/api/admin/upload-tsep?name=${name}`, {
-      method: "POST",
-      body: file,
-    });
-
-    const json = await upload.json();
-    update("archivo_url", json.url);
-  }
-
-  // Guardar cambios
   async function guardar() {
-    await fetch("/api/admin/plugins/editar", {
+    if (!form) return;
+
+    const res = await fetch("/api/admin/plugins/editar", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...form }),
     });
 
-    window.location.href = "/panel/admin/plugins";
+    if (res.ok) {
+      window.location.href = "/panel/admin/plugins";
+    }
   }
 
-  // Notificar versión
-  async function notificarVersion() {
-    if (!form.archivo_url) {
-      alert("Primero sube un archivo .tsep");
-      return;
-    }
+  async function subir(file, tipo) {
+    if (!file) return;
 
-    const archivo_nombre = form.archivo_url.split("/").pop();
+    const endpoint = `/api/admin/${tipo === "imagen" ? "upload-image" : "upload-tsep"}?name=${file.name}`;
 
-    const res = await fetch("/api/admin/plugins/notificar-version", {
+    const res = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plugin_id: id, archivo_nombre }),
+      credentials: "include",
+      body: file,
     });
 
-    const data = await res.json();
+    const json = await res.json();
+    if (!json.url) return;
 
-    alert(`Notificados ${data.enviados} usuarios`);
+    const campo = tipo === "imagen" ? "imagen_url" : "archivo_url";
+    update(campo, json.url);
   }
 
-  if (loading) return <p className="mt-10">Cargando...</p>;
+  if (loading) return <p className="p-6">Cargando plugin…</p>;
+  if (!form) return <p>No se pudo cargar el plugin</p>;
 
   return (
     <div className="space-y-6 p-4 max-w-xl mx-auto">
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
-        <ArrowLeft size={20} /> Volver
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2 text-blue-600">
+        <ArrowLeft size={18} />
+        Volver
       </Link>
 
-      <h1 className="text-3xl font-bold">Editar Plugin</h1>
+      <h1 className="text-3xl font-bold mb-4">Editar plugin</h1>
 
-      <div className="space-y-4">
+      <label className="block font-semibold">Nombre</label>
+      <input
+        value={form.nombre}
+        onChange={(e) => update("nombre", e.target.value)}
+        className="w-full p-2 rounded border dark:bg-gray-900"
+      />
 
-        <div>
-          <label>Nombre</label>
-          <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.nombre}
-            onChange={(e) => update("nombre", e.target.value)}
-          />
-        </div>
+      <label className="block font-semibold mt-2">Descripción</label>
+      <textarea
+        value={form.descripcion}
+        rows={3}
+        onChange={(e) => update("descripcion", e.target.value)}
+        className="w-full p-2 rounded border dark:bg-gray-900"
+      />
 
-        <div>
-          <label>Descripción</label>
-          <textarea
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            rows={4}
-            value={form.descripcion}
-            onChange={(e) => update("descripcion", e.target.value)}
-          />
-        </div>
+      <label className="block font-semibold mt-2">Precio estándar (€)</label>
+      <input
+        type="number"
+        value={form.precio}
+        onChange={(e) => update("precio", Number(e.target.value))}
+        className="w-full p-2 rounded border dark:bg-gray-900"
+      />
 
-        <div>
-          <label>Precio (€)</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.precio}
-            onChange={(e) => update("precio", Number(e.target.value))}
-          />
-        </div>
+      <label className="block font-semibold mt-2">Precio anual (€)</label>
+      <input
+        type="number"
+        value={form.precio_anual}
+        onChange={(e) => update("precio_anual", Number(e.target.value))}
+        className="w-full p-2 rounded border dark:bg-gray-900"
+      />
 
-        {/* TSEP */}
-        <div>
-          <label>Archivo del plugin (.tsep)</label>
-          <input
-            type="file"
-            accept=".tsep"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            onChange={subirTsep}
-          />
+      <label className="block font-semibold mt-2">Precio completa (€)</label>
+      <input
+        type="number"
+        value={form.precio_completa}
+        onChange={(e) => update("precio_completa", Number(e.target.value))}
+        className="w-full p-2 rounded border dark:bg-gray-900"
+      />
 
-          {form.archivo_url && (
-            <p className="text-sm text-green-600">
-              Archivo actual: {form.archivo_url.split("/").pop()}
-            </p>
-          )}
-        </div>
-
-        {/* Video */}
-        <div>
-          <label>Video URL (YouTube)</label>
-          <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.video_url}
-            onChange={(e) => update("video_url", e.target.value)}
-          />
-        </div>
-
-        {/* Imagen */}
-        <div>
-          <label>Imagen del plugin</label>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            onChange={subirImagen}
-          />
-        </div>
-
-        {/* BOTONES */}
-        <button
-          onClick={guardar}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
-        >
-          Guardar cambios
-        </button>
-
-        <button
-          onClick={notificarVersion}
-          className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700"
-        >
-          Notificar nueva versión a compradores
-        </button>
+      <div className="mt-3">
+        <label>Archivo .tsep</label>
+        <input
+          type="file"
+          accept=".tsep"
+          onChange={(e) => subir(e.target.files[0], "tsep")}
+        />
+        {form.archivo_url && (
+          <p className="text-sm text-green-600">
+            {form.archivo_url.split("/").pop()}
+          </p>
+        )}
       </div>
+
+      <div className="mt-3">
+        <label>Video (YouTube)</label>
+        <input
+          value={form.video_url}
+          onChange={(e) => update("video_url", e.target.value)}
+          className="w-full p-2 rounded border dark:bg-gray-900"
+        />
+      </div>
+
+      <div className="mt-3">
+        <label>Imagen del plugin</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => subir(e.target.files[0], "imagen")}
+        />
+        {form.imagen_url && (
+          <p className="text-sm text-green-600">
+            {form.imagen_url.split("/").pop()}
+          </p>
+        )}
+      </div>
+
+      <button
+        onClick={guardar}
+        className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 mt-4"
+      >
+        Guardar cambios
+      </button>
     </div>
   );
 }

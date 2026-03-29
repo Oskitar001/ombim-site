@@ -4,14 +4,16 @@ import CompraLicencias from "./CompraLicencias";
 export const dynamic = "force-dynamic";
 
 export default async function Page({ params }) {
+
+  // ✔ FIX: params en Next.js 15/16 es una PROMESA
+  const { plugin_id } = await params;
+
   const supabase = supabaseServer();
 
   const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) {
     return <p className="p-6">Debes iniciar sesión para continuar.</p>;
   }
-
-  const { plugin_id } = params;
 
   const { data: plugin, error } = await supabase
     .from("plugins")

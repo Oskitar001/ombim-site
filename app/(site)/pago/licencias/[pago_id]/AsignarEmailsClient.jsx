@@ -3,12 +3,15 @@
 import { useState } from "react";
 
 export default function AsignarEmailsClient({ pago, onSaved }) {
-  const [emails, setEmails] = useState(
-    pago.licencias.map((l) => ({
-      licencia_id: l.id,
-      email_tekla: l.email_tekla ?? "",
-    }))
-  );
+  // ⭐ Proteger si pago.licencias NO existe
+  const initial = Array.isArray(pago.licencias)
+    ? pago.licencias.map((l) => ({
+        licencia_id: l.id,
+        email_tekla: l.email_tekla ?? "",
+      }))
+    : [];
+
+  const [emails, setEmails] = useState(initial);
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -17,7 +20,7 @@ export default function AsignarEmailsClient({ pago, onSaved }) {
   function actualizarEmail(i, valor) {
     setEmails((prev) =>
       prev.map((item, idx) =>
-        idx === i ? { ...item, email_tekla: valor } : item
+        idx === i ? { ...item, email_tekla: valor.trim() } : item
       )
     );
   }
@@ -26,6 +29,14 @@ export default function AsignarEmailsClient({ pago, onSaved }) {
     setLoading(true);
     setMsg("");
     setError("");
+
+    // ⭐ Validación local
+    const vacios = emails.some((e) => !e.email_tekla || e.email_tekla === "");
+    if (vacios) {
+      setError("Todos los emails Tekla son obligatorios.");
+      setLoading(false);
+      return;
+    }
 
     const res = await fetch("/api/pagos/guardar-emails", {
       method: "POST",

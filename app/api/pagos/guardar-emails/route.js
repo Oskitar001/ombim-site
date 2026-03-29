@@ -1,23 +1,46 @@
 // app/api/pagos/guardar-emails/route.js
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
-  const supabase = await supabaseServer();
-  const body = await req.json();
-
-  const { pago_id, emails } = body;
+  const { pago_id, emails } = await req.json();
 
   if (!pago_id || !emails?.length) {
-    return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Datos incompletos" },
+      { status: 400 }
+    );
   }
 
+  // Validar emails
   for (const entry of emails) {
-    await supabase
-      .from("licencias")
-      .update({ email_tekla: entry.email_tekla })
-      .eq("id", entry.licencia_id)
-      .eq("pago_id", pago_id);
+    if (!entry.email_tekla || entry.email_tekla.trim() === "") {
+      return NextResponse.json(
+        { error: "Todos los emails deben estar completos" },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Preparar batch update
+  const updates = emails.map((entry) => ({
+    id: entry.licencia_id,
+    email_tekla: entry.email_tekla.trim(),
+  }));
+
+  // Actualizar licencias
+  const { error } = await supabaseAdmin
+    .from("licencias")
+    .upsert(updates, {
+      onConflict: "id",
+    });
+
+  if (error) {
+    console.error("❌ Error guardando emails:", error);
+    return NextResponse.json(
+      { error: "error_guardando_emails" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true });

@@ -1,48 +1,95 @@
 import Link from "next/link";
-import { Home, KeyRound, CreditCard, Download } from "lucide-react";
+import {
+  Home,
+  KeyRound,
+  CreditCard,
+  Download,
+  User,
+} from "lucide-react";
 
 export default function UserLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg text-gray-900 dark:text-gray-100">
+    <div className="flex h-screen overflow-hidden">
 
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-gray-200 dark:bg-gray-800 p-6 shadow-xl flex flex-col gap-6">
+      {/* SIDEBAR FIJO */}
+      <aside
+        className="
+          w-64 
+          bg-gray-100 dark:bg-gray-900 
+          p-4 space-y-4 
+          border-r border-gray-300 dark:border-gray-700
+          flex-shrink-0
+          overflow-hidden
+          fixed
+          inset-y-0
+        "
+      >
+        <h2 className="text-xl font-bold mb-4">Panel Usuario</h2>
 
-        <div className="text-2xl font-bold tracking-tight">
-          Panel Usuario
-        </div>
+        <nav className="space-y-2">
 
-        <nav className="flex flex-col gap-3">
-
-          <Link href="/panel/user" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <Home size={20} /> Inicio
+          <Link
+            href="/panel/user"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <Home size={18} />
+            Inicio
           </Link>
 
-          <Link href="/panel/user/licencias" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <KeyRound size={20} /> Mis licencias
+          <Link
+            href="/panel/user/licencias"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <KeyRound size={18} />
+            Mis licencias
           </Link>
 
-          <Link href="/panel/user/pagos" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <CreditCard size={20} /> Mis pagos
+          <Link
+            href="/panel/user/pagos"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <CreditCard size={18} />
+            Mis pagos
           </Link>
 
-          <Link href="/panel/user/descargas" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400">
-            <Download size={20} /> Descargas
+          <Link
+            href="/panel/user/mis-datos"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <User size={18} />
+            Mis datos
           </Link>
 
-          <Link href="/" className="mt-6 text-sm opacity-80 hover:opacity-100">
+          <Link
+            href="/panel/user/descargas"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+          >
+            <Download size={18} />
+            Descargas
+          </Link>
+
+          <Link
+            href="/"
+            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
+          >
             ← Volver a ombim.site
           </Link>
 
         </nav>
-
       </aside>
 
-      {/* CONTENIDO */}
-      <main className="flex-1 p-10">
+      {/* CONTENIDO DESPLAZABLE */}
+      <main
+        className="
+          flex-1 
+          ml-64 
+          p-6 
+          overflow-y-auto 
+          bg-gray-50 dark:bg-gray-800
+        "
+      >
         {children}
       </main>
-
     </div>
   );
 }

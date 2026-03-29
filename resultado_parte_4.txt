@@ -1,0 +1,64 @@
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseRoute.js
+============================================================
+
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export function supabaseRoute() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        async get(name) {
+          const store = await cookies();      // FIX: cookies() es async en Next 16
+          const cookie = store.get(name);
+          return cookie?.value;
+        },
+        async set(name, value, options) {
+          const store = await cookies();
+          store.set(name, value, options);
+        },
+        async remove(name, options) {
+          const store = await cookies();
+          store.set(name, "", { ...options, maxAge: 0 });
+        },
+      },
+    }
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseServer.js
+============================================================
+
+// lib/supabaseServer.js — Next.js 16 compatible
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+
+export async function supabaseServer() {
+  const cookieStore = await cookies(); // 🔥 AQUÍ ESTÁ LA CLAVE: AWAIT
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set() {
+          // No se permite escribir cookies desde SSR
+        },
+        remove() {
+          // No se permite borrar cookies desde SSR
+        },
+      },
+    }
+  );
+}
+

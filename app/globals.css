@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ----------------------------------------
+/* ============================================
    ESTILOS GLOBALES OMBIM
------------------------------------------*/
+============================================ */
 
 html,
 body {
@@ -28,7 +28,7 @@ a {
   color: inherit;
 }
 
-/* Scrollbar elegante */
+/* SCROLLBAR PREMIUM */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -43,11 +43,10 @@ a {
   background: #888;
 }
 
-/* ----------------------------------------
+/* ============================================
    ANIMACIONES GLOBALES
------------------------------------------*/
+============================================ */
 
-/* Modales */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -58,12 +57,10 @@ a {
     transform: scale(1);
   }
 }
-
 .animate-fadeIn {
   animation: fadeIn 0.15s ease-out;
 }
 
-/* Dropdowns */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -74,150 +71,80 @@ a {
     transform: translateY(0);
   }
 }
-
 .animate-slideDown {
   animation: slideDown 0.15s ease-out;
 }
 
-/* ----------------------------------------
-   TABLAS PRO
------------------------------------------*/
+/* ============================================
+   TABLAS PREMIUM (NO ROMPER LAS TABLAS TAILWIND)
+============================================ */
 
+/* Quitamos border-collapse global, causaba bugs */
 table {
-  border-collapse: collapse;
   width: 100%;
 }
 
 th {
-  background: #e5e7eb;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.dark th {
-  background: #3b3b3b;
+  @apply bg-gray-200 dark:bg-gray-800 font-semibold text-sm;
 }
 
 td,
 th {
-  border: 1px solid #d1d5db;
-  padding: 10px 12px;
+  @apply border border-gray-300 dark:border-gray-700 p-3;
 }
 
-.dark td,
-.dark th {
-  border-color: #4b4b4b;
-}
-
-/* Hover */
+/* Hover Premium */
 tr:hover td {
-  background-color: #eef0f3;
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
-.dark tr:hover td {
-  background-color: #252525;
-}
-
-/* ----------------------------------------
-   BOTONES PRO
------------------------------------------*/
+/* ============================================
+   BOTONES PREMIUM
+============================================ */
 
 .btn {
-  padding: 8px 14px;
-  border-radius: 6px;
-  transition: 0.2s;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  @apply px-4 py-2 rounded-md font-medium inline-flex items-center gap-2 transition;
 }
 
 .btn-primary {
-  background: #2563eb;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #1e40af;
+  @apply bg-blue-600 hover:bg-blue-700 text-white;
 }
 
 .btn-danger {
-  background: #dc2626;
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #b91c1c;
+  @apply bg-red-600 hover:bg-red-700 text-white;
 }
 
 .btn-secondary {
-  background: #e5e7eb;
-  color: #111827;
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white;
 }
 
-.btn-secondary:hover {
-  background: #d1d5db;
-}
-
-.dark .btn-secondary {
-  background: #4b4b4b;
-  color: white;
-}
-
-.dark .btn-secondary:hover {
-  background: #6b6b6b;
-}
-
-/* Icon buttons */
 .btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  border-radius: 6px;
-  transition: 0.15s;
+  @apply p-2 rounded-md flex items-center justify-center transition;
 }
 
 .btn-icon:hover {
-  background: rgba(0, 0, 0, 0.08);
+  @apply bg-black/10 dark:bg-white/10;
 }
 
-.dark .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* ----------------------------------------
-   INPUTS
------------------------------------------*/
+/* ============================================
+   INPUTS PREMIUM
+============================================ */
 
 input,
 select,
 textarea {
-  @apply border p-2 rounded w-full dark:bg-gray-900 dark:border-gray-700 dark:text-white;
+  @apply border p-2 rounded w-full dark:bg-gray-900 dark:border-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500;
 }
 
-input:disabled {
-  background: #e5e7eb;
-  color: #7b7b7b;
+input:disabled,
+textarea:disabled {
+  @apply bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-400;
 }
 
-.dark input:disabled {
-  background: #3b3b3b;
-  color: #777;
-}
-
-/* ----------------------------------------
-   CARDS PRO
------------------------------------------*/
+/* ============================================
+   CARDS PREMIUM
+============================================ */
 
 .card {
-  background: #e5e7eb;
-  padding: 16px;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-.dark .card {
-  background: #2d2d2d;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-xl shadow border border-gray-300 dark:border-gray-700;
 }

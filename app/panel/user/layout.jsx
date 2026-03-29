@@ -191,14 +191,14 @@ export default function UserLayout({ children }) {
       {/* =============================
           CONTENIDO PRINCIPAL
       ============================= */}
-      <main
-        className="
-          flex-1 
-          p-6 
-          overflow-y-auto 
-          bg-gray-50 dark:bg-gray-800
-        "
-      >
+     
+       <main className="
+  flex-1 
+  p-6 
+  pt-20 md:pt-6
+  overflow-y-auto 
+  bg-gray-50 dark:bg-gray-800
+">
         {children}
       </main>
 

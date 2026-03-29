@@ -27,32 +27,58 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     async function load() {
-      // STATS
-      const r1 = await fetch("/api/admin/dashboard");
+      /* =====================================
+         1. STATS DASHBOARD
+      ===================================== */
+      const r1 = await fetch("/api/admin/dashboard", {
+        credentials: "include",
+      });
       const d1 = await r1.json();
-      setStats(d1 ?? {});
 
-      // ULTIMOS PAGOS
-      const r2 = await fetch("/api/admin/pagos");
+      setStats({
+        totalLicencias: d1.totalLicencias ?? 0,
+        licenciasActivas: d1.licenciasActivas ?? 0,
+        licenciasBloqueadas: d1.licenciasBloqueadas ?? 0,
+        totalPagos: d1.totalPagos ?? 0,
+        pendientes: d1.pendientes ?? 0,
+        descargasTotales: d1.descargasTotales ?? 0,
+        ingresosTotales: d1.ingresosTotales ?? 0,
+      });
+
+      /* =====================================
+         2. ULTIMOS PAGOS
+      ===================================== */
+      const r2 = await fetch("/api/admin/pagos/list", {
+        credentials: "include",
+      });
       const d2 = await r2.json();
-      setUltimosPagos((d2 ?? []).slice(0, 5));
+      setUltimosPagos(Array.isArray(d2) ? d2.slice(0, 5) : []);
 
-      // ULTIMAS LICENCIAS
+      /* =====================================
+         3. ULTIMAS LICENCIAS
+      ===================================== */
       const r3 = await fetch("/api/admin/licencias");
       const d3 = await r3.json();
-      setUltimasLicencias((d3?.licencias ?? []).slice(0, 5));
+      setUltimasLicencias(
+        Array.isArray(d3.licencias) ? d3.licencias.slice(0, 5) : []
+      );
 
-      // ULTIMOS USUARIOS
+      /* =====================================
+         4. ULTIMOS USUARIOS
+      ===================================== */
       const r4 = await fetch("/api/admin/usuarios");
       const d4 = await r4.json();
-      setUltimosUsuarios((d4?.users ?? []).slice(0, 5));
+      setUltimosUsuarios(
+        Array.isArray(d4.users) ? d4.users.slice(0, 5) : []
+      );
     }
 
     load();
   }, []);
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto">
+    <div className="space-y-10 max-w-7xl mx-auto min-h-[80vh]">
+
       {/* TITULO */}
       <h1 className="text-3xl font-bold flex items-center gap-3">
         <Activity size={32} /> Panel de Administración
@@ -65,8 +91,8 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TARJETAS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* TARJETAS KPI PREMIUM */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card
           title="Licencias activas"
           value={stats.licenciasActivas}
@@ -94,51 +120,65 @@ export default function AdminDashboardPage() {
 
       {/* ULTIMOS PAGOS */}
       <Section title="Últimos pagos">
-        {ultimosPagos.map((p) => (
-          <Row key={p.id}>
-            <div>
-              <p className="font-semibold">Pago #{p.id}</p>
-              <p className="text-sm opacity-70">
-                {p.plugin_id} — {p.estado}
-              </p>
-            </div>
-            <span>{new Date(p.fecha).toLocaleString()}</span>
-          </Row>
-        ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          {ultimosPagos.map((p) => (
+            <CardRow key={p.id}>
+              <div className="space-y-1">
+                <p className="font-semibold">Pago #{p.id}</p>
+                <p className="text-sm opacity-70">
+                  {p.plugin_id} — {p.estado}
+                </p>
+              </div>
+              <span className="text-sm text-right opacity-70">
+                {new Date(p.fecha).toLocaleString()}
+              </span>
+            </CardRow>
+          ))}
+        </div>
       </Section>
 
       {/* ULTIMAS LICENCIAS */}
       <Section title="Últimas licencias">
-        {ultimasLicencias.map((l) => (
-          <Row key={l.id}>
-            <div>
-              <p className="font-semibold">Licencia #{l.id}</p>
-              <p className="text-sm opacity-70">
-                {l.plugin_id} — {l.email_tekla}
-              </p>
-            </div>
-            <span>{new Date(l.fecha_creacion).toLocaleString()}</span>
-          </Row>
-        ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          {ultimasLicencias.map((l) => (
+            <CardRow key={l.id}>
+              <div className="space-y-1">
+                <p className="font-semibold">Licencia #{l.id}</p>
+                <p className="text-sm opacity-70">
+                  {l.plugin_id} — {l.email_tekla}
+                </p>
+              </div>
+              <span className="text-sm text-right opacity-70">
+                {new Date(l.fecha_creacion).toLocaleString()}
+              </span>
+            </CardRow>
+          ))}
+        </div>
       </Section>
 
       {/* ULTIMOS USUARIOS */}
       <Section title="Últimos usuarios">
-        {ultimosUsuarios.map((u) => (
-          <Row key={u.id}>
-            <p className="font-semibold">{u.email}</p>
-            <span>{new Date(u.created_at).toLocaleString()}</span>
-          </Row>
-        ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          {ultimosUsuarios.map((u) => (
+            <CardRow key={u.id}>
+              <p className="font-semibold">{u.email}</p>
+              <span className="text-sm text-right opacity-70">
+                {new Date(u.created_at).toLocaleString()}
+              </span>
+            </CardRow>
+          ))}
+        </div>
       </Section>
+
     </div>
   );
 }
 
-// --------- COMPONENTES REUTILIZABLES ---------
+/* ==================== COMPONENTES ==================== */
+
 function Card({ title, value, icon }) {
   return (
-    <div className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex flex-col gap-3">
+    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 hover:shadow-xl transition">
       <div className="flex items-center gap-3">
         {icon}
         <h2 className="text-lg font-bold">{title}</h2>
@@ -151,12 +191,18 @@ function Card({ title, value, icon }) {
 function Section({ title, children }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">{title}</h2>
-      <div className="space-y-3">{children}</div>
+      <h2 className="text-2xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+        {title}
+      </h2>
+      {children}
     </div>
   );
 }
 
-function Row({ children }) {
-  return <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded shadow flex justify-between">{children}</div>;
+function CardRow({ children }) {
+  return (
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 flex justify-between items-start hover:shadow-md transition">
+      {children}
+    </div>
+  );
 }

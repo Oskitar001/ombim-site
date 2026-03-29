@@ -1,7 +1,8 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 
 export default function NuevoPluginPage() {
   const [form, setForm] = useState({
@@ -31,7 +32,7 @@ export default function NuevoPluginPage() {
 
     const res = await fetch(`/api/admin/upload-image?name=${name}`, {
       method: "POST",
-      credentials: "include", // 🔥 FIX
+      credentials: "include",
       body: file,
     });
 
@@ -61,7 +62,7 @@ export default function NuevoPluginPage() {
 
     const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
       method: "POST",
-      credentials: "include", // 🔥 FIX
+      credentials: "include",
       body: file,
     });
 
@@ -87,7 +88,7 @@ export default function NuevoPluginPage() {
 
     const res = await fetch("/api/admin/plugins/nuevo", {
       method: "POST",
-      credentials: "include", // 🔥 FIX
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -103,109 +104,112 @@ export default function NuevoPluginPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 max-w-xl mx-auto">
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
+    <div className="space-y-8 p-4 max-w-2xl mx-auto">
+
+      {/* VOLVER */}
+      <Link
+        href="/panel/admin/plugins"
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+      >
         <ArrowLeft size={20} /> Volver
       </Link>
 
+      {/* TÍTULO */}
       <h1 className="text-3xl font-bold">Nuevo Plugin</h1>
 
-      <div className="space-y-4">
+      {/* FORM CARD PREMIUM */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow rounded-xl p-6 space-y-6">
+
         {/* Nombre */}
-        <div>
-          <label>Nombre</label>
+        <Field label="Nombre">
           <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.nombre}
             onChange={(e) => update("nombre", e.target.value)}
           />
-        </div>
+        </Field>
 
         {/* Descripción */}
-        <div>
-          <label>Descripción</label>
+        <Field label="Descripción">
           <textarea
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             rows={4}
             value={form.descripcion}
             onChange={(e) => update("descripcion", e.target.value)}
           />
-        </div>
+        </Field>
 
-        {/* Precio por defecto */}
-        <div>
-          <label>Precio por defecto (€)</label>
+        {/* Precio */}
+        <Field label="Precio por defecto (€)">
           <input
             type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.precio}
             onChange={(e) => update("precio", e.target.value)}
           />
-        </div>
+        </Field>
 
-        {/* Precio anual */}
-        <div>
-          <label>Precio Anual (€)</label>
+        <Field label="Precio anual (€)">
           <input
             type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.precio_anual}
             onChange={(e) => update("precio_anual", e.target.value)}
           />
-        </div>
+        </Field>
 
-        {/* Precio completa */}
-        <div>
-          <label>Precio Completa (€)</label>
+        <Field label="Precio completa (€)">
           <input
             type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.precio_completa}
             onChange={(e) => update("precio_completa", e.target.value)}
           />
-        </div>
+        </Field>
 
         {/* Archivo TSEP */}
-        <div>
-          <label>Archivo (.tsep)</label>
+        <Field label="Archivo (.tsep)">
           <input
             type="file"
             accept=".tsep"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             onChange={subirTsep}
           />
           {form.archivo_url && (
-            <p className="text-green-600 text-sm">Archivo subido correctamente</p>
+            <p className="text-green-600 text-sm mt-1">
+              Archivo subido correctamente
+            </p>
           )}
-        </div>
+        </Field>
 
         {/* Video */}
-        <div>
-          <label>Video URL (YouTube)</label>
+        <Field label="Video URL (YouTube)">
           <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.video_url}
             onChange={(e) => update("video_url", e.target.value)}
           />
-        </div>
+        </Field>
 
         {/* Imagen */}
-        <div>
-          <label>Imagen del plugin</label>
+        <Field label="Imagen del plugin">
           <input
             type="file"
             accept="image/*"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             onChange={subirImagen}
           />
           {form.imagen_url && (
-            <p className="text-green-600 text-sm">Imagen subida correctamente</p>
+            <p className="text-green-600 text-sm mt-1">
+              Imagen subida correctamente
+            </p>
           )}
-        </div>
+        </Field>
 
+        {/* Botón Guardar */}
         <button
           onClick={guardar}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 shadow text-lg font-semibold"
         >
           Guardar Plugin
         </button>
@@ -213,3 +217,20 @@ export default function NuevoPluginPage() {
     </div>
   );
 }
+
+/* ============================
+   COMPONENTE PREMIUM FIELD
+============================ */
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      <label className="font-semibold">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+/* ============================
+   ESTILOS PREMIUM INPUT
+============================ */
+/* Usar Tailwind con clases reutilizables */

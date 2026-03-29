@@ -1,5 +1,152 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\compra.js
+============================================================
+
+// /app/api/email/plantillas/compra.js
+
+export const PLANTILLA_COMPRA = `
+<!DOCTYPE html>
+<html lang="es" style="font-family: Arial, sans-serif;">
+<body style="background:#f9fafb;padding:0;margin:0;">
+
+<div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;
+     box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+
+  <h2 style="color:#1f2937;text-align:center;margin-bottom:20px;">
+    Compra recibida – OMBIM
+  </h2>
+
+  <p style="font-size:16px;color:#374151;">
+    Hemos recibido tu compra del plugin <strong>{{plugin_nombre}}</strong>.
+  </p>
+
+  <p style="margin-top:20px;font-size:16px;color:#4b5563;">
+    Emails Tekla asignados a esta compra:
+  </p>
+
+  <ul style="color:#374151;font-size:15px;">
+    {{lista_emails}}
+  </ul>
+
+  <p style="margin-top:20px;font-size:16px;color:#4b5563;">
+    Para completar la compra, realiza una transferencia bancaria a:
+  </p>
+
+  <div style="background:#e5e7eb;padding:12px;border-radius:6px;">
+    <p><strong>Cuenta bancaria:</strong> {{cuenta_banco}}</p>
+    <p><strong>Concepto:</strong> Pago OMBIM Nº {{pago_id}}</p>
+    <p><strong>Importe:</strong> {{precio}}€</p>
+  </div>
+
+  <p style="margin-top:20px;font-size:16px;color:#4b5563;">
+    Cuando validemos la transferencia, activaremos tus licencias y te avisaremos por email.
+  </p>
+
+  <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+  <p style="text-align:center;color:#9ca3af;font-size:12px;">
+    © OMBIM – Herramientas BIM para Tekla Structures
+  </p>
+
+</div>
+</body>
+</html>
+`;
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\empresa\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("empresa")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: "Error cargando empresa" }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar\route.js
+============================================================
+
+// /app/api/facturacion/guardar/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export const runtime = "nodejs";
+
+export async function POST(req) {
+  const supabase = await supabaseServer();
+  const body = await req.json();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
+  }
+
+  const { usarDatosUsuario, ...factForm } = body;
+
+  let {
+    nombre,
+    nif,
+    direccion,
+    ciudad,
+    cp,
+    pais,
+    telefono,
+  } = factForm;
+
+  const um = user.user_metadata ?? {};
+
+  // AUTOCOPIAR SOLO SI MARCA LA CASILLA
+  if (usarDatosUsuario) {
+    nombre = um.nombre || um.empresa || nombre;
+    pais = um.pais || pais;
+    telefono = um.telefono || telefono;
+  }
+
+  // Guardar facturación
+  const { error } = await supabase.from("facturacion").upsert(
+    {
+      user_id: user.id,
+      nombre,
+      nif,
+      direccion,
+      ciudad,
+      cp,
+      pais,
+      telefono,
+      updated_at: new Date(),
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "error_guardando_facturacion" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
 ============================================================
 
@@ -40,7 +187,7 @@ export async function POST(req) {
 // /app/api/facturacion/pdf/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
-import { generateInvoicePdf } from "@/lib/pdf";
+import { generateInvoicePdf } from "@/lib/pdf2";
 
 export const runtime = "nodejs";
 
@@ -57,9 +204,7 @@ export async function POST(req) {
 
     const supabase = await supabaseServer();
 
-    // =====================================================
-    // 1. Obtener datos del pago
-    // =====================================================
+    // 1. Obtener pago
     const { data: pago, error: pagoErr } = await supabase
       .from("pagos")
       .select("id, user_id, plugin_id, tipo, importe, cantidad_licencias, numero_factura, fecha")
@@ -73,45 +218,42 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // 2. Obtener datos del usuario
-    // =====================================================
+    // 2. Usuario
     const { data: userData } = await supabase.auth.admin.getUserById(pago.user_id);
     const user = userData?.user;
 
-    // =====================================================
-    // 3. Obtener datos de facturación almacenados
-    // =====================================================
+    // 3. Facturación
     const { data: fact } = await supabase
       .from("facturacion")
       .select("*")
       .eq("user_id", pago.user_id)
       .maybeSingle();
 
-    // =====================================================
-    // 4. Obtener licencias asociadas al pago
-    // =====================================================
+    // 4. Licencias
     const { data: licData } = await supabase
       .from("licencias")
-      .select("email_tekla, tipo, max_activaciones, fecha_creacion")
+      .select("email_tekla, tipo")
       .eq("pago_id", pagoId);
 
     const licencias = (licData ?? []).map((l) => ({
       email: l.email_tekla,
       tipo: l.tipo,
-      precioUnitario: pago.importe / pago.cantidad_licencias, // precio individual sin IVA
+      precioUnitario: pago.importe / pago.cantidad_licencias,
     }));
 
-    // =====================================================
-    // 5. Construir datos del PDF
-    // =====================================================
-
+    // 5. Datos PDF
     const datosPdf = {
       pagoId,
-      numeroFactura: pago.numero_factura ?? `OMBIM-${new Date().getFullYear()}-${String(pago.id).padStart(6, "0")}`,
+      numeroFactura:
+        pago.numero_factura ??
+        `OMBIM-${new Date().getFullYear()}-${String(pago.id).padStart(6, "0")}`,
       fecha: new Date(pago.fecha).toLocaleDateString(),
 
-      razonSocial: fact?.nombre ?? user?.user_metadata?.empresa ?? user?.user_metadata?.nombre ?? "",
+      razonSocial:
+        fact?.nombre ??
+        user?.user_metadata?.empresa ??
+        user?.user_metadata?.nombre ??
+        "",
       nif: fact?.nif ?? "",
       direccion: fact?.direccion ?? "",
       ciudad: fact?.ciudad ?? "",
@@ -123,26 +265,17 @@ export async function POST(req) {
       licencias,
     };
 
-    // =====================================================
-    // 6. GENERAR PDF BONITO
-    // =====================================================
-    const pdfStream = await generateInvoicePdf(datosPdf);
+    // 6. Generar PDF (YA DEVUELVE BUFFER)
+    const pdfBuffer = await generateInvoicePdf(datosPdf);
 
-    const chunks = [];
-    for await (const chunk of pdfStream) {
-      chunks.push(chunk);
-    }
-
-    const buffer = Buffer.concat(chunks);
-
-    return new Response(buffer, {
+    // 7. Devolver PDF
+    return new Response(pdfBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="factura-${pago.id}.pdf"`,
       },
     });
-
   } catch (err) {
     console.error("❌ Error generando factura PDF:", err);
     return NextResponse.json(
@@ -154,99 +287,160 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar-factura\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar\route.js
 ============================================================
 
+// /app/api/facturacion/solicitar/route.js
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { sendEmail } from "@/lib/email";
 
+export const runtime = "nodejs";
+
 export async function POST(req) {
-  const supabase = await supabaseServer();
+  try {
+    const supabase = await supabaseServer();
 
-  // ================================
-  // 1. Obtener usuario autenticado
-  // ================================
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // ========================================
+    // 1. Verificar usuario autenticado
+    // ========================================
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
+    if (!user) {
+      return NextResponse.json(
+        { error: "No autorizado" },
+        { status: 401 }
+      );
+    }
+
+    // ========================================
+    // 2. Validar que el usuario tiene facturación
+    // ========================================
+    const { data: fact } = await supabase
+      .from("facturacion")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!fact) {
+      return NextResponse.json(
+        {
+          error: "sin_datos_facturacion",
+          mensaje:
+            "Debes completar tu información de facturación antes de solicitar una factura.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // ========================================
+    // 3. Leer el pago_id enviado por el usuario
+    // ========================================
+    const { pagoId } = await req.json();
+
+    if (!pagoId) {
+      return NextResponse.json(
+        { error: "faltan_datos", mensaje: "Falta pagoId en la solicitud." },
+        { status: 400 }
+      );
+    }
+
+    // ========================================
+    // 4. Comprobar que el pago existe y es suyo
+    // ========================================
+    const { data: pago } = await supabase
+      .from("pagos")
+      .select("id, user_id, factura_solicitada, numero_factura")
+      .eq("id", pagoId)
+      .maybeSingle();
+
+    if (!pago) {
+      return NextResponse.json(
+        { error: "pago_no_encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Evitar que un usuario pida factura de otro usuario
+    if (pago.user_id !== user.id) {
+      return NextResponse.json(
+        { error: "acceso_denegado" },
+        { status: 403 }
+      );
+    }
+
+    // Si ya tiene número → no solicitar
+    if (pago.numero_factura) {
+      return NextResponse.json({
+        ok: true,
+        mensaje: "Este pago ya tiene factura disponible.",
+      });
+    }
+
+    // Si ya estaba solicitada → no duplicar
+    if (pago.factura_solicitada) {
+      return NextResponse.json({
+        ok: true,
+        mensaje: "La factura ya había sido solicitada.",
+      });
+    }
+
+    // ========================================
+    // 5. Marcar el pago como 'solicita factura'
+    // ========================================
+    await supabase
+      .from("pagos")
+      .update({ factura_solicitada: true })
+      .eq("id", pagoId);
+
+    // ========================================
+    // 6. Enviar email al administrador
+    // ========================================
+    const html = `
+      <h2>Solicitud de factura</h2>
+
+      <h3>Usuario solicitante</h3>
+      <p><strong>Email:</strong> ${user.email}</p>
+      <p><strong>Nombre:</strong> ${user.user_metadata?.nombre ?? "—"}</p>
+      <p><strong>Empresa:</strong> ${user.user_metadata?.empresa ?? "—"}</p>
+
+      <h3>Datos de facturación</h3>
+      <p><strong>Razón social:</strong> ${fact.nombre}</p>
+      <p><strong>NIF/CIF:</strong> ${fact.nif}</p>
+      <p><strong>Dirección:</strong> ${fact.direccion}</p>
+      <p><strong>Ciudad:</strong> ${fact.ciudad}</p>
+      <p><strong>CP:</strong> ${fact.cp}</p>
+      <p><strong>País:</strong> ${fact.pais}</p>
+      <p><strong>Teléfono:</strong> ${fact.telefono}</p>
+
+      <h3>Pago solicitado</h3>
+      <p><strong>ID del pago:</strong> ${pagoId}</p>
+
+      <p>Debe asignarse un número de factura para que el usuario pueda descargarla.</p>
+    `;
+
+    await sendEmail({
+      to: "facturacion@ombim.site",
+      subject: `[OMBIM] Nueva solicitud de factura`,
+      html,
+    });
+
+    // ========================================
+    // 7. Respuesta correcta al usuario
+    // ========================================
+    return NextResponse.json({
+      ok: true,
+      mensaje: "Solicitud enviada. El administrador la revisará.",
+    });
+  } catch (err) {
+    console.error("❌ Error solicitando factura:", err);
     return NextResponse.json(
-      { error: "No autorizado" },
-      { status: 401 }
+      { error: "error_interno", mensaje: err.message },
+      { status: 500 }
     );
   }
-
-  // ================================
-  // 2. Obtener datos de facturación
-  // ================================
-  const { data: fact } = await supabase
-    .from("facturacion")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!fact) {
-    return NextResponse.json(
-      {
-        error: "Sin datos de facturación",
-        mensaje: "Debe completar su información de facturación antes de solicitar una factura."
-      },
-      { status: 400 }
-    );
-  }
-
-  // ================================
-  // 3. Datos enviados por el usuario
-  // (p.ej: pago_id para el que quiere factura)
-  // ================================
-  const { pago_id } = await req.json();
-
-  if (!pago_id) {
-    return NextResponse.json(
-      { error: "Falta pago_id" },
-      { status: 400 }
-    );
-  }
-
-  // ================================
-  // 4. Enviar email al ADMIN
-  // ================================
-  const html = `
-    <h2>Solicitud de factura</h2>
-
-    <p><strong>Usuario:</strong> ${user.email}</p>
-    <p><strong>Nombre usuario:</strong> ${user.user_metadata?.nombre ?? "—"}</p>
-    <p><strong>Empresa:</strong> ${user.user_metadata?.empresa ?? "—"}</p>
-
-    <h3>Datos de Facturación</h3>
-    <p><strong>Razón social:</strong> ${fact.nombre}</p>
-    <p><strong>NIF/CIF:</strong> ${fact.nif}</p>
-    <p><strong>Dirección:</strong> ${fact.direccion}</p>
-    <p><strong>Ciudad:</strong> ${fact.ciudad}</p>
-    <p><strong>CP:</strong> ${fact.cp}</p>
-    <p><strong>País:</strong> ${fact.pais}</p>
-    <p><strong>Teléfono:</strong> ${fact.telefono}</p>
-
-    <h3>Solicitud</h3>
-    <p>El usuario solicita la factura del pago con ID:</p>
-    <p><strong>${pago_id}</strong></p>
-  `;
-
-  await sendEmail({
-    to: "facturacion@ombim.site",
-    subject: `[OMBIM] Nueva solicitud de factura`,
-    html,
-  });
-
-  // ================================
-  // 5. Respuesta al usuario
-  // ================================
-  return NextResponse.json({
-    ok: true,
-    mensaje: "Solicitud enviada. El administrador la revisará.",
-  });
 }
 
 
@@ -812,14 +1006,10 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET(req, context) {
-  // Next.js 16 → params es promesa
   const { pago_id } = await context.params;
-
   const supabase = supabaseRoute();
 
-  // ==========================================================
-  // 1) Obtener el pago (sin comentarios en el select)
-  // ==========================================================
+  // 1) Obtener datos del pago
   const { data: pago, error } = await supabase
     .from("pagos")
     .select(`
@@ -832,39 +1022,42 @@ export async function GET(req, context) {
       tipo,
       importe,
       importe_base,
-      iva
+      iva,
+      numero_factura,
+      factura_solicitada
     `)
     .eq("id", pago_id)
-    .single();
+    .maybeSingle();
 
   if (error || !pago) {
-    console.log("❌ Error cargando pago:", error);
     return NextResponse.json(
       { error: "pago_no_encontrado" },
       { status: 404 }
     );
   }
 
-  // ==========================================================
   // 2) Emails asociados
-  // ==========================================================
   const { data: emails } = await supabase
     .from("pagos_emails")
     .select("email_tekla")
     .eq("pago_id", pago_id);
 
-  // ==========================================================
-  // 3) Respuesta final segura
-  // ==========================================================
+  // 3) Respuesta final
   return NextResponse.json({
     ...pago,
-    emails: emails?.map(e => e.email_tekla) ?? [],
+
+    emails: emails?.map((e) => e.email_tekla) ?? [],
+
     importe_base: pago.importe_base ?? 0,
     iva: pago.iva ?? 0,
-    importe: pago.importe ?? (pago.importe_base ?? 0) + (pago.iva ?? 0),
+    importe:
+      pago.importe ??
+      (pago.importe_base ?? 0) + (pago.iva ?? 0),
+
+    numero_factura: pago.numero_factura ?? null,
+    factura_solicitada: pago.factura_solicitada ?? false,
   });
 }
-
 
 
 ============================================================
@@ -885,7 +1078,7 @@ export async function POST(req) {
     );
   }
 
-  // Validar emails
+  // Validación de emails
   for (const entry of emails) {
     if (!entry.email_tekla || entry.email_tekla.trim() === "") {
       return NextResponse.json(
@@ -895,23 +1088,36 @@ export async function POST(req) {
     }
   }
 
-  // Preparar batch update
-  const updates = emails.map((entry) => ({
-    id: entry.licencia_id,
-    email_tekla: entry.email_tekla.trim(),
+  // 1️⃣ Eliminar emails anteriores del pago
+  const { error: deleteErr } = await supabaseAdmin
+    .from("pagos_emails")
+    .delete()
+    .eq("pago_id", pago_id);
+
+  if (deleteErr) {
+    console.error("❌ Error eliminando emails previos:", deleteErr);
+    return NextResponse.json(
+      { error: "error_eliminando", detalle: deleteErr.message },
+      { status: 500 }
+    );
+  }
+
+  // 2️⃣ Insertar los nuevos emails (ON CONFLICT ahora funciona gracias al UNIQUE)
+  const inserts = emails.map((e) => ({
+    pago_id,
+    email_tekla: e.email_tekla.trim(),
   }));
 
-  // Actualizar licencias
-  const { error } = await supabaseAdmin
-    .from("licencias")
-    .upsert(updates, {
-      onConflict: "id",
+  const { error: insertErr } = await supabaseAdmin
+    .from("pagos_emails")
+    .upsert(inserts, {
+      onConflict: "pago_id,email_tekla"
     });
 
-  if (error) {
-    console.error("❌ Error guardando emails:", error);
+  if (insertErr) {
+    console.error("❌ Error guardando emails:", insertErr);
     return NextResponse.json(
-      { error: "error_guardando_emails" },
+      { error: "error_guardando_emails", detalle: insertErr.message },
       { status: 500 }
     );
   }
@@ -1900,7 +2106,10 @@ function Row({ children }) {
 ============================================================
 
 // app/panel/admin/layout.jsx
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Ticket,
@@ -1909,18 +2118,25 @@ import {
   Users,
   Package,
   ArrowLeft,
+  Menu,
+  X
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default function AdminLayout({ children }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <aside className="w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 space-y-6 shadow-xl">
+
+      {/* =============================
+          MENÚ LATERAL — DESKTOP
+      ============================= */}
+      <aside className="hidden md:block w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 space-y-6 shadow-xl">
         <h2 className="text-2xl font-bold mb-4">Panel Admin</h2>
 
         <nav className="flex flex-col space-y-2">
-
           <Link href="/panel/admin/dashboard" className="flex items-center gap-3 hover:text-white">
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
@@ -1936,12 +2152,10 @@ export default function AdminLayout({ children }) {
             <span>Pagos</span>
           </Link>
 
-          {/*  ⭐ AÑADIDO AHORA ⭐ */}
           <Link href="/panel/admin/plugins" className="flex items-center gap-3 hover:text-white">
             <Package size={20} />
             <span>Plugins</span>
           </Link>
-          {/* ------------------- */}
 
           <Link href="/panel/admin/logs" className="flex items-center gap-3 hover:text-white">
             <Scroll size={20} />
@@ -1957,11 +2171,87 @@ export default function AdminLayout({ children }) {
             <ArrowLeft size={20} />
             <span>Volver</span>
           </Link>
-
         </nav>
       </aside>
 
-      <main className="flex-1 p-10">{children}</main>
+      {/* =============================
+          MENÚ HAMBURGUESA — MÓVIL
+      ============================= */}
+      <button
+        className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 p-2 rounded"
+        onClick={() => setOpen(true)}
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* Overlay oscuro */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={() => setOpen(false)}
+        ></div>
+      )}
+
+      {/* Drawer */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-full w-64 p-6 z-30 shadow-xl
+          bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200
+          transform transition-transform duration-300
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:hidden
+        `}
+      >
+        {/* Cerrar */}
+        <button
+          className="absolute top-4 right-4"
+          onClick={() => setOpen(false)}
+        >
+          <X size={24} />
+        </button>
+
+        <h2 className="text-2xl font-bold mb-6">Panel Admin</h2>
+
+        <nav className="flex flex-col space-y-3 text-lg">
+          <Link href="/panel/admin/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
+            <LayoutDashboard size={20} />
+            <span>Dashboard</span>
+          </Link>
+
+          <Link href="/panel/admin/licencias" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
+            <Ticket size={20} />
+            <span>Licencias</span>
+          </Link>
+
+          <Link href="/panel/admin/pagos" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
+            <CreditCard size={20} />
+            <span>Pagos</span>
+          </Link>
+
+          <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
+            <Package size={20} />
+            <span>Plugins</span>
+          </Link>
+
+          <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
+            <Scroll size={20} />
+            <span>Logs</span>
+          </Link>
+
+          <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
+            <Users size={20} />
+            <span>Usuarios</span>
+          </Link>
+
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white mt-4">
+            <ArrowLeft size={20} />
+            <span>Volver</span>
+          </Link>
+        </nav>
+      </aside>
+
+      {/* CONTENIDO */}
+      <main className="flex-1 p-10 md:ml-0">{children}</main>
     </div>
   );
 }
@@ -2321,11 +2611,18 @@ export default function AdminPagosPage() {
   useEffect(() => {
     async function load() {
       try {
-        const r = await fetch("/api/admin/pagos/lista");
+        // ✔ RUTA CORRECTA
+        const r = await fetch("/api/admin/pagos/list", {
+          credentials: "include",
+        });
+
         const d = await r.json();
-        setPagos(d.pagos || []);
+
+        // ✔ EL ENDPOINT DEVUELVE UN ARRAY DIRECTO
+        setPagos(Array.isArray(d) ? d : []);
       } catch (err) {
         console.log("Error cargando pagos", err);
+        setPagos([]);
       } finally {
         setLoading(false);
       }
@@ -2363,17 +2660,21 @@ export default function AdminPagosPage() {
               >
                 <td className="p-3">{p.id}</td>
 
-                <td className="p-3">{p.user_email}</td>
+                <td className="p-3">{p.user_email ?? "—"}</td>
 
-                <td className="p-3">{p.plugin_nombre}</td>
+                <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
 
                 <td className="p-3">{p.cantidad_licencias}</td>
 
-                <td className="p-3">{p.importe_base?.toFixed(2)} €</td>
+                <td className="p-3">
+                  {p.importe_base?.toFixed(2)} €
+                </td>
 
                 <td className="p-3">{p.iva?.toFixed(2)} €</td>
 
-                <td className="p-3 font-semibold">{p.importe?.toFixed(2)} €</td>
+                <td className="p-3 font-semibold">
+                  {p.importe?.toFixed(2)} €
+                </td>
 
                 <td className="p-3">
                   {p.estado === "pendiente" && (
@@ -2411,33 +2712,25 @@ export default function AdminPagosPage() {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
 ============================================================
 
 "use client";
 
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-export default function AdminPagoDetallePage({ params }) {
-
-  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
-  const [id, setId] = useState(null);
-
-  useEffect(() => {
-    async function resolver() {
-      const resolved = await params;
-      setId(resolved.id);
-    }
-    resolver();
-  }, [params]);
+export default function AdminPagoDetallePage() {
+  const params = useParams();
+  const id = params.id;
 
   const [pago, setPago] = useState(null);
   const [emails, setEmails] = useState([]);
   const [facturacion, setFacturacion] = useState(null);
+  const [numeroFactura, setNumeroFactura] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -2447,12 +2740,10 @@ export default function AdminPagoDetallePage({ params }) {
   const [openReenviar, setOpenReenviar] = useState(false);
   const [openBorrar, setOpenBorrar] = useState(false);
 
-  // ============================================
-  // CARGAR PAGO
-  // ============================================
+  // ============================
+  // CARGA INICIAL
+  // ============================
   useEffect(() => {
-    if (!id) return;
-
     async function load() {
       try {
         const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
@@ -2467,28 +2758,45 @@ export default function AdminPagoDetallePage({ params }) {
           return;
         }
 
-        setPago(data.pago ?? null);
+        setPago(data.pago);
+        setNumeroFactura(data.pago.numero_factura ?? "");
+        setEmails(data.pago.emails ?? []);
         setFacturacion(data.facturacion ?? null);
 
-        const listaEmails = Array.isArray(data.pago.emails)
-          ? data.pago.emails
-          : [];
-
-        setEmails(listaEmails);
       } catch {
-        setError("Error de conexión");
+        setError("Error de conexión.");
       } finally {
         setLoading(false);
       }
     }
 
     load();
-
   }, [id]);
 
-  // ============================================
-  // ACCIONES BACKEND
-  // ============================================
+  // ============================
+  // ACCIONES
+  // ============================
+
+  async function guardarNumeroFactura() {
+    if (!numeroFactura.trim()) {
+      return alert("Debes introducir un número de factura.");
+    }
+
+    const r = await fetch("/api/admin/pagos/numero-factura", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pago_id: id,
+        numero_factura: numeroFactura.trim(),
+      }),
+    });
+
+    if (!r.ok) return alert("Error guardando número de factura");
+
+    alert("Número guardado correctamente.");
+    window.location.reload();
+  }
 
   async function confirmarValidacion() {
     const r = await fetch("/api/admin/pagos/validar", {
@@ -2523,6 +2831,7 @@ export default function AdminPagoDetallePage({ params }) {
     });
 
     if (!r.ok) return alert("Error reenviando email.");
+    alert("Email reenviado.");
   }
 
   async function confirmarBorrado() {
@@ -2534,20 +2843,18 @@ export default function AdminPagoDetallePage({ params }) {
     });
 
     if (!r.ok) return alert("Error borrando el pago.");
-
     window.location.href = "/panel/admin/pagos?deleted=1";
   }
 
-  // ============================================
+  // ============================
   // RENDER
-  // ============================================
+  // ============================
   if (loading) return <p>Cargando…</p>;
   if (error) return <p>{error}</p>;
   if (!pago) return <p>Pago no encontrado.</p>;
 
   return (
     <>
-      {/* VOLVER */}
       <Link href="/panel/admin/pagos" className="text-blue-600 hover:underline">
         ← Volver
       </Link>
@@ -2555,9 +2862,52 @@ export default function AdminPagoDetallePage({ params }) {
       <h2 className="text-2xl font-bold mt-4">Pago #{pago.id}</h2>
 
       {/* =======================
+          FACTURA
+      ======================= */}
+      <div className="mt-4 p-4 rounded bg-gray-100 dark:bg-gray-900 border">
+
+        <h3 className="text-lg font-semibold mb-2">Factura</h3>
+
+        {/* BADGES VISUALES */}
+        {pago.numero_factura ? (
+          <span className="inline-block bg-blue-200 text-blue-900 px-3 py-1 rounded text-xs font-semibold">
+            ✔ Factura lista
+          </span>
+        ) : pago.factura_solicitada ? (
+          <span className="inline-block bg-yellow-200 text-yellow-900 px-3 py-1 rounded text-xs font-semibold">
+            📄 Factura solicitada por el usuario
+          </span>
+        ) : (
+          <span className="inline-block bg-gray-300 text-gray-900 px-3 py-1 rounded text-xs font-semibold">
+            — No solicitada —
+          </span>
+        )}
+
+        {/* INPUT NÚMERO */}
+        <div className="mt-4">
+          <label className="font-semibold block mb-1">Número de factura:</label>
+
+          <input
+            type="text"
+            value={numeroFactura}
+            onChange={(e) => setNumeroFactura(e.target.value)}
+            placeholder="Ej: OMBIM-2026-000123"
+            className="w-full border p-2 rounded dark:bg-gray-800"
+          />
+
+          <button
+            onClick={guardarNumeroFactura}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Guardar número de factura
+          </button>
+        </div>
+      </div>
+
+      {/* =======================
           RESUMEN ECONÓMICO
-      ======================== */}
-      <div className="mt-6 border p-4 bg-gray-100 dark:bg-gray-900 rounded">
+      ======================= */}
+      <div className="mt-6 border p-4 rounded bg-gray-100 dark:bg-gray-900">
         <h3 className="font-semibold text-lg mb-2">Resumen económico</h3>
 
         <p><strong>Tipo:</strong> {pago.tipo}</p>
@@ -2565,73 +2915,67 @@ export default function AdminPagoDetallePage({ params }) {
         <p><strong>Estado:</strong> {pago.estado}</p>
 
         <div className="mt-3">
-          <p>
-            <strong>Subtotal:</strong> {pago.importe_base?.toFixed(2)} €
-          </p>
-          <p>
-            <strong>IVA (21%):</strong> {pago.iva?.toFixed(2)} €
-          </p>
+          <p><strong>Subtotal:</strong> {pago.importe_base.toFixed(2)} €</p>
+          <p><strong>IVA (21%):</strong> {pago.iva.toFixed(2)} €</p>
           <p className="text-xl font-bold">
-            TOTAL (IVA incluido): {pago.importe?.toFixed(2)} €
+            TOTAL (IVA incluido): {pago.importe.toFixed(2)} €
           </p>
         </div>
       </div>
 
       {/* =======================
-          EMAILS TEKLA
-      ======================== */}
+          EMAILS
+      ======================= */}
       <h3 className="mt-6 font-semibold text-lg">Emails Tekla</h3>
 
-      {emails.length === 0 && (
-        <p className="text-gray-500">No hay emails asociados.</p>
-      )}
-
-      {emails.length > 0 && (
-        <div className="flex flex-col gap-3 mt-3">
-          {emails.map((email, i) => (
-            <input
-              key={i}
-              value={email}
-              onChange={(ev) => {
-                const copia = [...emails];
-                copia[i] = ev.target.value;
-                setEmails(copia);
-              }}
-              className="border p-2 rounded dark:bg-gray-900"
-            />
-          ))}
-
-          <button
-            onClick={async () => {
-              const vacios = emails.some((x) => !x.trim());
-              if (vacios)
-                return alert("Todos los emails Tekla deben estar completos.");
-
-              const r = await fetch("/api/pagos/guardar-emails", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  pago_id: pago.id,
-                  emails: emails.map((e) => ({
-                    licencia_id: null,
-                    email_tekla: e.trim(),
-                  })),
-                }),
-              });
-
-              if (!r.ok) return alert("Error guardando emails.");
+      <div className="flex flex-col gap-3 mt-3">
+        {emails.map((email, i) => (
+          <input
+            key={i}
+            value={email}
+            onChange={(ev) => {
+              const copia = [...emails];
+              copia[i] = ev.target.value;
+              setEmails(copia);
             }}
-            className="bg-blue-600 text-white py-2 rounded"
-          >
-            Guardar emails
-          </button>
-        </div>
-      )}
+            className="border p-2 rounded dark:bg-gray-900"
+          />
+        ))}
+
+        <button
+          onClick={() => setEmails([...emails, ""])}
+          className="bg-gray-500 text-white py-1 rounded"
+        >
+          Añadir email
+        </button>
+
+        <button
+          onClick={async () => {
+            const vacios = emails.some(x => !x.trim());
+            if (vacios) return alert("Todos los emails deben estar completos.");
+
+            const r = await fetch("/api/pagos/guardar-emails", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                pago_id: id,
+                emails: emails.map(e => ({ email_tekla: e.trim() })),
+              }),
+            });
+
+            if (!r.ok) return alert("Error guardando emails.");
+            window.location.reload();
+          }}
+          className="bg-blue-600 text-white py-2 rounded"
+        >
+          Guardar emails
+        </button>
+      </div>
 
       {/* =======================
-          FACTURACIÓN
-      ======================== */}
+          FACTURACIÓN USUARIO
+      ======================= */}
       <h3 className="mt-8 font-semibold text-lg">Datos de facturación</h3>
 
       {!facturacion && (
@@ -2640,33 +2984,19 @@ export default function AdminPagoDetallePage({ params }) {
 
       {facturacion && (
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded mt-2 text-sm flex flex-col gap-1">
-          <p>
-            <strong>Nombre:</strong> {facturacion.nombre ?? "—"}
-          </p>
-          <p>
-            <strong>NIF:</strong> {facturacion.nif ?? "—"}
-          </p>
-          <p>
-            <strong>Dirección:</strong> {facturacion.direccion ?? "—"}
-          </p>
-          <p>
-            <strong>Ciudad:</strong> {facturacion.ciudad ?? "—"}
-          </p>
-          <p>
-            <strong>CP:</strong> {facturacion.cp ?? "—"}
-          </p>
-          <p>
-            <strong>País:</strong> {facturacion.pais ?? "—"}
-          </p>
-          <p>
-            <strong>Teléfono:</strong> {facturacion.telefono ?? "—"}
-          </p>
+          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
+          <p><strong>NIF:</strong> {facturacion.nif}</p>
+          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
+          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
+          <p><strong>CP:</strong> {facturacion.cp}</p>
+          <p><strong>País:</strong> {facturacion.pais}</p>
+          <p><strong>Teléfono:</strong> {facturacion.telefono}</p>
         </div>
       )}
 
       {/* =======================
-          BOTONES
-      ======================== */}
+          ACCIONES
+      ======================= */}
       <div className="mt-10 flex flex-col gap-3 max-w-sm">
         <button
           onClick={() => setOpenValidar(true)}
@@ -2698,8 +3028,8 @@ export default function AdminPagoDetallePage({ params }) {
       </div>
 
       {/* =======================
-          DIALOGOS
-      ======================== */}
+          DIÁLOGOS
+      ======================= */}
       <ConfirmDialog
         open={openValidar}
         title="Validar pago"
@@ -2991,225 +3321,4 @@ export default function EditarPluginPage() {
   );
 }
 
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
-============================================================
-
-"use client";
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-
-export default function NuevoPluginPage() {
-  const [form, setForm] = useState({
-    nombre: "",
-    descripcion: "",
-    precio: 0,
-    precio_anual: 0,
-    precio_completa: 0,
-    archivo_url: "",
-    video_url: "",
-    imagen_url: "",
-  });
-
-  function update(key, value) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  // ================================
-  // SUBIR IMAGEN
-  // ================================
-  async function subirImagen(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const ext = file.name.split(".").pop();
-    const name = `${Date.now()}.${ext}`;
-
-    const res = await fetch(`/api/admin/upload-image?name=${name}`, {
-      method: "POST",
-      credentials: "include", // 🔥 FIX
-      body: file,
-    });
-
-    const json = await res.json();
-    if (!json?.url) {
-      alert("Error subiendo la imagen");
-      return;
-    }
-
-    update("imagen_url", json.url);
-  }
-
-  // ================================
-  // SUBIR TSEP
-  // ================================
-  async function subirTsep(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const ext = file.name.split(".").pop();
-    if (ext !== "tsep") {
-      alert("El archivo debe ser .tsep");
-      return;
-    }
-
-    const name = `${Date.now()}.${ext}`;
-
-    const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
-      method: "POST",
-      credentials: "include", // 🔥 FIX
-      body: file,
-    });
-
-    const json = await res.json();
-    if (!json?.url) {
-      alert("Error subiendo el archivo TSEP");
-      return;
-    }
-
-    update("archivo_url", json.url);
-  }
-
-  // ================================
-  // GUARDAR PLUGIN
-  // ================================
-  async function guardar() {
-    const payload = {
-      ...form,
-      precio: Number(form.precio) || 0,
-      precio_anual: Number(form.precio_anual) || 0,
-      precio_completa: Number(form.precio_completa) || 0,
-    };
-
-    const res = await fetch("/api/admin/plugins/nuevo", {
-      method: "POST",
-      credentials: "include", // 🔥 FIX
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      alert(json.error ?? "Error guardando plugin");
-      return;
-    }
-
-    window.location.href = "/panel/admin/plugins";
-  }
-
-  return (
-    <div className="space-y-6 p-4 max-w-xl mx-auto">
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
-        <ArrowLeft size={20} /> Volver
-      </Link>
-
-      <h1 className="text-3xl font-bold">Nuevo Plugin</h1>
-
-      <div className="space-y-4">
-        {/* Nombre */}
-        <div>
-          <label>Nombre</label>
-          <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.nombre}
-            onChange={(e) => update("nombre", e.target.value)}
-          />
-        </div>
-
-        {/* Descripción */}
-        <div>
-          <label>Descripción</label>
-          <textarea
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            rows={4}
-            value={form.descripcion}
-            onChange={(e) => update("descripcion", e.target.value)}
-          />
-        </div>
-
-        {/* Precio por defecto */}
-        <div>
-          <label>Precio por defecto (€)</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.precio}
-            onChange={(e) => update("precio", e.target.value)}
-          />
-        </div>
-
-        {/* Precio anual */}
-        <div>
-          <label>Precio Anual (€)</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.precio_anual}
-            onChange={(e) => update("precio_anual", e.target.value)}
-          />
-        </div>
-
-        {/* Precio completa */}
-        <div>
-          <label>Precio Completa (€)</label>
-          <input
-            type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.precio_completa}
-            onChange={(e) => update("precio_completa", e.target.value)}
-          />
-        </div>
-
-        {/* Archivo TSEP */}
-        <div>
-          <label>Archivo (.tsep)</label>
-          <input
-            type="file"
-            accept=".tsep"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            onChange={subirTsep}
-          />
-          {form.archivo_url && (
-            <p className="text-green-600 text-sm">Archivo subido correctamente</p>
-          )}
-        </div>
-
-        {/* Video */}
-        <div>
-          <label>Video URL (YouTube)</label>
-          <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            value={form.video_url}
-            onChange={(e) => update("video_url", e.target.value)}
-          />
-        </div>
-
-        {/* Imagen */}
-        <div>
-          <label>Imagen del plugin</label>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full p-2 rounded border dark:bg-gray-900"
-            onChange={subirImagen}
-          />
-          {form.imagen_url && (
-            <p className="text-green-600 text-sm">Imagen subida correctamente</p>
-          )}
-        </div>
-
-        <button
-          onClick={guardar}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
-        >
-          Guardar Plugin
-        </button>
-      </div>
-    </div>
-  );
-}
 

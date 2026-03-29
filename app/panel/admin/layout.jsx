@@ -26,7 +26,7 @@ export default function AdminLayout({ children }) {
           BOTÓN HAMBURGUESA (MÓVIL)
       ============================ */}
       <button
-        className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 
+        className="md:hidden absolute top-4 left-4 z-[999] bg-gray-300 dark:bg-gray-700 
                    p-2 rounded shadow-lg hover:bg-gray-400 dark:hover:bg-gray-600"
         onClick={() => setOpen(true)}
       >
@@ -38,7 +38,7 @@ export default function AdminLayout({ children }) {
       ============================ */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] md:hidden"
           onClick={() => setOpen(false)}
         ></div>
       )}
@@ -48,7 +48,7 @@ export default function AdminLayout({ children }) {
       ============================ */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-4 z-30 shadow-xl
+          fixed top-0 left-0 h-full w-64 p-4 z-[999] shadow-xl
           bg-gray-100 dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
           transform transition-transform duration-300
@@ -70,19 +70,18 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* ============================
-          SIDEBAR ESCRITORIO
+          SIDEBAR DESKTOP
       ============================ */}
       <aside
         className="
           hidden md:block
-          w-64
+          w-64 h-full
           bg-gray-100 dark:bg-gray-900
           p-4 space-y-4
           border-r border-gray-300 dark:border-gray-700
         "
       >
         <h2 className="text-xl font-bold mb-4">Panel Admin</h2>
-
         <AdminMenu />
       </aside>
 
@@ -92,6 +91,7 @@ export default function AdminLayout({ children }) {
       <main className="flex-1 p-6 overflow-y-auto">
         {children}
       </main>
+
     </div>
   );
 }
@@ -106,6 +106,7 @@ function AdminMenu({ onNavigate = () => {} }) {
 
   return (
     <nav className="space-y-2 text-base">
+
       <Link href="/panel/admin" className={linkClasses} onClick={onNavigate}>
         <LayoutDashboard size={18} /> Dashboard
       </Link>
@@ -133,6 +134,7 @@ function AdminMenu({ onNavigate = () => {} }) {
       <Link href="/" className={`${linkClasses} mt-4`} onClick={onNavigate}>
         <ArrowLeft size={18} /> Volver a ombim.site
       </Link>
+
     </nav>
   );
 }

@@ -9,7 +9,8 @@ import {
   Download,
   User,
   Menu,
-  X
+  X,
+  ArrowLeft
 } from "lucide-react";
 
 export default function UserLayout({ children }) {
@@ -22,7 +23,7 @@ export default function UserLayout({ children }) {
           BOTÓN HAMBURGUESA (MÓVIL)
       ============================= */}
       <button
-        className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 p-2 rounded"
+        className="md:hidden absolute top-4 left-4 z-[999] bg-gray-300 dark:bg-gray-700 p-2 rounded shadow-lg"
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
@@ -33,7 +34,7 @@ export default function UserLayout({ children }) {
       ============================= */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] md:hidden"
           onClick={() => setOpen(false)}
         ></div>
       )}
@@ -43,8 +44,8 @@ export default function UserLayout({ children }) {
       ============================= */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-4 z-30 shadow-xl
-          bg-gray-100 dark:bg-gray-900
+          fixed top-0 left-0 h-full w-64 p-4 z-[999]
+          shadow-xl bg-gray-100 dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
@@ -53,13 +54,13 @@ export default function UserLayout({ children }) {
       >
         {/* Cerrar menú */}
         <button
-          className="absolute top-4 right-4"
+          className="absolute top-4 right-4 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           onClick={() => setOpen(false)}
         >
           <X size={24} />
         </button>
 
-        <h2 className="text-xl font-bold mb-6">Panel Usuario</h2>
+        <h2 className="text-xl font-bold mb-6 mt-1">Panel Usuario</h2>
 
         <nav className="space-y-3 text-lg">
 
@@ -113,7 +114,8 @@ export default function UserLayout({ children }) {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
           >
-            ← Volver a ombim.site
+            <ArrowLeft size={18} />
+            Volver a ombim.site
           </Link>
 
         </nav>
@@ -179,7 +181,8 @@ export default function UserLayout({ children }) {
             href="/"
             className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
           >
-            ← Volver a ombim.site
+            <ArrowLeft size={18} />
+            Volver a ombim.site
           </Link>
 
         </nav>
@@ -194,11 +197,11 @@ export default function UserLayout({ children }) {
           p-6 
           overflow-y-auto 
           bg-gray-50 dark:bg-gray-800
-          md:ml-0
         "
       >
         {children}
       </main>
+
     </div>
   );
 }

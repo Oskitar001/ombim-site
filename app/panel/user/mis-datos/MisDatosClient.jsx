@@ -53,7 +53,7 @@ export default function MisDatosClient() {
           pais: d1.user.user_metadata?.pais ?? "",
         });
 
-        // FACTURACIÓN (ruta correcta)
+        // FACTURACIÓN
         const r2 = await fetch("/api/user/facturacion", { cache: "no-store" });
         const d2 = await r2.json();
 
@@ -75,7 +75,7 @@ export default function MisDatosClient() {
   }, []);
 
   // ===============================================
-  // HANDLERS (CORREGIDOS)
+  // HANDLERS CORRECTOS
   // ===============================================
   const updateUserField = (key, value) =>
     setUserForm((prev) => ({ ...prev, [key]: value }));
@@ -225,7 +225,7 @@ export default function MisDatosClient() {
           editable={editFact}
         />
 
-        {/* Checkbox para usar datos de usuario */}
+        {/* Checkbox */}
         <div className="flex items-center mt-1">
           <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
             <input
@@ -261,7 +261,6 @@ export default function MisDatosClient() {
     </div>
   );
 }
-
 
 // -----------------------------------------------------------------------------
 // AUXILIARES

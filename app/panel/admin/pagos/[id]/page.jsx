@@ -6,13 +6,13 @@ import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminPagoDetallePage() {
-  // ✔ NEXT.js 15/16 — useParams devuelve el ID correctamente
   const params = useParams();
   const id = params.id;
 
   const [pago, setPago] = useState(null);
   const [emails, setEmails] = useState([]);
   const [facturacion, setFacturacion] = useState(null);
+  const [numeroFactura, setNumeroFactura] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,12 +22,10 @@ export default function AdminPagoDetallePage() {
   const [openReenviar, setOpenReenviar] = useState(false);
   const [openBorrar, setOpenBorrar] = useState(false);
 
-  // ============================================
-  // CARGAR DATOS DEL PAGO
-  // ============================================
+  // ============================
+  // CARGA INICIAL
+  // ============================
   useEffect(() => {
-    if (!id) return;
-
     async function load() {
       try {
         const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
@@ -42,16 +40,13 @@ export default function AdminPagoDetallePage() {
           return;
         }
 
-        setPago(data.pago ?? null);
+        setPago(data.pago);
+        setNumeroFactura(data.pago.numero_factura ?? "");
+        setEmails(data.pago.emails ?? []);
         setFacturacion(data.facturacion ?? null);
 
-        const listaEmails = Array.isArray(data.pago.emails)
-          ? data.pago.emails
-          : [];
-
-        setEmails(listaEmails);
       } catch {
-        setError("Error de conexión");
+        setError("Error de conexión.");
       } finally {
         setLoading(false);
       }
@@ -60,9 +55,30 @@ export default function AdminPagoDetallePage() {
     load();
   }, [id]);
 
-  // ============================================
-  // ACCIONES BACKEND
-  // ============================================
+  // ============================
+  // ACCIONES
+  // ============================
+
+  async function guardarNumeroFactura() {
+    if (!numeroFactura.trim()) {
+      return alert("Debes introducir un número de factura.");
+    }
+
+    const r = await fetch("/api/admin/pagos/numero-factura", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pago_id: id,
+        numero_factura: numeroFactura.trim(),
+      }),
+    });
+
+    if (!r.ok) return alert("Error guardando número de factura");
+
+    alert("Número guardado correctamente.");
+    window.location.reload();
+  }
 
   async function confirmarValidacion() {
     const r = await fetch("/api/admin/pagos/validar", {
@@ -97,6 +113,7 @@ export default function AdminPagoDetallePage() {
     });
 
     if (!r.ok) return alert("Error reenviando email.");
+    alert("Email reenviado.");
   }
 
   async function confirmarBorrado() {
@@ -111,16 +128,15 @@ export default function AdminPagoDetallePage() {
     window.location.href = "/panel/admin/pagos?deleted=1";
   }
 
-  // ============================================
+  // ============================
   // RENDER
-  // ============================================
+  // ============================
   if (loading) return <p>Cargando…</p>;
   if (error) return <p>{error}</p>;
   if (!pago) return <p>Pago no encontrado.</p>;
 
   return (
     <>
-      {/* VOLVER */}
       <Link href="/panel/admin/pagos" className="text-blue-600 hover:underline">
         ← Volver
       </Link>
@@ -128,9 +144,52 @@ export default function AdminPagoDetallePage() {
       <h2 className="text-2xl font-bold mt-4">Pago #{pago.id}</h2>
 
       {/* =======================
+          FACTURA
+      ======================= */}
+      <div className="mt-4 p-4 rounded bg-gray-100 dark:bg-gray-900 border">
+
+        <h3 className="text-lg font-semibold mb-2">Factura</h3>
+
+        {/* BADGES VISUALES */}
+        {pago.numero_factura ? (
+          <span className="inline-block bg-blue-200 text-blue-900 px-3 py-1 rounded text-xs font-semibold">
+            ✔ Factura lista
+          </span>
+        ) : pago.factura_solicitada ? (
+          <span className="inline-block bg-yellow-200 text-yellow-900 px-3 py-1 rounded text-xs font-semibold">
+            📄 Factura solicitada por el usuario
+          </span>
+        ) : (
+          <span className="inline-block bg-gray-300 text-gray-900 px-3 py-1 rounded text-xs font-semibold">
+            — No solicitada —
+          </span>
+        )}
+
+        {/* INPUT NÚMERO */}
+        <div className="mt-4">
+          <label className="font-semibold block mb-1">Número de factura:</label>
+
+          <input
+            type="text"
+            value={numeroFactura}
+            onChange={(e) => setNumeroFactura(e.target.value)}
+            placeholder="Ej: OMBIM-2026-000123"
+            className="w-full border p-2 rounded dark:bg-gray-800"
+          />
+
+          <button
+            onClick={guardarNumeroFactura}
+            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Guardar número de factura
+          </button>
+        </div>
+      </div>
+
+      {/* =======================
           RESUMEN ECONÓMICO
       ======================= */}
-      <div className="mt-6 border p-4 bg-gray-100 dark:bg-gray-900 rounded">
+      <div className="mt-6 border p-4 rounded bg-gray-100 dark:bg-gray-900">
         <h3 className="font-semibold text-lg mb-2">Resumen económico</h3>
 
         <p><strong>Tipo:</strong> {pago.tipo}</p>
@@ -138,20 +197,16 @@ export default function AdminPagoDetallePage() {
         <p><strong>Estado:</strong> {pago.estado}</p>
 
         <div className="mt-3">
-          <p>
-            <strong>Subtotal:</strong> {pago.importe_base?.toFixed(2)} €
-          </p>
-          <p>
-            <strong>IVA (21%):</strong> {pago.iva?.toFixed(2)} €
-          </p>
+          <p><strong>Subtotal:</strong> {pago.importe_base.toFixed(2)} €</p>
+          <p><strong>IVA (21%):</strong> {pago.iva.toFixed(2)} €</p>
           <p className="text-xl font-bold">
-            TOTAL (IVA incluido): {pago.importe?.toFixed(2)} €
+            TOTAL (IVA incluido): {pago.importe.toFixed(2)} €
           </p>
         </div>
       </div>
 
       {/* =======================
-          EMAILS TEKLA
+          EMAILS
       ======================= */}
       <h3 className="mt-6 font-semibold text-lg">Emails Tekla</h3>
 
@@ -169,7 +224,6 @@ export default function AdminPagoDetallePage() {
           />
         ))}
 
-        {/* Botón para añadir un email vacío */}
         <button
           onClick={() => setEmails([...emails, ""])}
           className="bg-gray-500 text-white py-1 rounded"
@@ -177,12 +231,10 @@ export default function AdminPagoDetallePage() {
           Añadir email
         </button>
 
-        {/* Botón guardar */}
         <button
           onClick={async () => {
-            const vacios = emails.some((x) => !x.trim());
-            if (vacios)
-              return alert("Todos los emails Tekla deben estar completos.");
+            const vacios = emails.some(x => !x.trim());
+            if (vacios) return alert("Todos los emails deben estar completos.");
 
             const r = await fetch("/api/pagos/guardar-emails", {
               method: "POST",
@@ -190,9 +242,7 @@ export default function AdminPagoDetallePage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 pago_id: id,
-                emails: emails.map((e) => ({
-                  email_tekla: e.trim(),
-                })),
+                emails: emails.map(e => ({ email_tekla: e.trim() })),
               }),
             });
 
@@ -206,7 +256,7 @@ export default function AdminPagoDetallePage() {
       </div>
 
       {/* =======================
-          FACTURACIÓN
+          FACTURACIÓN USUARIO
       ======================= */}
       <h3 className="mt-8 font-semibold text-lg">Datos de facturación</h3>
 
@@ -216,32 +266,18 @@ export default function AdminPagoDetallePage() {
 
       {facturacion && (
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded mt-2 text-sm flex flex-col gap-1">
-          <p>
-            <strong>Nombre:</strong> {facturacion.nombre ?? "—"}
-          </p>
-          <p>
-            <strong>NIF:</strong> {facturacion.nif ?? "—"}
-          </p>
-          <p>
-            <strong>Dirección:</strong> {facturacion.direccion ?? "—"}
-          </p>
-          <p>
-            <strong>Ciudad:</strong> {facturacion.ciudad ?? "—"}
-          </p>
-          <p>
-            <strong>CP:</strong> {facturacion.cp ?? "—"}
-          </p>
-          <p>
-            <strong>País:</strong> {facturacion.pais ?? "—"}
-          </p>
-          <p>
-            <strong>Teléfono:</strong> {facturacion.telefono ?? "—"}
-          </p>
+          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
+          <p><strong>NIF:</strong> {facturacion.nif}</p>
+          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
+          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
+          <p><strong>CP:</strong> {facturacion.cp}</p>
+          <p><strong>País:</strong> {facturacion.pais}</p>
+          <p><strong>Teléfono:</strong> {facturacion.telefono}</p>
         </div>
       )}
 
       {/* =======================
-          BOTONES
+          ACCIONES
       ======================= */}
       <div className="mt-10 flex flex-col gap-3 max-w-sm">
         <button
@@ -274,7 +310,7 @@ export default function AdminPagoDetallePage() {
       </div>
 
       {/* =======================
-          DIALOGOS
+          DIÁLOGOS
       ======================= */}
       <ConfirmDialog
         open={openValidar}

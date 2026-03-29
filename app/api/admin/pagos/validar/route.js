@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(req) {
   const admin = await requireAdmin();
@@ -91,7 +92,7 @@ export async function POST(req) {
   const licenciasInsertar = [];
 
   for (const email of emailsTekla) {
-    // 3.1 Verificar si YA existe una licencia activa para el mismo plugin + email
+    // Verificar si YA existe una licencia activa para el mismo plugin + email
     const { data: existente } = await supabaseAdmin
       .from("licencias")
       .select("id")
@@ -110,7 +111,6 @@ export async function POST(req) {
       );
     }
 
-    // 3.2 Agregar a la lista para insertar
     licenciasInsertar.push({
       user_id: pago.user_id,
       pago_id,
@@ -125,7 +125,7 @@ export async function POST(req) {
     });
   }
 
-  // 3.3 Insertar licencias
+  // Insertar licencias
   const { error: licErr } = await supabaseAdmin
     .from("licencias")
     .insert(licenciasInsertar);
@@ -147,7 +147,32 @@ export async function POST(req) {
     .update({ estado: "aprobado", fecha_validacion: ahora })
     .eq("id", pago_id);
 
-  // 5. Respuesta bonita
+  // 5. Enviar email al usuario
+  const { data: usuario } = await supabaseAdmin
+    .from("usuarios")
+    .select("email, nombre")
+    .eq("id", pago.user_id)
+    .maybeSingle();
+
+  if (usuario?.email) {
+    const subject = "Tus licencias ya han sido activadas";
+    const html = `
+      <h2>Licencias activadas ✔</h2>
+      <p>Hola ${usuario.nombre ?? ""},</p>
+      <p>Te confirmamos que tu compra ha sido validada.</p>
+      <p>Las licencias asociadas ya están activas y disponibles en tu panel:</p>
+      <p><a href="https://ombim.site/panel/user/licencias" target="_blank">Ver mis licencias</a></p>
+      <p>Gracias por confiar en OMBIM.</p>
+    `;
+
+    await sendEmail({
+      to: usuario.email,
+      subject,
+      html,
+    });
+  }
+
+  // 6. Respuesta final
   return NextResponse.json({
     ok: true,
     mensaje: `Pago validado correctamente. Se han creado ${licenciasInsertar.length} licencia(s).`,

@@ -67,8 +67,9 @@ export default function UserPagosPage() {
             <tr className="bg-gray-200 dark:bg-gray-700">
               <th>ID</th>
               <th>Plugin</th>
-              <th>Licencias</th>
+              <th>Lic.</th>
               <th>Estado</th>
+              <th>Factura</th>
               <th>Fecha</th>
               <th></th>
             </tr>
@@ -84,7 +85,7 @@ export default function UserPagosPage() {
                 <td>{p.plugin_id}</td>
                 <td>{p.cantidad_licencias}</td>
 
-                {/* Estado con badge PRO */}
+                {/* Estado del pago */}
                 <td>
                   {p.estado === "pendiente" && (
                     <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold">
@@ -92,9 +93,27 @@ export default function UserPagosPage() {
                     </span>
                   )}
 
-                  {p.estado === "validado" && (
+                  {p.estado === "aprobado" && (
                     <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold">
-                      Validado
+                      Aprobado
+                    </span>
+                  )}
+                </td>
+
+                {/* ESTADO FACTURA */}
+                <td>
+                  {/* Ya tiene número → listo para descargar */}
+                  {p.numero_factura ? (
+                    <span className="bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded text-xs font-semibold">
+                      Lista
+                    </span>
+                  ) : p.factura_solicitada ? (
+                    <span className="bg-yellow-200 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded text-xs font-semibold">
+                      Solicitada
+                    </span>
+                  ) : (
+                    <span className="bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded text-xs font-semibold">
+                      No solicitada
                     </span>
                   )}
                 </td>

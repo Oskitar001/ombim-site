@@ -1,13 +1,13 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { use as usePromise } from "react";
+import { useParams } from "next/navigation";
 import { ArrowLeft, FileDown } from "lucide-react";
 
-export default function UserPagoDetallePage({ params }) {
-  // Next.js 16 → params es PROMESA
-  const { id } = usePromise(params);
+export default function UserPagoDetallePage() {
+  const params = useParams();
+  const id = params.id;
 
   const [pago, setPago] = useState(null);
   const [plugin, setPlugin] = useState(null);
@@ -23,7 +23,7 @@ export default function UserPagoDetallePage({ params }) {
   useEffect(() => {
     async function load() {
       try {
-        // 1) PAGO (CORREGIDO)
+        // 1) PAGO
         const rPago = await fetch(`/api/pagos/detalle/${id}`, {
           credentials: "include",
         });
@@ -35,13 +35,13 @@ export default function UserPagoDetallePage({ params }) {
           return;
         }
 
-        setPago(dPago);
+        setPago(dPago); // ESTO YA ES CORRECTO gracias al endpoint corregido
 
         // 2) Plugin
         const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
         setPlugin(await rPlugin.json());
 
-        // 3) Licencias
+        // 3) Licencias vinculadas a este pago
         const rLic = await fetch(`/api/user/licencias?pago_id=${id}`);
         const dLic = await rLic.json();
         setLicencias(dLic.licencias ?? []);
@@ -70,6 +70,7 @@ export default function UserPagoDetallePage({ params }) {
   const iva = pago.iva ?? 0;
   const total = pago.importe ?? subtotal + iva;
 
+  // Descargar factura PDF
   async function descargarFactura() {
     const res = await fetch("/api/facturacion/pdf", {
       method: "POST",
@@ -78,7 +79,8 @@ export default function UserPagoDetallePage({ params }) {
     });
 
     if (!res.ok) {
-      alert("Error generando factura");
+      const data = await res.json();
+      alert(data.mensaje ?? "Error generando factura");
       return;
     }
 
@@ -90,6 +92,23 @@ export default function UserPagoDetallePage({ params }) {
     a.download = `factura-${pago.id}.pdf`;
     a.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  // Solicitar factura
+  async function solicitarFactura() {
+    const r = await fetch("/api/facturacion/solicitar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pagoId: pago.id }),
+    });
+
+    if (!r.ok) {
+      alert("Error solicitando la factura.");
+      return;
+    }
+
+    alert("Solicitud enviada. El administrador debe asignar un número de factura.");
   }
 
   return (
@@ -105,9 +124,23 @@ export default function UserPagoDetallePage({ params }) {
       {/* -------------------------------------
           RESUMEN DEL PAGO
       -------------------------------------- */}
-      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-1">
+      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
         <p><strong>Plugin:</strong> {plugin?.nombre}</p>
-        <p><strong>Estado:</strong> {pago.estado}</p>
+
+        <p>
+          <strong>Estado:</strong>{" "}
+          {pago.estado === "pendiente" && (
+            <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">
+              Pendiente
+            </span>
+          )}
+          {pago.estado === "aprobado" && (
+            <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
+              Aprobado
+            </span>
+          )}
+        </p>
+
         <p><strong>Tipo licencia:</strong> {pago.tipo}</p>
         <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
         <p>
@@ -123,15 +156,29 @@ export default function UserPagoDetallePage({ params }) {
           </p>
         </div>
 
-        {/* BOTÓN DESCARGAR FACTURA */}
+        {/* -------------------------------------
+            BOTÓN SOLICITAR / DESCARGAR FACTURA
+        -------------------------------------- */}
+
         {pago.estado === "aprobado" && (
-          <button
-            onClick={descargarFactura}
-            className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            <FileDown size={18} />
-            Descargar factura en PDF
-          </button>
+          <>
+            {pago.numero_factura ? (
+              <button
+                onClick={descargarFactura}
+                className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                <FileDown size={18} />
+                Descargar factura en PDF
+              </button>
+            ) : (
+              <button
+                onClick={solicitarFactura}
+                className="mt-4 flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+              >
+                Solicitar factura
+              </button>
+            )}
+          </>
         )}
       </div>
 

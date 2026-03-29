@@ -446,10 +446,19 @@ export default function AsignarEmailsClient({ pago, onSaved }) {
 
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function PagosTransferenciaPage({ params }) {
-  const { pago_id } = use(params);
+  // ✔ Next.js 15/16 → params es PROMESA en client components
+  const [pago_id, setPagoId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setPagoId(resolved.pago_id);
+    }
+    resolver();
+  }, [params]);
 
   const [pago, setPago] = useState(null);
   const [plugin, setPlugin] = useState(null);
@@ -460,6 +469,8 @@ export default function PagosTransferenciaPage({ params }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!pago_id) return;
+
     async function load() {
       try {
         const rPago = await fetch(`/api/pagos/detalle/${pago_id}`);
@@ -505,7 +516,9 @@ export default function PagosTransferenciaPage({ params }) {
       return;
     }
 
-    setMsg("Tu aviso ha sido enviado. Te confirmaremos en cuanto validemos la transferencia.");
+    setMsg(
+      "Tu aviso ha sido enviado. Te confirmaremos en cuanto validemos la transferencia."
+    );
   }
 
   if (loading) return <p className="p-4">Cargando datos del pago...</p>;
@@ -513,16 +526,14 @@ export default function PagosTransferenciaPage({ params }) {
 
   const emails = pago.emails ?? [];
 
-  // 👇 VALORES SEGUROS (evitan errores .toFixed)
   const subtotal = pago.importe_base ?? 0;
   const iva = pago.iva ?? 0;
-  const total = pago.importe ?? (subtotal + iva);
+  const total = pago.importe ?? subtotal + iva;
 
   const iban = empresa?.iban ?? "—";
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6">
-
       <h2 className="text-2xl font-bold">Pago por transferencia</h2>
 
       <p className="opacity-80">
@@ -533,18 +544,31 @@ export default function PagosTransferenciaPage({ params }) {
       <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
         <h3 className="text-xl font-semibold">Resumen del pedido</h3>
 
-        <p><strong>Plugin:</strong> {plugin?.nombre}</p>
-        <p><strong>Tipo de licencia:</strong> {pago.tipo === "anual" ? "Anual" : "Completa"}</p>
+        <p>
+          <strong>Plugin:</strong> {plugin?.nombre}
+        </p>
+        <p>
+          <strong>Tipo de licencia:</strong>{" "}
+          {pago.tipo === "anual" ? "Anual" : "Completa"}
+        </p>
 
-        <p><strong>Emails Tekla:</strong></p>
+        <p>
+          <strong>Emails Tekla:</strong>
+        </p>
         <ul className="list-disc ml-6">
-          {emails.map((e, i) => <li key={i}>{e}</li>)}
+          {emails.map((e, i) => (
+            <li key={i}>{e}</li>
+          ))}
         </ul>
 
         {/* 🟩 DESGLOSE DE IVA */}
         <div className="mt-4 space-y-1">
-          <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
-          <p><strong>IVA (21%):</strong> {iva.toFixed(2)} €</p>
+          <p>
+            <strong>Subtotal:</strong> {subtotal.toFixed(2)} €
+          </p>
+          <p>
+            <strong>IVA (21%):</strong> {iva.toFixed(2)} €
+          </p>
           <p className="text-xl font-bold">
             TOTAL a pagar (IVA incluido): {total.toFixed(2)} €
           </p>
@@ -555,10 +579,18 @@ export default function PagosTransferenciaPage({ params }) {
       <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
         <h3 className="text-xl font-semibold">Datos bancarios</h3>
 
-        <p><strong>Titular:</strong> {empresa?.nombre}</p>
-        <p><strong>CIF:</strong> {empresa?.cif}</p>
-        <p><strong>IBAN:</strong> {iban}</p>
-        <p><strong>Concepto:</strong> Pago OMBIM Nº {pago.id}</p>
+        <p>
+          <strong>Titular:</strong> {empresa?.nombre}
+        </p>
+        <p>
+          <strong>CIF:</strong> {empresa?.cif}
+        </p>
+        <p>
+          <strong>IBAN:</strong> {iban}
+        </p>
+        <p>
+          <strong>Concepto:</strong> Pago OMBIM Nº {pago.id}
+        </p>
       </div>
 
       {msg && <p className="text-green-600 font-semibold">{msg}</p>}
@@ -640,6 +672,8 @@ export default function Page() {
   const [tipo, setTipo] = useState(planInicial);
 
   useEffect(() => {
+    if (!plugin_id) return; // ✔ FIX mínimo necesario
+
     async function load() {
       try {
         const rUser = await fetch("/api/auth/me");
@@ -656,15 +690,15 @@ export default function Page() {
       }
     }
 
-    if (plugin_id) load();
+    load();
   }, [plugin_id]);
 
   function actualizarEmail(i, valor) {
-    setEmails(prev => prev.map((e, idx) => (idx === i ? valor : e)));
+    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
   }
 
   function añadirFila() {
-    setEmails(prev => [...prev, ""]);
+    setEmails((prev) => [...prev, ""]);
   }
 
   async function crearPago() {
@@ -673,8 +707,8 @@ export default function Page() {
       return;
     }
 
-    const emailsLimpios = emails.map(e => e.trim());
-    if (emailsLimpios.some(e => e === "")) {
+    const emailsLimpios = emails.map((e) => e.trim());
+    if (emailsLimpios.some((e) => e === "")) {
       setError("Debes completar TODOS los emails Tekla.");
       return;
     }
@@ -716,7 +750,7 @@ export default function Page() {
   const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
 
   // DESGLOSE IVA
-  const subtotal = precioUnitario * emails.length;   // sin IVA
+  const subtotal = precioUnitario * emails.length; // sin IVA
   const iva = subtotal * 0.21;
   const total = subtotal + iva;
 
@@ -742,7 +776,9 @@ export default function Page() {
           )}
 
           {precioCompleta > 0 && (
-            <option value="completa">Completa – {precioCompleta.toFixed(2)} €</option>
+            <option value="completa">
+              Completa – {precioCompleta.toFixed(2)} €
+            </option>
           )}
         </select>
       </div>
@@ -762,19 +798,22 @@ export default function Page() {
           />
         ))}
 
-        <button
-          onClick={añadirFila}
-          className="text-blue-600 underline mb-4"
-        >
+        <button onClick={añadirFila} className="text-blue-600 underline mb-4">
           Añadir otro email
         </button>
       </div>
 
-      {/* DESGLOSE DE PRECIOS (AQUÍ FALTABA EL IVA) */}
+      {/* DESGLOSE DE PRECIOS */}
       <div className="space-y-1 text-lg">
-        <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
-        <p><strong>IVA (21%):</strong> {iva.toFixed(2)} €</p>
-        <p className="text-2xl font-bold"><strong>Total:</strong> {total.toFixed(2)} €</p>
+        <p>
+          <strong>Subtotal:</strong> {subtotal.toFixed(2)} €
+        </p>
+        <p>
+          <strong>IVA (21%):</strong> {iva.toFixed(2)} €
+        </p>
+        <p className="text-2xl font-bold">
+          <strong>Total:</strong> {total.toFixed(2)} €
+        </p>
       </div>
 
       {error && <p className="text-red-600">{error}</p>}
@@ -812,7 +851,10 @@ export default function PluginsPage() {
         const d1 = await r1.json();
         setPlugins(Array.isArray(d1) ? d1 : []);
 
-        const r2 = await fetch("/api/auth/me");
+        // ✔ FIX CRÍTICO → añadir credentials: "include"
+        const r2 = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
         const d2 = await r2.json();
         setUser(d2.user ?? null);
       } catch {
@@ -834,19 +876,18 @@ export default function PluginsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => {
-          // ⭐ Lógica correcta de visualización de precio
           const precioNormal = Number(p.precio) || 0;
           const precioCompleta = Number(p.precio_completa) || 0;
           const precioAnual = Number(p.precio_anual) || 0;
 
           const precioMostrar =
-  precioNormal > 0
-    ? precioNormal
-    : precioCompleta > 0
-    ? precioCompleta
-    : precioAnual > 0
-    ? precioAnual
-    : 0;
+            precioNormal > 0
+              ? precioNormal
+              : precioCompleta > 0
+              ? precioCompleta
+              : precioAnual > 0
+              ? precioAnual
+              : 0;
 
           return (
             <div
@@ -904,7 +945,6 @@ export default function PluginsPage() {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\(site)\plugins\[id]\DescargarBoton.jsx
 ============================================================
@@ -949,6 +989,7 @@ export default async function PluginPage({ params }) {
 
   const plugin = await res.json();
 
+  // ✔ FIX: JSX real, NO entidades HTML escapadas
   return <PluginClient plugin={plugin} pluginId={id} />;
 }
 
@@ -974,7 +1015,7 @@ export default function PluginClient({ plugin }) {
   const pluginId = plugin.id;
 
   // ================================
-  // CARGAR USUARIO
+  // CARGAR USUARIO (FIX crítico: credentials)
   // ================================
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
@@ -1112,7 +1153,6 @@ export default function PluginClient({ plugin }) {
     </div>
   );
 }
-
 
 
 ============================================================
@@ -3282,40 +3322,6 @@ export async function POST(req) {
       { error: "error_guardando_facturacion" },
       { status: 500 }
     );
-  }
-
-  return NextResponse.json({ ok: true });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
-============================================================
-
-// app/api/facturacion/guardar-numero/route.js
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export async function POST(req) {
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
-  }
-
-  const { pago_id, numero_factura } = await req.json();
-
-  if (!pago_id || !numero_factura) {
-    return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
-  }
-
-  const { error } = await supabaseAdmin
-    .from("pagos")
-    .update({ numero_factura })
-    .eq("id", pago_id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   return NextResponse.json({ ok: true });

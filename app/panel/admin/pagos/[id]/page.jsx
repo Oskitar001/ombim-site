@@ -1,21 +1,14 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
-export default function AdminPagoDetallePage({ params }) {
-
-  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
-  const [id, setId] = useState(null);
-
-  useEffect(() => {
-    async function resolver() {
-      const resolved = await params;
-      setId(resolved.id);
-    }
-    resolver();
-  }, [params]);
+export default function AdminPagoDetallePage() {
+  // ✔ NEXT.js 15/16 — useParams devuelve el ID correctamente
+  const params = useParams();
+  const id = params.id;
 
   const [pago, setPago] = useState(null);
   const [emails, setEmails] = useState([]);
@@ -30,7 +23,7 @@ export default function AdminPagoDetallePage({ params }) {
   const [openBorrar, setOpenBorrar] = useState(false);
 
   // ============================================
-  // CARGAR PAGO
+  // CARGAR DATOS DEL PAGO
   // ============================================
   useEffect(() => {
     if (!id) return;
@@ -65,7 +58,6 @@ export default function AdminPagoDetallePage({ params }) {
     }
 
     load();
-
   }, [id]);
 
   // ============================================
@@ -116,7 +108,6 @@ export default function AdminPagoDetallePage({ params }) {
     });
 
     if (!r.ok) return alert("Error borrando el pago.");
-
     window.location.href = "/panel/admin/pagos?deleted=1";
   }
 
@@ -138,7 +129,7 @@ export default function AdminPagoDetallePage({ params }) {
 
       {/* =======================
           RESUMEN ECONÓMICO
-      ======================== */}
+      ======================= */}
       <div className="mt-6 border p-4 bg-gray-100 dark:bg-gray-900 rounded">
         <h3 className="font-semibold text-lg mb-2">Resumen económico</h3>
 
@@ -161,59 +152,62 @@ export default function AdminPagoDetallePage({ params }) {
 
       {/* =======================
           EMAILS TEKLA
-      ======================== */}
+      ======================= */}
       <h3 className="mt-6 font-semibold text-lg">Emails Tekla</h3>
 
-      {emails.length === 0 && (
-        <p className="text-gray-500">No hay emails asociados.</p>
-      )}
-
-      {emails.length > 0 && (
-        <div className="flex flex-col gap-3 mt-3">
-          {emails.map((email, i) => (
-            <input
-              key={i}
-              value={email}
-              onChange={(ev) => {
-                const copia = [...emails];
-                copia[i] = ev.target.value;
-                setEmails(copia);
-              }}
-              className="border p-2 rounded dark:bg-gray-900"
-            />
-          ))}
-
-          <button
-            onClick={async () => {
-              const vacios = emails.some((x) => !x.trim());
-              if (vacios)
-                return alert("Todos los emails Tekla deben estar completos.");
-
-              const r = await fetch("/api/pagos/guardar-emails", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  pago_id: pago.id,
-                  emails: emails.map((e) => ({
-                    licencia_id: null,
-                    email_tekla: e.trim(),
-                  })),
-                }),
-              });
-
-              if (!r.ok) return alert("Error guardando emails.");
+      <div className="flex flex-col gap-3 mt-3">
+        {emails.map((email, i) => (
+          <input
+            key={i}
+            value={email}
+            onChange={(ev) => {
+              const copia = [...emails];
+              copia[i] = ev.target.value;
+              setEmails(copia);
             }}
-            className="bg-blue-600 text-white py-2 rounded"
-          >
-            Guardar emails
-          </button>
-        </div>
-      )}
+            className="border p-2 rounded dark:bg-gray-900"
+          />
+        ))}
+
+        {/* Botón para añadir un email vacío */}
+        <button
+          onClick={() => setEmails([...emails, ""])}
+          className="bg-gray-500 text-white py-1 rounded"
+        >
+          Añadir email
+        </button>
+
+        {/* Botón guardar */}
+        <button
+          onClick={async () => {
+            const vacios = emails.some((x) => !x.trim());
+            if (vacios)
+              return alert("Todos los emails Tekla deben estar completos.");
+
+            const r = await fetch("/api/pagos/guardar-emails", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                pago_id: id,
+                emails: emails.map((e) => ({
+                  email_tekla: e.trim(),
+                })),
+              }),
+            });
+
+            if (!r.ok) return alert("Error guardando emails.");
+            window.location.reload();
+          }}
+          className="bg-blue-600 text-white py-2 rounded"
+        >
+          Guardar emails
+        </button>
+      </div>
 
       {/* =======================
           FACTURACIÓN
-      ======================== */}
+      ======================= */}
       <h3 className="mt-8 font-semibold text-lg">Datos de facturación</h3>
 
       {!facturacion && (
@@ -248,7 +242,7 @@ export default function AdminPagoDetallePage({ params }) {
 
       {/* =======================
           BOTONES
-      ======================== */}
+      ======================= */}
       <div className="mt-10 flex flex-col gap-3 max-w-sm">
         <button
           onClick={() => setOpenValidar(true)}
@@ -281,7 +275,7 @@ export default function AdminPagoDetallePage({ params }) {
 
       {/* =======================
           DIALOGOS
-      ======================== */}
+      ======================= */}
       <ConfirmDialog
         open={openValidar}
         title="Validar pago"

@@ -1,5 +1,44 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
+============================================================
+
+{/* HERO VISUAL CORRECTO */}
+<section
+  className="relative h-[70vh] w-full flex items-center justify-center text-center px-6"
+  style={{
+    backgroundImage: "url('/images/hero-tekla.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }}
+>
+  {/* Overlay adaptado a tema */}
+  <div className="absolute inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm"></div>
+
+  {/* Contenido */}
+  <div className="relative max-w-4xl mx-auto text-white">
+    <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 drop-shadow-xl">
+      Plugins, automatizaciones y modelado 3D <br />
+      para Tekla Structures
+    </h1>
+
+    <p className="text-lg md:text-2xl opacity-90 leading-relaxed mb-10 drop-shadow-lg">
+      Acelera tu flujo BIM con herramientas profesionales creadas desde la experiencia real
+      en obra, fabricación y modelado avanzado.
+    </p>
+
+    <Link
+      href="/contacto"
+      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-lg transition"
+    >
+      Solicitar demo personalizada →
+    </Link>
+  </div>
+</section>
+``
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
 ============================================================
 
@@ -18,8 +57,6 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState("light");
-
-  
 
   const menuRef = useRef(null);
 
@@ -70,15 +107,18 @@ export default function Navbar() {
     document.body.classList.toggle("overflow-hidden", open);
   }, [open]);
 
-  // Logout
+  // Logout (FIX crítico: credentials)
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { 
+      method: "POST",
+      credentials: "include"
+    });
     setUser(null);
     router.push("/");
   };
 
   if (!ready) return null;
-  console.log("USER METADATA:", user?.user_metadata);
+
   const role = user?.user_metadata?.role;
   const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
 
@@ -235,6 +275,7 @@ const items = [
   { title: 'Proyecto 2', desc: 'Descripción breve del proyecto realizado.' },
   { title: 'Proyecto 3', desc: 'Descripción breve del proyecto realizado.' },
 ]
+
 export default function Projects() {
   return (
     <section id="proyectos" className="bg-[#f3f4f6] py-20">
@@ -242,7 +283,7 @@ export default function Projects() {
         <h2 className="text-4xl font-bold text-center mb-12">Proyectos</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {items.map((p, i) => (
-            <div key={i} className="p-6 rounded-2xl border bg-[#f3f4f6]Soft shadow-sm text-center">
+            <div key={i} className="p-6 rounded-2xl border bg-[#f3f4f6] shadow-sm text-center">
               <h4 className="font-semibold mb-2">{p.title}</h4>
               <p className="text-[#1f2937]">{p.desc}</p>
             </div>
@@ -252,7 +293,6 @@ export default function Projects() {
     </section>
   )
 }
-
 
 
 ============================================================
@@ -303,7 +343,8 @@ export default function Services() {
         <h2 className="text-4xl font-bold text-center mb-12">Servicios</h2>
 
         <div className="grid md:grid-cols-2 gap-10">
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Modelado BIM en Tekla Structures</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Modelado de estructuras metálicas y de hormigón</li>
@@ -313,7 +354,7 @@ export default function Services() {
             </ul>
           </div>
 
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Planos y documentación técnica</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Planos de fabricación</li>
@@ -323,7 +364,7 @@ export default function Services() {
             </ul>
           </div>
 
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Automatizaciones y plugins para Tekla</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Desarrollo de plugins a medida</li>
@@ -333,7 +374,7 @@ export default function Services() {
             </ul>
           </div>
 
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Colaboración externa</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Refuerzo de equipos técnicos</li>
@@ -342,6 +383,7 @@ export default function Services() {
               <li>• Comunicación directa y flexible</li>
             </ul>
           </div>
+
         </div>
       </div>
     </section>
@@ -349,11 +391,9 @@ export default function Services() {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
 ============================================================
-
 
 "use client";
 
@@ -368,7 +408,6 @@ export default function TestimonialsSection() {
     </section>
   );
 }
-
 
 
 ============================================================
@@ -446,7 +485,7 @@ export default function Input({ className = "", ...props }) {
       {...props}
       className={`
         w-full px-3 py-2 rounded-lg
-        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        bg-[#f3f4f6] dark:bg-[#242424]
         text-[#1f2937] dark:text-[#e6e6e6]
         border border-[#d1d5db] dark:border-[#3a3a3a]
         focus:outline-none focus:ring-2 focus:ring-brand
@@ -456,7 +495,6 @@ export default function Input({ className = "", ...props }) {
     />
   );
 }
-
 
 
 ============================================================
@@ -469,7 +507,7 @@ export default function Select({ children, className = "", ...props }) {
       {...props}
       className={`
         w-full px-4 py-2.5 rounded-xl
-        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        bg-[#f3f4f6] dark:bg-[#242424]
         text-[#1f2937] dark:text-[#e6e6e6]
         border border-[#d1d5db] dark:border-[#3a3a3a]
         shadow-sm
@@ -483,7 +521,6 @@ export default function Select({ children, className = "", ...props }) {
     </select>
   );
 }
-
 
 
 ============================================================
@@ -816,19 +853,19 @@ export async function generateInvoicePdf(datos) {
   // ================================
   doc.font("Helvetica-Bold").fontSize(12);
   doc.text("Subtotal:", startX, doc.y, { continued: true });
-  doc.text(` ${(subtotal).toFixed(2)} €`, { align: "right" });
+  doc.text(` ${subtotal.toFixed(2)} €`, { align: "right" });
 
   doc.text("IVA 21%:", startX, doc.y, { continued: true });
-  doc.text(` ${(iva).toFixed(2)} €`, { align: "right" });
+  doc.text(` ${iva.toFixed(2)} €`, { align: "right" });
 
   doc.fontSize(14).fillColor("#000");
   doc.text("TOTAL:", startX, doc.y, { continued: true });
-  doc.text(` ${(total).toFixed(2)} €`, { align: "right" });
+  doc.text(` ${total.toFixed(2)} €`, { align: "right" });
 
   doc.moveDown(3);
 
   // ================================
-  //   QR — VERIFICACIÓN
+  //   QR — FIX CRÍTICO: añadir fit
   // ================================
   doc.font("Helvetica-Bold").fontSize(11).text("Verificación de la factura:");
   doc.moveDown(0.5);
@@ -836,7 +873,9 @@ export async function generateInvoicePdf(datos) {
   try {
     const qrBase64 = qrDataUrl.replace(/^data:image\/png;base64,/, "");
     const qrBuffer = Buffer.from(qrBase64, "base64");
-    doc.image(qrBuffer, startX, doc.y, { width: 120 });
+
+    // ✔ FIX crítico para que PDFKit no rompa el PDF en Vercel
+    doc.image(qrBuffer, startX, doc.y, { width: 120, fit: [120, 120] });
   } catch (err) {
     doc.fontSize(10).fillColor("red").text("Error generando el QR");
   }

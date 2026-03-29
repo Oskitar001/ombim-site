@@ -1,5 +1,39 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
+============================================================
+
+// app/api/facturacion/guardar-numero/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { pago_id, numero_factura } = await req.json();
+
+  if (!pago_id || !numero_factura) {
+    return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin
+    .from("pagos")
+    .update({ numero_factura })
+    .eq("id", pago_id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\pdf\route.js
 ============================================================
 
@@ -2384,12 +2418,22 @@ export default function AdminPagosPage() {
 
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminPagoDetallePage({ params }) {
-  const { id } = use(params);
+
+  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
 
   const [pago, setPago] = useState(null);
   const [emails, setEmails] = useState([]);
@@ -2407,6 +2451,8 @@ export default function AdminPagoDetallePage({ params }) {
   // CARGAR PAGO
   // ============================================
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       try {
         const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
@@ -2436,7 +2482,8 @@ export default function AdminPagoDetallePage({ params }) {
       }
     }
 
-    if (id) load();
+    load();
+
   }, [id]);
 
   // ============================================
@@ -2518,8 +2565,12 @@ export default function AdminPagoDetallePage({ params }) {
         <p><strong>Estado:</strong> {pago.estado}</p>
 
         <div className="mt-3">
-          <p><strong>Subtotal:</strong> {pago.importe_base?.toFixed(2)} €</p>
-          <p><strong>IVA (21%):</strong> {pago.iva?.toFixed(2)} €</p>
+          <p>
+            <strong>Subtotal:</strong> {pago.importe_base?.toFixed(2)} €
+          </p>
+          <p>
+            <strong>IVA (21%):</strong> {pago.iva?.toFixed(2)} €
+          </p>
           <p className="text-xl font-bold">
             TOTAL (IVA incluido): {pago.importe?.toFixed(2)} €
           </p>
@@ -2552,8 +2603,9 @@ export default function AdminPagoDetallePage({ params }) {
 
           <button
             onClick={async () => {
-              const vacios = emails.some(x => !x.trim());
-              if (vacios) return alert("Todos los emails Tekla deben estar completos.");
+              const vacios = emails.some((x) => !x.trim());
+              if (vacios)
+                return alert("Todos los emails Tekla deben estar completos.");
 
               const r = await fetch("/api/pagos/guardar-emails", {
                 method: "POST",
@@ -2561,7 +2613,7 @@ export default function AdminPagoDetallePage({ params }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   pago_id: pago.id,
-                  emails: emails.map(e => ({
+                  emails: emails.map((e) => ({
                     licencia_id: null,
                     email_tekla: e.trim(),
                   })),
@@ -2588,13 +2640,27 @@ export default function AdminPagoDetallePage({ params }) {
 
       {facturacion && (
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded mt-2 text-sm flex flex-col gap-1">
-          <p><strong>Nombre:</strong> {facturacion.nombre ?? "—"}</p>
-          <p><strong>NIF:</strong> {facturacion.nif ?? "—"}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion ?? "—"}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad ?? "—"}</p>
-          <p><strong>CP:</strong> {facturacion.cp ?? "—"}</p>
-          <p><strong>País:</strong> {facturacion.pais ?? "—"}</p>
-          <p><strong>Teléfono:</strong> {facturacion.telefono ?? "—"}</p>
+          <p>
+            <strong>Nombre:</strong> {facturacion.nombre ?? "—"}
+          </p>
+          <p>
+            <strong>NIF:</strong> {facturacion.nif ?? "—"}
+          </p>
+          <p>
+            <strong>Dirección:</strong> {facturacion.direccion ?? "—"}
+          </p>
+          <p>
+            <strong>Ciudad:</strong> {facturacion.ciudad ?? "—"}
+          </p>
+          <p>
+            <strong>CP:</strong> {facturacion.cp ?? "—"}
+          </p>
+          <p>
+            <strong>País:</strong> {facturacion.pais ?? "—"}
+          </p>
+          <p>
+            <strong>Teléfono:</strong> {facturacion.telefono ?? "—"}
+          </p>
         </div>
       )}
 
@@ -2602,7 +2668,6 @@ export default function AdminPagoDetallePage({ params }) {
           BOTONES
       ======================== */}
       <div className="mt-10 flex flex-col gap-3 max-w-sm">
-        
         <button
           onClick={() => setOpenValidar(true)}
           className="bg-green-600 text-white py-2 rounded"
@@ -2677,7 +2742,6 @@ export default function AdminPagoDetallePage({ params }) {
     </>
   );
 }
-``
 
 
 ============================================================
@@ -3145,177 +3209,6 @@ export default function NuevoPluginPage() {
           Guardar Plugin
         </button>
       </div>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Package, Trash2, Eye, Edit3, Download } from "lucide-react";
-
-export default function AdminPluginsPage() {
-  const [plugins, setPlugins] = useState([]);
-  const [descargas, setDescargas] = useState({});
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      // Obtener plugins
-      const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
-      const d1 = await r1.json();
-
-      // 🔥 FIX: ahora la API SIEMPRE devuelve { plugins: [...] }
-      setPlugins(Array.isArray(d1.plugins) ? d1.plugins : []);
-
-      // Obtener descargas por plugin
-      const r2 = await fetch("/api/admin/dashboard");
-      const d2 = await r2.json();
-      setDescargas(d2.descargasPorPlugin ?? {});
-    }
-    load();
-  }, []);
-
-  function confirmarBorrar(plugin) {
-    setSelected(plugin);
-    setOpen(true);
-  }
-
-  async function borrar() {
-    await fetch("/api/admin/plugins/borrar", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: selected.id }),
-    });
-
-    setOpen(false);
-    location.reload();
-  }
-
-  return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Plugins</h2>
-
-      <Link
-        href="/panel/admin/plugins/nuevo"
-        className="text-blue-600 flex items-center gap-2 mb-4"
-      >
-        <Package size={18} /> Nuevo plugin
-      </Link>
-
-      <table className="w-full border border-gray-300 dark:border-gray-700">
-        <thead>
-          <tr className="bg-gray-300 dark:bg-gray-700">
-            <th>Imagen</th>
-            <th>Nombre</th>
-            <th>Precios</th>
-            <th>Descargas</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {plugins.map((p) => (
-            <tr
-              key={p.id}
-              className="border-b border-gray-300 dark:border-gray-700"
-            >
-              <td className="p-2 text-center">
-                {p.imagen_url ? (
-                  <img
-                    src={p.imagen_url}
-                    alt={p.nombre}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gray-400 rounded" />
-                )}
-              </td>
-
-              <td className="font-semibold">{p.nombre}</td>
-
-              {/* Mostrar precios */}
-              <td className="p-2 text-sm">
-                <div>
-                  <strong>Estándar:</strong>{" "}
-                  {p.precio > 0 ? `${p.precio} €` : "—"}
-                </div>
-                <div>
-                  <strong>Anual:</strong>{" "}
-                  {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
-                </div>
-                <div>
-                  <strong>Completa:</strong>{" "}
-                  {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
-                </div>
-              </td>
-
-              <td className="text-center">
-                <span className="flex items-center gap-1 justify-center">
-                  <Download size={16} />
-                  {descargas[p.id] ?? 0}
-                </span>
-              </td>
-
-              <td className="flex gap-3 py-2 justify-center">
-                <Link href={`/panel/admin/plugins/${p.id}`}>
-                  <Eye className="text-blue-600 hover:text-blue-800" />
-                </Link>
-
-                <Link href={`/panel/admin/plugins/editar/${p.id}`}>
-                  <Edit3 className="text-yellow-500 hover:text-yellow-600" />
-                </Link>
-
-                <button onClick={() => confirmarBorrar(p)}>
-                  <Trash2 className="text-red-600 hover:text-red-800" />
-                </button>
-              </td>
-            </tr>
-          ))}
-
-          {!plugins.length && (
-            <tr>
-              <td colSpan="5" className="text-center p-4 opacity-70">
-                No hay plugins creados.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* MODAL BORRADO */}
-      {open && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4 max-w-md">
-            <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
-            <p>Esta acción no se puede deshacer.</p>
-
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setOpen(false)}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
-              >
-                Cancelar
-              </button>
-
-              <button
-                onClick={borrar}
-                className="px-4 py-2 bg-red-600 text-white rounded"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

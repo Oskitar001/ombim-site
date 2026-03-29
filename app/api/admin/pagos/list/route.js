@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";   // ✔ IMPORTACIÓN CORRECTA
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";       // ✔ IMPORTACIÓN CORRECTA
+import { supabaseAdmin } from "@/lib/supabaseAdmin";   // ✔ ADMIN CLIENT
 
 export async function GET() {
   const admin = await requireAdmin();

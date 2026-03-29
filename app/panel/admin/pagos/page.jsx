@@ -10,11 +10,18 @@ export default function AdminPagosPage() {
   useEffect(() => {
     async function load() {
       try {
-        const r = await fetch("/api/admin/pagos/lista");
+        // ✔ RUTA CORRECTA
+        const r = await fetch("/api/admin/pagos/list", {
+          credentials: "include",
+        });
+
         const d = await r.json();
-        setPagos(d.pagos || []);
+
+        // ✔ EL ENDPOINT DEVUELVE UN ARRAY DIRECTO
+        setPagos(Array.isArray(d) ? d : []);
       } catch (err) {
         console.log("Error cargando pagos", err);
+        setPagos([]);
       } finally {
         setLoading(false);
       }
@@ -52,17 +59,21 @@ export default function AdminPagosPage() {
               >
                 <td className="p-3">{p.id}</td>
 
-                <td className="p-3">{p.user_email}</td>
+                <td className="p-3">{p.user_email ?? "—"}</td>
 
-                <td className="p-3">{p.plugin_nombre}</td>
+                <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
 
                 <td className="p-3">{p.cantidad_licencias}</td>
 
-                <td className="p-3">{p.importe_base?.toFixed(2)} €</td>
+                <td className="p-3">
+                  {p.importe_base?.toFixed(2)} €
+                </td>
 
                 <td className="p-3">{p.iva?.toFixed(2)} €</td>
 
-                <td className="p-3 font-semibold">{p.importe?.toFixed(2)} €</td>
+                <td className="p-3 font-semibold">
+                  {p.importe?.toFixed(2)} €
+                </td>
 
                 <td className="p-3">
                   {p.estado === "pendiente" && (

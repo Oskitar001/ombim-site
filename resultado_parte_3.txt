@@ -1,5 +1,176 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Package, Trash2, Eye, Edit3, Download } from "lucide-react";
+
+export default function AdminPluginsPage() {
+  const [plugins, setPlugins] = useState([]);
+  const [descargas, setDescargas] = useState({});
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      // Obtener plugins
+      const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
+      const d1 = await r1.json();
+
+      // 🔥 FIX: ahora la API SIEMPRE devuelve { plugins: [...] }
+      setPlugins(Array.isArray(d1.plugins) ? d1.plugins : []);
+
+      // Obtener descargas por plugin
+      const r2 = await fetch("/api/admin/dashboard");
+      const d2 = await r2.json();
+      setDescargas(d2.descargasPorPlugin ?? {});
+    }
+    load();
+  }, []);
+
+  function confirmarBorrar(plugin) {
+    setSelected(plugin);
+    setOpen(true);
+  }
+
+  async function borrar() {
+    await fetch("/api/admin/plugins/borrar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: selected.id }),
+    });
+
+    setOpen(false);
+    location.reload();
+  }
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Plugins</h2>
+
+      <Link
+        href="/panel/admin/plugins/nuevo"
+        className="text-blue-600 flex items-center gap-2 mb-4"
+      >
+        <Package size={18} /> Nuevo plugin
+      </Link>
+
+      <table className="w-full border border-gray-300 dark:border-gray-700">
+        <thead>
+          <tr className="bg-gray-300 dark:bg-gray-700">
+            <th>Imagen</th>
+            <th>Nombre</th>
+            <th>Precios</th>
+            <th>Descargas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {plugins.map((p) => (
+            <tr
+              key={p.id}
+              className="border-b border-gray-300 dark:border-gray-700"
+            >
+              <td className="p-2 text-center">
+                {p.imagen_url ? (
+                  <img
+                    src={p.imagen_url}
+                    alt={p.nombre}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gray-400 rounded" />
+                )}
+              </td>
+
+              <td className="font-semibold">{p.nombre}</td>
+
+              {/* Mostrar precios */}
+              <td className="p-2 text-sm">
+                <div>
+                  <strong>Estándar:</strong>{" "}
+                  {p.precio > 0 ? `${p.precio} €` : "—"}
+                </div>
+                <div>
+                  <strong>Anual:</strong>{" "}
+                  {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
+                </div>
+                <div>
+                  <strong>Completa:</strong>{" "}
+                  {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
+                </div>
+              </td>
+
+              <td className="text-center">
+                <span className="flex items-center gap-1 justify-center">
+                  <Download size={16} />
+                  {descargas[p.id] ?? 0}
+                </span>
+              </td>
+
+              <td className="flex gap-3 py-2 justify-center">
+                <Link href={`/panel/admin/plugins/${p.id}`}>
+                  <Eye className="text-blue-600 hover:text-blue-800" />
+                </Link>
+
+                <Link href={`/panel/admin/plugins/editar/${p.id}`}>
+                  <Edit3 className="text-yellow-500 hover:text-yellow-600" />
+                </Link>
+
+                <button onClick={() => confirmarBorrar(p)}>
+                  <Trash2 className="text-red-600 hover:text-red-800" />
+                </button>
+              </td>
+            </tr>
+          ))}
+
+          {!plugins.length && (
+            <tr>
+              <td colSpan="5" className="text-center p-4 opacity-70">
+                No hay plugins creados.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* MODAL BORRADO */}
+      {open && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4 max-w-md">
+            <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
+            <p>Esta acción no se puede deshacer.</p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setOpen(false)}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={borrar}
+                className="px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\[id]\page.jsx
 ============================================================
 
@@ -249,15 +420,22 @@ export default function AdminUsuariosPage() {
 
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminUsuarioDetallePage({ params }) {
+  // ✔ Next.js 15/16 → params es PROMESA en client components
+  const [id, setId] = useState(null);
 
-  // 🔥 EN NEXT.JS 16 params ES UN PROMISE
-  const { id } = use(params);
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
 
   const [usuario, setUsuario] = useState(null);
   const [open, setOpen] = useState(false);
@@ -700,13 +878,24 @@ export default function PagosClient({ pagos }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\page.jsx
 ============================================================
 
-// /app/panel/mis-pagos/[id]/page.jsx
-import { use } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import PagoClient from "./PagoClient";
 
 export default function PagoPage({ params }) {
-  // ⬇⬇⬇ FIX OBLIGATORIO EN NEXT 16
-  const { id } = use(params);
+  // ✔ Next.js 15/16 → params es una PROMESA en componentes cliente
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
+
+  if (!id) return <p>Cargando…</p>;
 
   return <PagoClient pagoId={id} />;
 }
@@ -1385,10 +1574,10 @@ export default function UserLicenciasPage() {
 
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 function Tooltip({ label, children }) {
   return (
@@ -1402,18 +1591,30 @@ function Tooltip({ label, children }) {
 }
 
 export default function UserLicenciaDetallePage({ params }) {
-  const { id } = use(params);
+  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
 
   const [licencia, setLicencia] = useState(null);
   const [open, setOpen] = useState(false);
   const [accion, setAccion] = useState(null);
 
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       const r = await fetch(`/api/user/licencia?id=${id}`);
       const d = await r.json();
       setLicencia(d.licencia ?? null);
     }
+
     load();
   }, [id]);
 
@@ -1430,8 +1631,12 @@ export default function UserLicenciaDetallePage({ params }) {
 
       <h2 className="text-2xl font-bold mb-4">Licencia #{licencia.id}</h2>
 
-      <p><strong>Plugin:</strong> {licencia.plugin_nombre}</p>
-      <p><strong>Email Tekla:</strong> {licencia.email_tekla}</p>
+      <p>
+        <strong>Plugin:</strong> {licencia.plugin_nombre}
+      </p>
+      <p>
+        <strong>Email Tekla:</strong> {licencia.email_tekla}
+      </p>
 
       <p>
         <strong>Estado:</strong>{" "}
@@ -2482,6 +2687,8 @@ export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
 
     const res = await fetch("/api/admin/licencias/tipo", {
       method: "POST",
+      credentials: "include",               // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ necesario para el backend
       body: JSON.stringify({ id, tipo_id: tipo }),
     });
 
@@ -2524,7 +2731,6 @@ export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CrearLicenciaModal.jsx
 ============================================================
@@ -2544,6 +2750,8 @@ export default function CrearLicenciaModal({ onClose, onCreated }) {
 
     const res = await fetch("/api/admin/licencias/crear", {
       method: "POST",
+      credentials: "include",                // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ Necesario
       body: JSON.stringify({
         email_tekla: email,
         plugin_id: plugin,
@@ -2566,7 +2774,7 @@ export default function CrearLicenciaModal({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-[#f3f4f6]Soft p-6 rounded shadow w-96">
+      <div className="bg-[#f3f4f6] p-6 rounded shadow w-96">
         <h2 className="text-xl font-bold mb-4">Crear licencia</h2>
 
         <input
@@ -2609,7 +2817,6 @@ export default function CrearLicenciaModal({ onClose, onCreated }) {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\EditarNotas.jsx
 ============================================================
@@ -2627,6 +2834,8 @@ export default function EditarNotas({ id, notasIniciales, onUpdated }) {
 
     const res = await fetch("/api/admin/licencias/notas", {
       method: "POST",
+      credentials: "include",                         // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ Necesario
       body: JSON.stringify({ id, notas }),
     });
 
@@ -2663,7 +2872,6 @@ export default function EditarNotas({ id, notasIniciales, onUpdated }) {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaAcciones.jsx
 ============================================================
@@ -2673,54 +2881,74 @@ export default function EditarNotas({ id, notasIniciales, onUpdated }) {
 import { useState } from "react";
 
 export default function LicenciaAcciones({ id, onUpdated }) {
-    const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    async function call(endpoint) {
-        setLoading(true);
-        const res = await fetch(`/api/admin/licencias/${endpoint}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id }),
-        });
-        setLoading(false);
-        if (!res.ok) {
-            alert("Error ejecutando acción");
-            return;
-        }
-        onUpdated();
+  async function call(endpoint) {
+    setLoading(true);
+
+    const res = await fetch(`/api/admin/licencias/${endpoint}`, {
+      method: "POST",
+      credentials: "include", // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    setLoading(false);
+
+    if (!res.ok) {
+      alert("Error ejecutando acción");
+      return;
     }
 
-    return (
-        <div className="flex flex-col gap-3 max-w-sm">
+    onUpdated();
+  }
 
-            <button onClick={() => call("activar")} disabled={loading}
-                className="bg-green-600 text-white px-4 py-2 rounded">
-                Activar
-            </button>
+  return (
+    <div className="flex flex-col gap-3 max-w-sm">
 
-            <button onClick={() => call("bloquear")} disabled={loading}
-                className="bg-red-600 text-white px-4 py-2 rounded">
-                Bloquear
-            </button>
+      <button
+        onClick={() => call("activar")}
+        disabled={loading}
+        className="bg-green-600 text-white px-4 py-2 rounded"
+      >
+        Activar
+      </button>
 
-            <button onClick={() => call("reset-activaciones")} disabled={loading}
-                className="bg-purple-600 text-white px-4 py-2 rounded">
-                Reset activaciones
-            </button>
+      <button
+        onClick={() => call("bloquear")}
+        disabled={loading}
+        className="bg-red-600 text-white px-4 py-2 rounded"
+      >
+        Bloquear
+      </button>
 
-            {/* NUEVOS BOTONES */}
-            <button onClick={() => call("hacer-anual")} disabled={loading}
-                className="bg-yellow-600 text-white px-4 py-2 rounded">
-                Hacer anual
-            </button>
+      <button
+        onClick={() => call("reset-activaciones")}
+        disabled={loading}
+        className="bg-purple-600 text-white px-4 py-2 rounded"
+      >
+        Reset activaciones
+      </button>
 
-            <button onClick={() => call("hacer-completa")} disabled={loading}
-                className="bg-indigo-600 text-white px-4 py-2 rounded">
-                Hacer completa
-            </button>
+      {/* NUEVOS BOTONES */}
+      <button
+        onClick={() => call("hacer-anual")}
+        disabled={loading}
+        className="bg-yellow-600 text-white px-4 py-2 rounded"
+      >
+        Hacer anual
+      </button>
 
-        </div>
-    );
+      <button
+        onClick={() => call("hacer-completa")}
+        disabled={loading}
+        className="bg-indigo-600 text-white px-4 py-2 rounded"
+      >
+        Hacer completa
+      </button>
+
+    </div>
+  );
 }
 
 
@@ -2737,9 +2965,9 @@ export default function LicenciaAcciones({ id, onUpdated }) {
 
 export default function LicenciasTable({ licencias }) {
   return (
-    <table className="w-full bg-[#f3f4f6]Soft shadow rounded">
+    <table className="w-full bg-[#f3f4f6] shadow rounded">
       <thead>
-        <tr className="bg-[#f3f4f6]Soft text-left">
+        <tr className="bg-[#f3f4f6] text-left">
           <th className="p-2">Email Tekla</th>
           <th className="p-2">Plugin</th>
           <th className="p-2">Estado</th>
@@ -2769,20 +2997,18 @@ export default function LicenciasTable({ licencias }) {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\StatsCard.jsx
 ============================================================
 
 export default function StatsCard({ title, value }) {
   return (
-    <div className="bg-[#f3f4f6]Soft shadow rounded p-4">
+    <div className="bg-[#f3f4f6] shadow rounded p-4">
       <h4 className="text-[#1f2937] text-sm">{title}</h4>
       <p className="text-2xl font-bold">{value}</p>
     </div>
   );
 }
-
 
 
 ============================================================
@@ -2821,6 +3047,7 @@ export default function ConfirmDialog({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{title}</h2>
           <button
+            type="button"
             className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-300"
             onClick={onCancel}
           >
@@ -2836,6 +3063,7 @@ export default function ConfirmDialog({
         {/* BUTTONS */}
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600"
             onClick={onCancel}
           >
@@ -2843,6 +3071,7 @@ export default function ConfirmDialog({
           </button>
 
           <button
+            type="button"
             className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
             onClick={onConfirm}
           >
@@ -2936,7 +3165,7 @@ export default function Demos() {
 
         <div className="grid md:grid-cols-3 gap-10">
           {demos.map((d, i) => (
-            <div key={i} className="p-5 bg-[#f3f4f6]Soft rounded-2xl shadow">
+            <div key={i} className="p-5 bg-[#f3f4f6] rounded-2xl shadow">
               <video
                 className="w-full rounded-xl mb-4"
                 autoPlay
@@ -2956,7 +3185,6 @@ export default function Demos() {
 }
 
 
-
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Footer.jsx
 ============================================================
@@ -2968,7 +3196,7 @@ export default function Footer() {
     <footer
       className="
         mt-32 py-14
-        bg-[#f3f4f6]Soft text-[#1f2937]
+        bg-[#f3f4f6] text-[#1f2937]
         dark:bg-[#242424] dark:text-[#e6e6e6]
         border-t border-[#d1d5db] dark:border-[#3a3a3a]
       "
@@ -3057,44 +3285,4 @@ export default function Footer() {
     </footer>
   );
 }
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
-============================================================
-
-{/* HERO VISUAL CORRECTO */}
-<section
-  className="relative h-[70vh] w-full flex items-center justify-center text-center px-6"
-  style={{
-    backgroundImage: "url('/images/hero-tekla.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }}
->
-  {/* Overlay adaptado a tema */}
-  <div className="absolute inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm"></div>
-
-  {/* Contenido */}
-  <div className="relative max-w-4xl mx-auto text-white">
-    <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 drop-shadow-xl">
-      Plugins, automatizaciones y modelado 3D <br />
-      para Tekla Structures
-    </h1>
-
-    <p className="text-lg md:text-2xl opacity-90 leading-relaxed mb-10 drop-shadow-lg">
-      Acelera tu flujo BIM con herramientas profesionales creadas desde la experiencia real
-      en obra, fabricación y modelado avanzado.
-    </p>
-
-    <Link
-      href="/contacto"
-      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg font-semibold shadow-lg transition"
-    >
-      Solicitar demo personalizada →
-    </Link>
-  </div>
-</section>
-``
 

@@ -75,7 +75,7 @@ export async function POST(req) {
     );
   }
 
-  // 3. Crear licencias
+  // 3. Crear licencias (pero antes verificar duplicados)
   const ahora = new Date().toISOString();
   const tipo = pago.tipo;
 
@@ -88,19 +88,44 @@ export async function POST(req) {
     fechaExp = f.toISOString();
   }
 
-  const licenciasInsertar = emailsTekla.map((email) => ({
-    user_id: pago.user_id,
-    pago_id,
-    plugin_id: pago.plugin_id,
-    email_tekla: email,
-    tipo,
-    estado: "activa",
-    activaciones_usadas: 0,
-    max_activaciones: maxActivaciones,
-    fecha_creacion: ahora,
-    fecha_expiracion: fechaExp,
-  }));
+  const licenciasInsertar = [];
 
+  for (const email of emailsTekla) {
+    // 3.1 Verificar si YA existe una licencia activa para el mismo plugin + email
+    const { data: existente } = await supabaseAdmin
+      .from("licencias")
+      .select("id")
+      .eq("plugin_id", pago.plugin_id)
+      .eq("email_tekla", email)
+      .maybeSingle();
+
+    if (existente) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "licencia_existente",
+          mensaje: `El email ${email} ya tiene una licencia para este plugin. No se puede validar este pago.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 3.2 Agregar a la lista para insertar
+    licenciasInsertar.push({
+      user_id: pago.user_id,
+      pago_id,
+      plugin_id: pago.plugin_id,
+      email_tekla: email,
+      tipo,
+      estado: "activa",
+      activaciones_usadas: 0,
+      max_activaciones: maxActivaciones,
+      fecha_creacion: ahora,
+      fecha_expiracion: fechaExp,
+    });
+  }
+
+  // 3.3 Insertar licencias
   const { error: licErr } = await supabaseAdmin
     .from("licencias")
     .insert(licenciasInsertar);

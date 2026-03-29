@@ -12,7 +12,7 @@ export async function POST(req) {
     );
   }
 
-  // Validar emails
+  // Validación de emails
   for (const entry of emails) {
     if (!entry.email_tekla || entry.email_tekla.trim() === "") {
       return NextResponse.json(
@@ -22,23 +22,36 @@ export async function POST(req) {
     }
   }
 
-  // Preparar batch update
-  const updates = emails.map((entry) => ({
-    id: entry.licencia_id,
-    email_tekla: entry.email_tekla.trim(),
+  // 1️⃣ Eliminar emails anteriores del pago
+  const { error: deleteErr } = await supabaseAdmin
+    .from("pagos_emails")
+    .delete()
+    .eq("pago_id", pago_id);
+
+  if (deleteErr) {
+    console.error("❌ Error eliminando emails previos:", deleteErr);
+    return NextResponse.json(
+      { error: "error_eliminando", detalle: deleteErr.message },
+      { status: 500 }
+    );
+  }
+
+  // 2️⃣ Insertar los nuevos emails (ON CONFLICT ahora funciona gracias al UNIQUE)
+  const inserts = emails.map((e) => ({
+    pago_id,
+    email_tekla: e.email_tekla.trim(),
   }));
 
-  // Actualizar licencias
-  const { error } = await supabaseAdmin
-    .from("licencias")
-    .upsert(updates, {
-      onConflict: "id",
+  const { error: insertErr } = await supabaseAdmin
+    .from("pagos_emails")
+    .upsert(inserts, {
+      onConflict: "pago_id,email_tekla"
     });
 
-  if (error) {
-    console.error("❌ Error guardando emails:", error);
+  if (insertErr) {
+    console.error("❌ Error guardando emails:", insertErr);
     return NextResponse.json(
-      { error: "error_guardando_emails" },
+      { error: "error_guardando_emails", detalle: insertErr.message },
       { status: 500 }
     );
   }

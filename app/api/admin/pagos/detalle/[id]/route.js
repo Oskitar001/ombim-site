@@ -2,43 +2,37 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, context) {
-  const { id } = await context.params;
+export async function GET(req, ctx) {
+  const { id } = await ctx.params;
 
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json(admin, { status: 403 });
   }
 
-  // 1) Obtener el pago y sus licencias
-  const { data: pago, error: pagoError } = await supabaseAdmin
+  const { data: pago, error } = await supabaseAdmin
     .from("pagos")
-    .select("*, licencias(*)")  
+    .select("*, pagos_emails(email_tekla)")
     .eq("id", id)
     .maybeSingle();
 
-  if (pagoError) {
-    console.error("SUPABASE ERROR (pago):", pagoError);
-    return NextResponse.json({ error: "Error consultando BD" }, { status: 500 });
+  if (error || !pago) {
+    return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
   }
 
-  if (!pago) {
-    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
-  }
+  const emails = pago.pagos_emails?.map((x) => x.email_tekla) ?? [];
 
-  // 2) Obtener la facturación POR user_id del pago
-  const { data: facturacion, error: factError } = await supabaseAdmin
+  const { data: facturacion } = await supabaseAdmin
     .from("facturacion")
     .select("*")
     .eq("user_id", pago.user_id)
     .maybeSingle();
 
-  if (factError) {
-    console.error("SUPABASE ERROR (facturacion):", factError);
-  }
-
   return NextResponse.json({
-    pago,
-    facturacion: facturacion ?? null
+    pago: {
+      ...pago,
+      emails,
+    },
+    facturacion,
   });
 }

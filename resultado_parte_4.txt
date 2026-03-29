@@ -1,5 +1,396 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Services.jsx
+============================================================
+
+export default function Services() {
+  return (
+    <section id="servicios" className="py-24 bg-[#f3f4f6]">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12">Servicios</h2>
+
+        <div className="grid md:grid-cols-2 gap-10">
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Modelado BIM en Tekla Structures</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Modelado de estructuras metálicas y de hormigón</li>
+              <li>• Detallado constructivo</li>
+              <li>• Gestión de revisiones</li>
+              <li>• Coordinación con ingeniería y obra</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Planos y documentación técnica</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Planos de fabricación</li>
+              <li>• Planos de montaje</li>
+              <li>• Listados y planillas de producción</li>
+              <li>• Cuadros de materiales</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Automatizaciones y plugins para Tekla</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Desarrollo de plugins a medida</li>
+              <li>• Automatización de tareas repetitivas</li>
+              <li>• Generación automática de planos y listados</li>
+              <li>• Herramientas internas para ingenierías y constructoras</li>
+            </ul>
+          </div>
+
+          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+            <h3 className="text-2xl font-semibold mb-4">Colaboración externa</h3>
+            <ul className="text-[#1f2937] space-y-2">
+              <li>• Refuerzo de equipos técnicos</li>
+              <li>• Soporte en picos de trabajo</li>
+              <li>• Trabajo por proyecto o por horas</li>
+              <li>• Comunicación directa y flexible</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
+============================================================
+
+
+"use client";
+
+export default function TestimonialsSection() {
+  return (
+    <section className='reveal max-w-3xl mx-auto text-center mb-24 px-6'>
+      <h2 className='text-3xl font-bold mb-6'>Lo que dicen nuestros clientes</h2>
+      <blockquote className='bg-[#f3f4f6] dark:bg-[#1a1a1a] p-6 rounded-xl border'>
+        <p className='italic'>“Las automatizaciones de OMBIM nos han ahorrado decenas de horas…”</p>
+        <footer className='mt-4 text-gray-600 dark:text-gray-400'>— Responsable BIM</footer>
+      </blockquote>
+    </section>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
+============================================================
+
+"use client";
+
+export default function TrustSection() {
+  return (
+    <section className="py-16 max-w-6xl mx-auto px-6 reveal">
+      <div className="grid md:grid-cols-3 gap-10 text-center">
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">+10 años de experiencia</h4>
+          <p className="opacity-80">
+            Desarrollando soluciones BIM para estructuras metálicas y de hormigón,
+            con enfoque práctico y orientado al trabajo real.
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">Software usado por empresas reales</h4>
+          <p className="opacity-80">
+            Más de 40 empresas utilizan mis herramientas y automatizaciones para acelerar
+            su producción y mejorar sus flujos internos.
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">Soluciones a medida</h4>
+          <p className="opacity-80">
+            Desarrollo herramientas totalmente personalizadas adaptadas a las necesidades
+            reales de cada empresa.
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Button.jsx
+============================================================
+
+export default function Button({ children, className = "", ...props }) {
+  return (
+    <button
+      {...props}
+      className={`
+        px-4 py-2.5 rounded-xl font-medium
+        bg-brand text-white
+        hover:bg-brand-dark
+        shadow-soft hover:shadow-soft-hover
+        transition-all
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Input.jsx
+============================================================
+
+export default function Input({ className = "", ...props }) {
+  return (
+    <input
+      {...props}
+      className={`
+        w-full px-3 py-2 rounded-lg
+        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        text-[#1f2937] dark:text-[#e6e6e6]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
+        focus:outline-none focus:ring-2 focus:ring-brand
+        transition
+        ${className}
+      `}
+    />
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Select.jsx
+============================================================
+
+export default function Select({ children, className = "", ...props }) {
+  return (
+    <select
+      {...props}
+      className={`
+        w-full px-4 py-2.5 rounded-xl
+        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        text-[#1f2937] dark:text-[#e6e6e6]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
+        shadow-sm
+        hover:border-brand
+        focus:outline-none focus:ring-2 focus:ring-brand
+        transition-all
+        ${className}
+      `}
+    >
+      {children}
+    </select>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useAccionesLicencia.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useCrearLicencia.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useLicencias.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useUser.js
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function useUser() {
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchUser() {
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include", // ⭐ NECESARIO PARA LEER LA COOKIE
+      });
+
+      const data = await res.json();
+
+      if (data?.user) {
+        setUser(data.user);
+        setRole(data.role);
+      } else {
+        setUser(null);
+        setRole(null);
+      }
+    } catch (err) {
+      setUser(null);
+      setRole(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  return { user, role, loading, refresh: fetchUser };
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\checkAdmin.js
+============================================================
+
+// lib/checkAdmin.js
+import { supabaseServer } from "./supabaseServer";
+
+export async function requireAdmin() {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    return { ok: false, redirect: "/login" };
+  }
+
+  const role = data.user.user_metadata?.role;
+
+  if (role !== "admin") {
+    return { ok: false, redirect: "/panel/user" };
+  }
+
+  return { ok: true, user: data.user };
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
+============================================================
+
+// /lib/email.js
+import { Resend } from "resend";
+
+export const resend = new Resend(process.env.RESEND_KEY);
+
+export async function sendEmail({ to, subject, html }) {
+  try {
+    return await resend.emails.send({
+      from: "OMBIM <noreply@updates.ombim.com>",   // 💥 DOMINIO VERIFICADO
+      reply_to: "o.martinez@ombim.com",            // 💥 RESPONDERÁN A TU EMAIL REAL
+      to,
+      subject,
+      html,
+    });
+  } catch (err) {
+    console.error("Error enviando email:", err);
+    return { error: true, err };
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
+============================================================
+
+// lib/logAdmin.js
+// Logging interno de acciones administrativas
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+export async function logAdminAction({ tipo, mensaje, user_id }) {
+  try {
+    await supabaseAdmin.from("admin_logs").insert([
+      {
+        tipo,
+        mensaje,
+        user_id,
+        fecha: new Date().toISOString(),
+      },
+    ]);
+  } catch (err) {
+    console.error("❌ Error guardando log admin:", err);
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\pdf.js
+============================================================
+
+// /lib/pdf.js
+import pdfNode from "html-pdf-node";
+
+export async function pdf(html) {
+  const file = { content: html };
+  const options = {
+    format: "A4",
+  };
+
+  const buffer = await pdfNode.generatePdf(file, options);
+  return buffer;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\requireUser.js
+============================================================
+
+import { supabaseServer } from "./supabaseServer";
+
+export async function requireUser() {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    return { ok: false, redirect: "/login" };
+  }
+
+  return { ok: true, user: data.user };
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseAdmin.js
+============================================================
+
+// lib/supabaseAdmin.js
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseRoute.js
 ============================================================
 

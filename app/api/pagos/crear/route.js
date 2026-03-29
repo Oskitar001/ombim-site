@@ -21,24 +21,34 @@ export async function POST(req) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
-  // 3. Validar tipo permitido (sin "normal")
+  // 3. Validar tipo permitido
   if (!["anual", "completa"].includes(tipo)) {
     return Response.json({ error: "tipo_invalido" }, { status: 400 });
   }
 
-  // 4. Comprobar duplicados email + plugin
-  const { data: existentes } = await supabase
-    .from("licencias")
-    .select("email_tekla")
-    .eq("plugin_id", plugin_id)
+  // 4. No permitir compras duplicadas: plugin + email Tekla
+  const { data: pagosPrevios } = await supabase
+    .from("pagos_emails")
+    .select(`
+      pago_id,
+      email_tekla,
+      pagos!inner (
+        id,
+        plugin_id,
+        estado
+      )
+    `)
     .in("email_tekla", emails_tekla)
-    .neq("estado", "bloqueada");
+    .eq("pagos.plugin_id", plugin_id)
+    .in("pagos.estado", ["pendiente", "aprobado"]);
 
-  if (existentes?.length > 0) {
+  if (pagosPrevios?.length > 0) {
     return Response.json(
       {
-        error: "ya_existe_licencia",
-        emails: existentes.map((x) => x.email_tekla),
+        error: "ya_existe_pago",
+        mensaje:
+          "Ya existe un pago activo para este plugin con este email Tekla. Si ya realizaste la transferencia, usa el botón 'He realizado la transferencia'.",
+        pago_existente: pagosPrevios[0].pago_id,
       },
       { status: 400 }
     );
@@ -55,7 +65,7 @@ export async function POST(req) {
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // 6. Calcular precio por tipo
+  // 6. Calcular precio
   let precioUnitario = 0;
 
   if (tipo === "anual") {
@@ -76,7 +86,7 @@ export async function POST(req) {
       plugin_id,
       cantidad_licencias: emails_tekla.length,
       estado: "pendiente",
-      tipo, // "anual" o "completa"
+      tipo,
       fecha: new Date(),
       importe,
     })
@@ -87,6 +97,14 @@ export async function POST(req) {
     console.error("❌ Error creando pago:", pagoError);
     return Response.json({ error: "error_creando_pago" }, { status: 500 });
   }
+
+  // 8. Insertar emails tekla asociados
+  const emailsInsert = emails_tekla.map((e) => ({
+    pago_id: pago.id,
+    email_tekla: e
+  }));
+
+  await supabase.from("pagos_emails").insert(emailsInsert);
 
   return Response.json({
     ok: true,

@@ -1,5 +1,316 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Users, Pencil, Trash2, Eye } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+
+export default function AdminUsuariosPage() {
+    const [usuarios, setUsuarios] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [me, setMe] = useState(null);
+
+    // Obtener lista de usuarios
+    useEffect(() => {
+        async function load() {
+            const r = await fetch("/api/admin/usuarios", { credentials: "include" });
+            const d = await r.json();
+            setUsuarios(d.users ?? []);
+        }
+        load();
+    }, []);
+
+    // Obtener datos del admin actual
+    useEffect(() => {
+        fetch("/api/auth/me", { credentials: "include" })
+            .then((r) => r.json())
+            .then((d) => setMe(d.user ?? null));
+    }, []);
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold mb-4">Usuarios</h2>
+
+            <table className="w-full border border-gray-300 dark:border-gray-700">
+                <thead>
+                    <tr className="bg-gray-200 dark:bg-gray-700">
+                        <th className="p-2">Email</th>
+                        <th className="p-2">Rol</th>
+                        <th className="p-2">Último login</th>
+                        <th className="p-2">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {usuarios.map((u) => (
+                        <tr key={u.id} className="border-b dark:border-gray-700">
+                            <td className="p-2">{u.email}</td>
+
+                            <td className="p-2">{u.user_metadata?.role ?? "user"}</td>
+
+                            <td className="p-2">
+                                {u.last_sign_in_at
+                                    ? new Date(u.last_sign_in_at).toLocaleString()
+                                    : "—"}
+                            </td>
+
+                            <td className="flex gap-4 p-2">
+
+                                <Link href={`/panel/admin/usuarios/${u.id}`}>
+                                    <Eye className="text-blue-500 hover:text-blue-700" />
+                                </Link>
+
+                                {me && me.id !== u.id && (
+                                    <>
+                                        <button
+                                            onClick={async () => {
+                                                await fetch("/api/admin/usuarios/editar", {
+                                                    method: "POST",
+                                                    credentials: "include",
+                                                    headers: {
+                                                        "Content-Type": "application/json",
+                                                    },
+                                                    body: JSON.stringify({
+                                                        id: u.id,
+                                                        role:
+                                                            u.user_metadata?.role === "admin"
+                                                                ? "user"
+                                                                : "admin",
+                                                    }),
+                                                });
+                                                location.reload();
+                                            }}
+                                        >
+                                            <Pencil className="text-yellow-500 hover:text-yellow-600" />
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setSelectedUser(u.id);
+                                                setOpen(true);
+                                            }}
+                                        >
+                                            <Trash2 className="text-red-600 hover:text-red-800" />
+                                        </button>
+                                    </>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+
+                    {usuarios.length === 0 && (
+                        <tr>
+                            <td colSpan={4} className="p-4 text-center opacity-70">
+                                No hay usuarios.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+
+            <ConfirmDialog
+                open={open}
+                onCancel={() => setOpen(false)}
+                onConfirm={async () => {
+                    await fetch("/api/admin/usuarios/borrar", {
+                        method: "POST",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: selectedUser }),
+                    });
+                    setOpen(false);
+                    location.reload();
+                }}
+            />
+        </div>
+    );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+
+export default function AdminUsuarioDetallePage({ params }) {
+
+  // 🔥 EN NEXT.JS 16 params ES UN PROMISE
+  const { id } = use(params);
+
+  const [usuario, setUsuario] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function load() {
+      const r = await fetch(`/api/admin/usuarios/${id}`, {
+        credentials: "include",
+      });
+
+      if (!r.ok) {
+        setUsuario(null);
+        return;
+      }
+
+      const d = await r.json();
+      setUsuario(d.user ?? null);
+    }
+
+    load();
+  }, [id]);
+
+  async function borrarUsuario() {
+    await fetch("/api/admin/usuarios/borrar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    window.location.href = "/panel/admin/usuarios";
+  }
+
+  if (!usuario) return <p className="p-4">Cargando usuario...</p>;
+
+  return (
+    <div className="p-4">
+      <Link
+        href="/panel/admin/usuarios"
+        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+      >
+        <ArrowLeft size={18} /> Volver
+      </Link>
+
+      <h2 className="text-2xl font-bold my-4">Usuario</h2>
+
+      <p>
+        <strong>Email:</strong> {usuario.email}
+      </p>
+      <p>
+        <strong>Rol:</strong> {usuario.user_metadata?.role ?? "user"}
+      </p>
+      <p>
+        <strong>Último login:</strong>{" "}
+        {usuario.last_sign_in_at
+          ? new Date(usuario.last_sign_in_at).toLocaleString()
+          : "—"}
+      </p>
+      <p>
+        <strong>Creación:</strong>{" "}
+        {new Date(usuario.created_at).toLocaleString()}
+      </p>
+
+      <button
+        onClick={() => setOpen(true)}
+        className="btn-danger flex items-center gap-2 w-full justify-center mt-6"
+      >
+        <Trash2 size={18} /> Borrar usuario
+      </button>
+
+      <ConfirmDialog
+        open={open}
+        onCancel={() => setOpen(false)}
+        onConfirm={borrarUsuario}
+      />
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\FacturacionClient.jsx
+============================================================
+
+// /app/panel/facturacion/FacturacionClient.jsx
+"use client";
+
+import { useState } from "react";
+
+export default function FacturacionClient({ user_id, datosIniciales }) {
+  const [form, setForm] = useState({
+    nombre: datosIniciales?.nombre ?? "",
+    nif: datosIniciales?.nif ?? "",
+    direccion: datosIniciales?.direccion ?? "",
+    ciudad: datosIniciales?.ciudad ?? "",
+    cp: datosIniciales?.cp ?? "",
+    pais: datosIniciales?.pais ?? "",
+    telefono: datosIniciales?.telefono ?? "",
+  });
+
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+
+  async function guardar() {
+    setMsg("");
+    setError("");
+
+    const res = await fetch("/api/facturacion/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id, ...form }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Error guardando datos");
+    } else {
+      setMsg("Datos guardados correctamente.");
+    }
+  }
+
+  return (
+    <div className="space-y-4 max-w-lg">
+      {Object.entries({
+        nombre: "Nombre o empresa",
+        nif: "NIF / CIF",
+        direccion: "Dirección",
+        ciudad: "Ciudad",
+        cp: "Código postal",
+        pais: "País",
+        telefono: "Teléfono",
+      }).map(([key, label]) => (
+        <div key={key}>
+          <label className="block mb-1">{label}</label>
+          <input
+            type="text"
+            value={form[key]}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+            className="border p-2 rounded w-full"
+          />
+        </div>
+      ))}
+
+      <button
+        onClick={guardar}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Guardar datos
+      </button>
+
+      {msg && <p className="text-green-600">{msg}</p>}
+      {error && <p className="text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
 ============================================================
 
@@ -2895,377 +3206,4 @@ export default function RevealObserver() {
   return null;
 }
 
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Services.jsx
-============================================================
-
-export default function Services() {
-  return (
-    <section id="servicios" className="py-24 bg-[#f3f4f6]">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-12">Servicios</h2>
-
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
-            <h3 className="text-2xl font-semibold mb-4">Modelado BIM en Tekla Structures</h3>
-            <ul className="text-[#1f2937] space-y-2">
-              <li>• Modelado de estructuras metálicas y de hormigón</li>
-              <li>• Detallado constructivo</li>
-              <li>• Gestión de revisiones</li>
-              <li>• Coordinación con ingeniería y obra</li>
-            </ul>
-          </div>
-
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
-            <h3 className="text-2xl font-semibold mb-4">Planos y documentación técnica</h3>
-            <ul className="text-[#1f2937] space-y-2">
-              <li>• Planos de fabricación</li>
-              <li>• Planos de montaje</li>
-              <li>• Listados y planillas de producción</li>
-              <li>• Cuadros de materiales</li>
-            </ul>
-          </div>
-
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
-            <h3 className="text-2xl font-semibold mb-4">Automatizaciones y plugins para Tekla</h3>
-            <ul className="text-[#1f2937] space-y-2">
-              <li>• Desarrollo de plugins a medida</li>
-              <li>• Automatización de tareas repetitivas</li>
-              <li>• Generación automática de planos y listados</li>
-              <li>• Herramientas internas para ingenierías y constructoras</li>
-            </ul>
-          </div>
-
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
-            <h3 className="text-2xl font-semibold mb-4">Colaboración externa</h3>
-            <ul className="text-[#1f2937] space-y-2">
-              <li>• Refuerzo de equipos técnicos</li>
-              <li>• Soporte en picos de trabajo</li>
-              <li>• Trabajo por proyecto o por horas</li>
-              <li>• Comunicación directa y flexible</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
-============================================================
-
-
-"use client";
-
-export default function TestimonialsSection() {
-  return (
-    <section className='reveal max-w-3xl mx-auto text-center mb-24 px-6'>
-      <h2 className='text-3xl font-bold mb-6'>Lo que dicen nuestros clientes</h2>
-      <blockquote className='bg-[#f3f4f6] dark:bg-[#1a1a1a] p-6 rounded-xl border'>
-        <p className='italic'>“Las automatizaciones de OMBIM nos han ahorrado decenas de horas…”</p>
-        <footer className='mt-4 text-gray-600 dark:text-gray-400'>— Responsable BIM</footer>
-      </blockquote>
-    </section>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
-============================================================
-
-"use client";
-
-export default function TrustSection() {
-  return (
-    <section className="py-16 max-w-6xl mx-auto px-6 reveal">
-      <div className="grid md:grid-cols-3 gap-10 text-center">
-
-        <div>
-          <h4 className="text-xl font-bold mb-2">+10 años de experiencia</h4>
-          <p className="opacity-80">
-            Desarrollando soluciones BIM para estructuras metálicas y de hormigón,
-            con enfoque práctico y orientado al trabajo real.
-          </p>
-        </div>
-
-        <div>
-          <h4 className="text-xl font-bold mb-2">Software usado por empresas reales</h4>
-          <p className="opacity-80">
-            Más de 40 empresas utilizan mis herramientas y automatizaciones para acelerar
-            su producción y mejorar sus flujos internos.
-          </p>
-        </div>
-
-        <div>
-          <h4 className="text-xl font-bold mb-2">Soluciones a medida</h4>
-          <p className="opacity-80">
-            Desarrollo herramientas totalmente personalizadas adaptadas a las necesidades
-            reales de cada empresa.
-          </p>
-        </div>
-
-      </div>
-    </section>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Button.jsx
-============================================================
-
-export default function Button({ children, className = "", ...props }) {
-  return (
-    <button
-      {...props}
-      className={`
-        px-4 py-2.5 rounded-xl font-medium
-        bg-brand text-white
-        hover:bg-brand-dark
-        shadow-soft hover:shadow-soft-hover
-        transition-all
-        ${className}
-      `}
-    >
-      {children}
-    </button>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Input.jsx
-============================================================
-
-export default function Input({ className = "", ...props }) {
-  return (
-    <input
-      {...props}
-      className={`
-        w-full px-3 py-2 rounded-lg
-        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
-        text-[#1f2937] dark:text-[#e6e6e6]
-        border border-[#d1d5db] dark:border-[#3a3a3a]
-        focus:outline-none focus:ring-2 focus:ring-brand
-        transition
-        ${className}
-      `}
-    />
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Select.jsx
-============================================================
-
-export default function Select({ children, className = "", ...props }) {
-  return (
-    <select
-      {...props}
-      className={`
-        w-full px-4 py-2.5 rounded-xl
-        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
-        text-[#1f2937] dark:text-[#e6e6e6]
-        border border-[#d1d5db] dark:border-[#3a3a3a]
-        shadow-sm
-        hover:border-brand
-        focus:outline-none focus:ring-2 focus:ring-brand
-        transition-all
-        ${className}
-      `}
-    >
-      {children}
-    </select>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useAccionesLicencia.js
-============================================================
-
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useCrearLicencia.js
-============================================================
-
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useLicencias.js
-============================================================
-
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useUser.js
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-
-export default function useUser() {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  async function fetchUser() {
-    try {
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        credentials: "include", // ⭐ NECESARIO PARA LEER LA COOKIE
-      });
-
-      const data = await res.json();
-
-      if (data?.user) {
-        setUser(data.user);
-        setRole(data.role);
-      } else {
-        setUser(null);
-        setRole(null);
-      }
-    } catch (err) {
-      setUser(null);
-      setRole(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  return { user, role, loading, refresh: fetchUser };
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\checkAdmin.js
-============================================================
-
-// lib/checkAdmin.js
-import { supabaseServer } from "./supabaseServer";
-
-export async function requireAdmin() {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    return { ok: false, redirect: "/login" };
-  }
-
-  const role = data.user.user_metadata?.role;
-
-  if (role !== "admin") {
-    return { ok: false, redirect: "/panel/user" };
-  }
-
-  return { ok: true, user: data.user };
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
-============================================================
-
-// /lib/email.js
-import { Resend } from "resend";
-
-export const resend = new Resend(process.env.RESEND_KEY);
-
-export async function sendEmail({ to, subject, html }) {
-  try {
-    return await resend.emails.send({
-      from: "OMBIM <noreply@updates.ombim.com>",   // 💥 DOMINIO VERIFICADO
-      reply_to: "o.martinez@ombim.com",            // 💥 RESPONDERÁN A TU EMAIL REAL
-      to,
-      subject,
-      html,
-    });
-  } catch (err) {
-    console.error("Error enviando email:", err);
-    return { error: true, err };
-  }
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
-============================================================
-
-// lib/logAdmin.js
-// Logging interno de acciones administrativas
-
-import { supabaseAdmin } from "./supabaseAdmin";
-
-export async function logAdminAction({ tipo, mensaje, user_id }) {
-  try {
-    await supabaseAdmin.from("admin_logs").insert([
-      {
-        tipo,
-        mensaje,
-        user_id,
-        fecha: new Date().toISOString(),
-      },
-    ]);
-  } catch (err) {
-    console.error("❌ Error guardando log admin:", err);
-  }
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\requireUser.js
-============================================================
-
-import { supabaseServer } from "./supabaseServer";
-
-export async function requireUser() {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    return { ok: false, redirect: "/login" };
-  }
-
-  return { ok: true, user: data.user };
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseAdmin.js
-============================================================
-
-// lib/supabaseAdmin.js
-import { createClient } from "@supabase/supabase-js";
-
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
 

@@ -6,7 +6,7 @@ import { Download, Tag } from "lucide-react";
 
 export default function PluginClient({ plugin }) {
   const [user, setUser] = useState(null);
-  const [plan, setPlan] = useState("normal"); // normal | anual | completa
+  const [plan, setPlan] = useState("completa"); // SOLO anual o completa
 
   if (!plugin) {
     return <p className="p-4">Plugin no encontrado.</p>;
@@ -14,24 +14,16 @@ export default function PluginClient({ plugin }) {
 
   const pluginId = plugin.id;
 
-  // ================================
-  // CARGAR USUARIO LOGUEADO
-  // ================================
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
       .then((r) => r.json())
       .then((d) => setUser(d.user ?? null));
   }, []);
 
-  // ================================
-  // NORMALIZAR PRECIOS (🔥 OBLIGATORIO)
-  // ================================
-  const precioNormal = Number(plugin.precio) || 0;
   const precioAnual = Number(plugin.precio_anual) || 0;
   const precioCompleta = Number(plugin.precio_completa) || 0;
 
   const precios = {
-    normal: precioNormal,
     anual: precioAnual,
     completa: precioCompleta,
   };
@@ -39,10 +31,8 @@ export default function PluginClient({ plugin }) {
   return (
     <div className="max-w-4xl mx-auto space-y-6 mt-6">
 
-      {/* TÍTULO + VERSIÓN */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{plugin.nombre}</h1>
-
         {plugin.version && (
           <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1">
             <Tag size={14} />
@@ -51,14 +41,8 @@ export default function PluginClient({ plugin }) {
         )}
       </div>
 
-      {/* ❌ FOTO ELIMINADA */}
+      <p className="opacity-80 text-lg leading-relaxed">{plugin.descripcion}</p>
 
-      {/* DESCRIPCIÓN */}
-      <p className="opacity-80 text-lg leading-relaxed">
-        {plugin.descripcion}
-      </p>
-
-      {/* VIDEO */}
       {plugin.video_url && (
         <div className="aspect-video w-full overflow-hidden rounded-lg shadow">
           <iframe
@@ -69,25 +53,11 @@ export default function PluginClient({ plugin }) {
         </div>
       )}
 
-      {/* SELECTOR DE PLAN */}
       <div className="border rounded-lg p-4 space-y-4 bg-gray-100 dark:bg-gray-900 shadow">
         <h2 className="text-xl font-semibold mb-2">Tipo de licencia</h2>
 
         <div className="flex flex-wrap gap-3">
 
-          {/* NORMAL */}
-          <button
-            onClick={() => setPlan("normal")}
-            className={`px-4 py-2 rounded font-medium border ${
-              plan === "normal"
-                ? "bg-blue-600 text-white border-blue-700"
-                : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-700"
-            }`}
-          >
-            Licencia estándar
-          </button>
-
-          {/* ANUAL */}
           {precioAnual > 0 && (
             <button
               onClick={() => setPlan("anual")}
@@ -101,7 +71,6 @@ export default function PluginClient({ plugin }) {
             </button>
           )}
 
-          {/* COMPLETA */}
           {precioCompleta > 0 && (
             <button
               onClick={() => setPlan("completa")}
@@ -114,29 +83,21 @@ export default function PluginClient({ plugin }) {
               Licencia completa
             </button>
           )}
+
         </div>
 
-        {/* PRECIO DEL PLAN SELECCIONADO */}
         <div className="text-3xl font-bold mt-4">
           {precios[plan] > 0 ? `${precios[plan]} €` : "Gratis"}
         </div>
 
-        {/* CTA / COMPRAR / TRIAL */}
         {user ? (
           <>
-            {/* BOTÓN COMPRAR */}
             {precios[plan] > 0 ? (
               <Link
                 href={`/pago/${pluginId}?plan=${plan}`}
                 className="block bg-blue-600 text-white text-center px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition mt-4"
               >
-                Comprar{" "}
-                {plan === "anual"
-                  ? "suscripción anual"
-                  : plan === "completa"
-                  ? "licencia completa"
-                  : "licencia estándar"}{" "}
-                →
+                Comprar {plan === "anual" ? "suscripción anual" : "licencia completa"} →
               </Link>
             ) : (
               <p className="text-green-600 font-semibold mt-2">
@@ -144,7 +105,6 @@ export default function PluginClient({ plugin }) {
               </p>
             )}
 
-            {/* DESCARGAR TRIAL */}
             <a
               href={`/api/plugin/download?plugin_id=${pluginId}`}
               className="mt-3 inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"

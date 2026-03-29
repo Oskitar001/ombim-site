@@ -447,44 +447,40 @@ export default function AsignarEmailsClient({ pago, onSaved }) {
 "use client";
 
 import { use, useEffect, useState } from "react";
-import AsignarEmailsClient from "./AsignarEmailsClient";
 
-export default function LicenciasPagoPage({ params }) {
-  // ✔ FIX: params es Promesa en Next.js 15/16
+export default function PagosTransferenciaPage({ params }) {
   const { pago_id } = use(params);
 
   const [pago, setPago] = useState(null);
   const [plugin, setPlugin] = useState(null);
+  const [empresa, setEmpresa] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
       try {
-        // 1. Cargar datos del pago
+        // Pago
         const rPago = await fetch(`/api/pagos/detalle/${pago_id}`);
         const dPago = await rPago.json();
 
-        if (dPago?.error) {
-          setError("No se encontró el pago");
+        if (!rPago.ok) {
+          setError("No se encontró el pago.");
           setLoading(false);
           return;
         }
 
         setPago(dPago);
 
-        // 2. Cargar datos del plugin
+        // Plugin
         const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
-        const dPlugin = await rPlugin.json();
+        setPlugin(await rPlugin.json());
 
-        if (dPlugin?.error) {
-          setError("No se encontró el plugin asociado");
-          setLoading(false);
-          return;
-        }
-
-        setPlugin(dPlugin);
-      } catch {
+        // Empresa
+        const rEmpresa = await fetch(`/api/empresa`);
+        setEmpresa(await rEmpresa.json());
+      } catch (err) {
         setError("Error cargando datos");
       } finally {
         setLoading(false);
@@ -494,53 +490,80 @@ export default function LicenciasPagoPage({ params }) {
     load();
   }, [pago_id]);
 
-  if (loading) return <p className="p-4">Cargando...</p>;
-  if (error) return <p className="p-4 text-red-600">{error}</p>;
+  async function notificarTransferencia() {
+    setMsg("");
+    setError("");
 
-  // ================================================
-  // ⭐ CÁLCULO CORRECTO DEL PRECIO (SOLO ANUAL/COMPLETA)
-  // ================================================
-  const tipo = pago.tipo; // "anual" | "completa"
+    const r = await fetch("/api/pagos/notificar-transferencia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pago_id }),
+    });
 
-  const precioAnual = Number(plugin.precio_anual) || 0;
-  const precioCompleta =
-    Number(plugin.precio_completa) > 0
-      ? Number(plugin.precio_completa)
-      : Number(plugin.precio) || 0;
+    const d = await r.json();
 
-  const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
+    if (!r.ok) {
+      setError(d.error ?? "Error notificando transferencia");
+      return;
+    }
 
-  const total = precioUnitario * pago.cantidad_licencias;
+    setMsg("Tu aviso ha sido enviado. Te confirmaremos en cuanto validemos la transferencia.");
+  }
+
+  if (loading) return <p className="p-6">Cargando datos del pago...</p>;
+  if (error) return <p className="p-6 text-red-600">{error}</p>;
+
+  const total = pago.importe;
+  const emails = pago.emails ?? [];
+  const iban = empresa?.iban ?? "—";
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
 
-      <h1 className="text-2xl font-bold">Licencias del pago #{pago_id}</h1>
+      <h1 className="text-3xl font-bold">Pago por transferencia</h1>
 
-      <div className="border rounded p-4 space-y-2">
-        <p>
-          <strong>Plugin:</strong> {plugin.nombre}
-        </p>
+      <p className="opacity-80">
+        Para completar la compra, realiza una transferencia bancaria con los datos que aparecen a continuación.
+      </p>
 
-        <p>
-          <strong>Tipo de licencia:</strong>{" "}
-          {tipo === "anual" ? "Anual" : "Completa"}
-        </p>
+      <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg space-y-3 shadow">
+        <h2 className="text-xl font-bold">Resumen del pedido</h2>
 
-        <p>
-          <strong>Precio por licencia:</strong> {precioUnitario} €
-        </p>
+        <p><b>Plugin:</b> {plugin?.nombre}</p>
+        <p><b>Tipo de licencia:</b> {pago.tipo === "anual" ? "Anual" : "Completa"}</p>
 
-        <p>
-          <strong>Cantidad de licencias:</strong> {pago.cantidad_licencias}
-        </p>
+        <p><b>Emails Tekla:</b></p>
+        <ul className="ml-4">
+          {emails.map((e, i) => (
+            <li key={i}>• {e}</li>
+          ))}
+        </ul>
 
-        <p>
-          <strong>Total:</strong> {total} €
-        </p>
+        <p className="text-2xl font-bold mt-4">Total a pagar: {total} €</p>
       </div>
 
-      <AsignarEmailsClient pago_id={pago_id} />
+      <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg space-y-3 shadow">
+        <h2 className="text-xl font-bold">Datos bancarios</h2>
+
+        <p><b>Titular:</b> {empresa?.nombre}</p>
+        <p><b>CIF:</b> {empresa?.cif}</p>
+        <p><b>IBAN:</b> {iban}</p>
+        <p><b>Concepto:</b> Pago OMBIM Nº {pago.id}</p>
+      </div>
+
+      {msg && <p className="text-green-600">{msg}</p>}
+      {error && <p className="text-red-600">{error}</p>}
+
+      <button
+        onClick={notificarTransferencia}
+        className="bg-blue-600 text-white px-6 py-3 rounded-lg w-full hover:bg-blue-700"
+      >
+        He realizado la transferencia
+      </button>
+
+      <p className="opacity-60 text-sm text-center">
+        Tras revisar la transferencia, se activarán automáticamente tus licencias.
+      </p>
     </div>
   );
 }
@@ -1744,6 +1767,90 @@ export async function GET() {
 
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\borrar\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { id } = await req.json();
+  if (!id) {
+    return NextResponse.json({ error: "faltan_datos" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin.from("pagos").delete().eq("id", id);
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ error: "error_borrando" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\borrar-todos\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+  }
+
+  const { id } = await req.json();
+
+  const { data: pago } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  const { data: emails } = await supabaseAdmin
+    .from("pagos_emails")
+    .select("email_tekla")
+    .eq("pago_id", id);
+
+  const emailsTekla = emails.map((e) => e.email_tekla);
+
+  const { data: duplicados } = await supabaseAdmin
+    .from("pagos_emails")
+    .select(`
+      pago_id,
+      email_tekla,
+      pagos!inner(
+        id,
+        plugin_id,
+        user_id,
+        estado
+      )
+    `)
+    .in("email_tekla", emailsTekla)
+    .eq("pagos.plugin_id", pago.plugin_id)
+    .eq("pagos.user_id", pago.user_id)
+    .eq("pagos.estado", "pendiente");
+
+  const ids = [...new Set(duplicados.map((d) => d.pago_id))];
+
+  await supabaseAdmin.from("pagos").delete().in("id", ids);
+
+  return NextResponse.json({ ok: true, borrados: ids.length });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\crear\route.js
 ============================================================
 
@@ -1783,47 +1890,40 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, context) {
-  const { id } = await context.params;
+export async function GET(req, ctx) {
+  const { id } = await ctx.params;
 
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json(admin, { status: 403 });
   }
 
-  // 1) Obtener el pago y sus licencias
-  const { data: pago, error: pagoError } = await supabaseAdmin
+  const { data: pago, error } = await supabaseAdmin
     .from("pagos")
-    .select("*, licencias(*)")  
+    .select("*, pagos_emails(email_tekla)")
     .eq("id", id)
     .maybeSingle();
 
-  if (pagoError) {
-    console.error("SUPABASE ERROR (pago):", pagoError);
-    return NextResponse.json({ error: "Error consultando BD" }, { status: 500 });
+  if (error || !pago) {
+    return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
   }
 
-  if (!pago) {
-    return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
-  }
+  const emails = pago.pagos_emails?.map((x) => x.email_tekla) ?? [];
 
-  // 2) Obtener la facturación POR user_id del pago
-  const { data: facturacion, error: factError } = await supabaseAdmin
+  const { data: facturacion } = await supabaseAdmin
     .from("facturacion")
     .select("*")
     .eq("user_id", pago.user_id)
     .maybeSingle();
 
-  if (factError) {
-    console.error("SUPABASE ERROR (facturacion):", factError);
-  }
-
   return NextResponse.json({
-    pago,
-    facturacion: facturacion ?? null
+    pago: {
+      ...pago,
+      emails,
+    },
+    facturacion,
   });
 }
-
 
 
 ============================================================
@@ -1850,6 +1950,82 @@ export async function GET() {
   }
 
   return NextResponse.json(data ?? []);
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\rechazar\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok)
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+
+  const { pago_id } = await req.json();
+
+  await supabaseAdmin
+    .from("pagos")
+    .update({ estado: "rechazado" })
+    .eq("id", pago_id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\pagos\validar\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok)
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+
+  const { pago_id, emails_tekla } = await req.json();
+
+  const { data: pago } = await supabaseAdmin
+    .from("pagos")
+    .select("*")
+    .eq("id", pago_id)
+    .single();
+
+  let max_activaciones = pago.tipo === "completa" ? 5 : 1;
+
+  let fecha_expiracion = null;
+  if (pago.tipo === "anual") {
+    const f = new Date();
+    f.setFullYear(f.getFullYear() + 1);
+    fecha_expiracion = f.toISOString();
+  }
+
+  const fecha_creacion = new Date().toISOString();
+
+  const licencias = emails_tekla.map((email) => ({
+    pago_id,
+    plugin_id: pago.plugin_id,
+    user_id: pago.user_id,
+    email_tekla: email,
+    tipo: pago.tipo,
+    estado: "activa",
+    max_activaciones,
+    activaciones_usac: 0,
+    fecha_creacion,
+    fecha_expiracion,
+  }));
+
+  await supabaseAdmin.from("licencias").insert(licencias);
+  await supabaseAdmin.from("pagos").update({ estado: "aprobado" }).eq("id", pago_id);
+
+  return NextResponse.json({ ok: true });
 }
 
 
@@ -2804,10 +2980,11 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
 ============================================================
 
+// /app/api/email/compra/route.js
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import compraTemplate from "@/app/api/email/plantillas/compra";
+import { PLANTILLA_COMPRA } from "@/app/api/email/plantillas/compra"; // ✔ IMPORT CORRECTO
 
 export const runtime = "nodejs";
 
@@ -2830,7 +3007,7 @@ export async function POST(req) {
     return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
   }
 
-  // 2. Cargar plugin con precios
+  // 2. Cargar plugin
   const { data: plugin } = await supabaseAdmin
     .from("plugins")
     .select("nombre, precio, precio_anual, precio_completa")
@@ -2844,15 +3021,15 @@ export async function POST(req) {
     .eq("id", pago.user_id)
     .single();
 
-  // 4. Cargar emails Tekla asociados
+  // 4. Cargar emails tekla asociados
   const { data: emails } = await supabaseAdmin
     .from("pagos_emails")
     .select("email_tekla")
     .eq("pago_id", pago_id);
 
-  const listaEmails = emails?.map(e => e.email_tekla) ?? [];
+  const listaEmails = emails?.map((e) => e.email_tekla) ?? [];
 
-  // 5. Calcular precio unitario según tipo
+  // 5. Calcular precio unitario
   let precioUnitario = 0;
 
   if (pago.tipo === "anual") {
@@ -2863,28 +3040,28 @@ export async function POST(req) {
     if (plugin.precio_completa > 0) {
       precioUnitario = plugin.precio_completa;
     } else {
-      precioUnitario = plugin.precio; // fallback si precio_completa es 0
+      precioUnitario = plugin.precio; // fallback
     }
   }
 
-  // 6. Total (ya viene en BD, pero lo recalculamos por seguridad)
   const total = precioUnitario * pago.cantidad_licencias;
 
-  // 7. Renderizar email
-  const html = compraTemplate({
-    nombreUsuario: usuario.nombre,
-    pluginNombre: plugin.nombre,
-    tipo: pago.tipo,                // anual | completa
-    precioUnitario,
-    cantidad: pago.cantidad_licencias,
-    total,
-    emailsTekla: listaEmails
-  });
+  // 6. Generar HTML final sustituyendo marcadores
+  const listaEmailsHtml = listaEmails
+    .map((e) => `- ${e}<br>`)
+    .join("");
 
-  // 8. Enviar email
+  const html = PLANTILLA_COMPRA
+    .replace("{{plugin_nombre}}", plugin.nombre)
+    .replace("{{lista_emails}}", listaEmailsHtml)
+    .replace("{{cuenta_banco}}", "ES00 0000 0000 0000 0000 0000")
+    .replace("{{pago_id}}", pago_id)
+    .replace("{{precio}}", total);
+
+  // 7. Enviar email al usuario
   await sendEmail({
     to: usuario.email,
-    subject: "Confirmación de compra - OMBIM",
+    subject: `Compra recibida – ${plugin.nombre}`,
     html,
   });
 

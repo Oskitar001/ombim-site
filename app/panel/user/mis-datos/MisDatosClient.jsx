@@ -27,10 +27,11 @@ export default function MisDatosClient() {
   });
   const [editFact, setEditFact] = useState(false);
 
-  // Checkbox
   const [usarMismosDatos, setUsarMismosDatos] = useState(false);
 
+  // ===============================================
   // CARGA INICIAL
+  // ===============================================
   useEffect(() => {
     async function load() {
       try {
@@ -52,18 +53,18 @@ export default function MisDatosClient() {
           pais: d1.user.user_metadata?.pais ?? "",
         });
 
-        // Facturación
-        const r2 = await fetch("/api/user/perfil", { cache: "no-store" });
+        // FACTURACIÓN (ruta correcta)
+        const r2 = await fetch("/api/user/facturacion", { cache: "no-store" });
         const d2 = await r2.json();
 
         setFactForm({
-          nombre: d2.nombre ?? "",
-          nif: d2.nif ?? "",
-          direccion: d2.direccion ?? "",
-          ciudad: d2.ciudad ?? "",
-          cp: d2.cp ?? "",
-          pais: d2.pais ?? "",
-          telefono: d2.telefono ?? "",
+          nombre: d2?.nombre ?? "",
+          nif: d2?.nif ?? "",
+          direccion: d2?.direccion ?? "",
+          ciudad: d2?.ciudad ?? "",
+          cp: d2?.cp ?? "",
+          pais: d2?.pais ?? "",
+          telefono: d2?.telefono ?? "",
         });
       } finally {
         setLoading(false);
@@ -73,14 +74,18 @@ export default function MisDatosClient() {
     load();
   }, []);
 
-  // HANDLERS — FIX TOTAL
+  // ===============================================
+  // HANDLERS (CORREGIDOS)
+  // ===============================================
   const updateUserField = (key, value) =>
-    setUserForm((prev) => ({ ...prev, value }));
+    setUserForm((prev) => ({ ...prev, [key]: value }));
 
   const updateFactField = (key, value) =>
-    setFactForm((prev) => ({ ...prev, value }));
+    setFactForm((prev) => ({ ...prev, [key]: value }));
 
-  // GUARDAR USUARIO
+  // ===============================================
+  // GUARDAR DATOS USUARIO
+  // ===============================================
   async function guardarUsuario() {
     const res = await fetch("/api/user/update", {
       method: "POST",
@@ -94,12 +99,11 @@ export default function MisDatosClient() {
     }
   }
 
+  // ===============================================
   // GUARDAR FACTURACION
+  // ===============================================
   async function guardarFacturacion() {
-    const payload = {
-      ...factForm,
-      usarDatosUsuario: usarMismosDatos,
-    };
+    const payload = { ...factForm, usarDatosUsuario: usarMismosDatos };
 
     const res = await fetch("/api/facturacion/guardar", {
       method: "POST",
@@ -221,7 +225,7 @@ export default function MisDatosClient() {
           editable={editFact}
         />
 
-        {/* Checkbox moderno */}
+        {/* Checkbox para usar datos de usuario */}
         <div className="flex items-center mt-1">
           <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
             <input
@@ -257,6 +261,7 @@ export default function MisDatosClient() {
     </div>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // AUXILIARES

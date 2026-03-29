@@ -8,6 +8,7 @@ export default function PagosTransferenciaPage({ params }) {
   const [pago, setPago] = useState(null);
   const [plugin, setPlugin] = useState(null);
   const [empresa, setEmpresa] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -15,7 +16,6 @@ export default function PagosTransferenciaPage({ params }) {
   useEffect(() => {
     async function load() {
       try {
-        // Pago
         const rPago = await fetch(`/api/pagos/detalle/${pago_id}`);
         const dPago = await rPago.json();
 
@@ -27,14 +27,12 @@ export default function PagosTransferenciaPage({ params }) {
 
         setPago(dPago);
 
-        // Plugin
         const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
         setPlugin(await rPlugin.json());
 
-        // Empresa
         const rEmpresa = await fetch(`/api/empresa`);
         setEmpresa(await rEmpresa.json());
-      } catch (err) {
+      } catch {
         setError("Error cargando datos");
       } finally {
         setLoading(false);
@@ -64,60 +62,68 @@ export default function PagosTransferenciaPage({ params }) {
     setMsg("Tu aviso ha sido enviado. Te confirmaremos en cuanto validemos la transferencia.");
   }
 
-  if (loading) return <p className="p-6">Cargando datos del pago...</p>;
-  if (error) return <p className="p-6 text-red-600">{error}</p>;
+  if (loading) return <p className="p-4">Cargando datos del pago...</p>;
+  if (error) return <p className="p-4 text-red-600">{error}</p>;
 
-  const total = pago.importe;
   const emails = pago.emails ?? [];
+
+  // 👇 VALORES SEGUROS (evitan errores .toFixed)
+  const subtotal = pago.importe_base ?? 0;
+  const iva = pago.iva ?? 0;
+  const total = pago.importe ?? (subtotal + iva);
+
   const iban = empresa?.iban ?? "—";
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-3xl mx-auto p-4 space-y-6">
 
-      <h1 className="text-3xl font-bold">Pago por transferencia</h1>
+      <h2 className="text-2xl font-bold">Pago por transferencia</h2>
 
       <p className="opacity-80">
-        Para completar la compra, realiza una transferencia bancaria con los datos que aparecen a continuación.
+        Realiza la transferencia con los datos que aparecen a continuación.
       </p>
 
-      <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg space-y-3 shadow">
-        <h2 className="text-xl font-bold">Resumen del pedido</h2>
+      {/* RESUMEN */}
+      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
+        <h3 className="text-xl font-semibold">Resumen del pedido</h3>
 
-        <p><b>Plugin:</b> {plugin?.nombre}</p>
-        <p><b>Tipo de licencia:</b> {pago.tipo === "anual" ? "Anual" : "Completa"}</p>
+        <p><strong>Plugin:</strong> {plugin?.nombre}</p>
+        <p><strong>Tipo de licencia:</strong> {pago.tipo === "anual" ? "Anual" : "Completa"}</p>
 
-        <p><b>Emails Tekla:</b></p>
-        <ul className="ml-4">
-          {emails.map((e, i) => (
-            <li key={i}>• {e}</li>
-          ))}
+        <p><strong>Emails Tekla:</strong></p>
+        <ul className="list-disc ml-6">
+          {emails.map((e, i) => <li key={i}>{e}</li>)}
         </ul>
 
-        <p className="text-2xl font-bold mt-4">Total a pagar: {total} €</p>
+        {/* 🟩 DESGLOSE DE IVA */}
+        <div className="mt-4 space-y-1">
+          <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
+          <p><strong>IVA (21%):</strong> {iva.toFixed(2)} €</p>
+          <p className="text-xl font-bold">
+            TOTAL a pagar (IVA incluido): {total.toFixed(2)} €
+          </p>
+        </div>
       </div>
 
-      <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg space-y-3 shadow">
-        <h2 className="text-xl font-bold">Datos bancarios</h2>
+      {/* DATOS BANCARIOS */}
+      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
+        <h3 className="text-xl font-semibold">Datos bancarios</h3>
 
-        <p><b>Titular:</b> {empresa?.nombre}</p>
-        <p><b>CIF:</b> {empresa?.cif}</p>
-        <p><b>IBAN:</b> {iban}</p>
-        <p><b>Concepto:</b> Pago OMBIM Nº {pago.id}</p>
+        <p><strong>Titular:</strong> {empresa?.nombre}</p>
+        <p><strong>CIF:</strong> {empresa?.cif}</p>
+        <p><strong>IBAN:</strong> {iban}</p>
+        <p><strong>Concepto:</strong> Pago OMBIM Nº {pago.id}</p>
       </div>
 
-      {msg && <p className="text-green-600">{msg}</p>}
+      {msg && <p className="text-green-600 font-semibold">{msg}</p>}
       {error && <p className="text-red-600">{error}</p>}
 
       <button
         onClick={notificarTransferencia}
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg w-full hover:bg-blue-700"
+        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
       >
         He realizado la transferencia
       </button>
-
-      <p className="opacity-60 text-sm text-center">
-        Tras revisar la transferencia, se activarán automáticamente tus licencias.
-      </p>
     </div>
   );
 }

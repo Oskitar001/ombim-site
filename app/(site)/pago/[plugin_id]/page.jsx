@@ -5,11 +5,10 @@ import { useRouter, useSearchParams, useParams } from "next/navigation";
 
 export default function Page() {
   const { plugin_id } = useParams();
-
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ⭐ Ya NO existe "normal"
+  // Tipo inicial (solo anual o completa)
   const planInicial = searchParams.get("plan") ?? "completa";
 
   const [plugin, setPlugin] = useState(null);
@@ -18,18 +17,15 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ⭐ Tipo inicial corregido
   const [tipo, setTipo] = useState(planInicial);
 
   useEffect(() => {
     async function load() {
       try {
-        // USER
         const rUser = await fetch("/api/auth/me");
         const dUser = await rUser.json();
         setUser(dUser.user ?? null);
 
-        // PLUGIN
         const rPlugin = await fetch(`/api/plugin/${plugin_id}`);
         const dPlugin = await rPlugin.json();
         setPlugin(dPlugin?.error ? null : dPlugin);
@@ -44,11 +40,11 @@ export default function Page() {
   }, [plugin_id]);
 
   function actualizarEmail(i, valor) {
-    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
+    setEmails(prev => prev.map((e, idx) => (idx === i ? valor : e)));
   }
 
   function añadirFila() {
-    setEmails((prev) => [...prev, ""]);
+    setEmails(prev => [...prev, ""]);
   }
 
   async function crearPago() {
@@ -57,8 +53,8 @@ export default function Page() {
       return;
     }
 
-    const emailsLimpios = emails.map((e) => e.trim());
-    if (emailsLimpios.some((e) => e === "")) {
+    const emailsLimpios = emails.map(e => e.trim());
+    if (emailsLimpios.some(e => e === "")) {
       setError("Debes completar TODOS los emails Tekla.");
       return;
     }
@@ -71,7 +67,7 @@ export default function Page() {
         body: JSON.stringify({
           plugin_id,
           emails_tekla: emailsLimpios,
-          tipo, // ⭐ Ahora siempre “anual” o “completa”
+          tipo,
         }),
       });
 
@@ -92,15 +88,17 @@ export default function Page() {
   if (loading) return <p>Cargando...</p>;
   if (!plugin) return <p>Plugin no encontrado.</p>;
 
-  // ⭐ PRECIOS — NORMALIZADOS A NÚMEROS
+  // PRECIOS BASE (sin IVA)
   const precioAnual = Number(plugin.precio_anual) || 0;
   const precioCompleta = Number(plugin.precio_completa) || 0;
 
-  // ⭐ PRECIO SEGÚN PLAN
-  const precioUnitario =
-    tipo === "anual" ? precioAnual : precioCompleta;
+  // PRECIO UNITARIO
+  const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
 
-  const total = precioUnitario * emails.length;
+  // DESGLOSE IVA
+  const subtotal = precioUnitario * emails.length;   // sin IVA
+  const iva = subtotal * 0.21;
+  const total = subtotal + iva;
 
   return (
     <div className="p-4 max-w-xl mx-auto space-y-6">
@@ -110,7 +108,7 @@ export default function Page() {
         Plugin: <strong>{plugin.nombre}</strong>
       </p>
 
-      {/* SELECTOR DE TIPO — SIN NORMAL */}
+      {/* SELECTOR DE PLAN */}
       <div>
         <label className="font-semibold">Tipo de licencia:</label>
 
@@ -120,16 +118,16 @@ export default function Page() {
           className="border p-2 rounded w-full dark:bg-gray-900"
         >
           {precioAnual > 0 && (
-            <option value="anual">Anual – {precioAnual} €</option>
+            <option value="anual">Anual – {precioAnual.toFixed(2)} €</option>
           )}
 
           {precioCompleta > 0 && (
-            <option value="completa">Completa – {precioCompleta} €</option>
+            <option value="completa">Completa – {precioCompleta.toFixed(2)} €</option>
           )}
         </select>
       </div>
 
-      {/* EMAILS */}
+      {/* EMAILS TEKLA */}
       <div>
         <h3 className="font-semibold mb-2">Emails Tekla:</h3>
 
@@ -152,11 +150,16 @@ export default function Page() {
         </button>
       </div>
 
-      {/* TOTAL */}
-      <p className="text-xl font-semibold">Total: {total} €</p>
+      {/* DESGLOSE DE PRECIOS (AQUÍ FALTABA EL IVA) */}
+      <div className="space-y-1 text-lg">
+        <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
+        <p><strong>IVA (21%):</strong> {iva.toFixed(2)} €</p>
+        <p className="text-2xl font-bold"><strong>Total:</strong> {total.toFixed(2)} €</p>
+      </div>
 
       {error && <p className="text-red-600">{error}</p>}
 
+      {/* BOTÓN COMPRAR */}
       <button
         onClick={crearPago}
         className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"

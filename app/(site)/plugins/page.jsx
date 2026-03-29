@@ -15,7 +15,10 @@ export default function PluginsPage() {
         const d1 = await r1.json();
         setPlugins(Array.isArray(d1) ? d1 : []);
 
-        const r2 = await fetch("/api/auth/me");
+        // ✔ FIX CRÍTICO → añadir credentials: "include"
+        const r2 = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
         const d2 = await r2.json();
         setUser(d2.user ?? null);
       } catch {
@@ -37,19 +40,18 @@ export default function PluginsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => {
-          // ⭐ Lógica correcta de visualización de precio
           const precioNormal = Number(p.precio) || 0;
           const precioCompleta = Number(p.precio_completa) || 0;
           const precioAnual = Number(p.precio_anual) || 0;
 
           const precioMostrar =
-  precioNormal > 0
-    ? precioNormal
-    : precioCompleta > 0
-    ? precioCompleta
-    : precioAnual > 0
-    ? precioAnual
-    : 0;
+            precioNormal > 0
+              ? precioNormal
+              : precioCompleta > 0
+              ? precioCompleta
+              : precioAnual > 0
+              ? precioAnual
+              : 0;
 
           return (
             <div

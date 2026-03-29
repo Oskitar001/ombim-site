@@ -15,7 +15,7 @@ export default function PluginClient({ plugin }) {
   const pluginId = plugin.id;
 
   // ================================
-  // CARGAR USUARIO
+  // CARGAR USUARIO (FIX crítico: credentials)
   // ================================
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })

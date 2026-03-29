@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft, KeyRound, CheckCircle, Clock, Ban, RefreshCw } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 function Tooltip({ label, children }) {
   return (
@@ -17,18 +17,30 @@ function Tooltip({ label, children }) {
 }
 
 export default function UserLicenciaDetallePage({ params }) {
-  const { id } = use(params);
+  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
 
   const [licencia, setLicencia] = useState(null);
   const [open, setOpen] = useState(false);
   const [accion, setAccion] = useState(null);
 
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       const r = await fetch(`/api/user/licencia?id=${id}`);
       const d = await r.json();
       setLicencia(d.licencia ?? null);
     }
+
     load();
   }, [id]);
 
@@ -45,8 +57,12 @@ export default function UserLicenciaDetallePage({ params }) {
 
       <h2 className="text-2xl font-bold mb-4">Licencia #{licencia.id}</h2>
 
-      <p><strong>Plugin:</strong> {licencia.plugin_nombre}</p>
-      <p><strong>Email Tekla:</strong> {licencia.email_tekla}</p>
+      <p>
+        <strong>Plugin:</strong> {licencia.plugin_nombre}
+      </p>
+      <p>
+        <strong>Email Tekla:</strong> {licencia.email_tekla}
+      </p>
 
       <p>
         <strong>Estado:</strong>{" "}

@@ -1,5 +1,115 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default function PluginDetalleAdmin() {
+  const { id } = useParams();
+  const [plugin, setPlugin] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function load() {
+      const res = await fetch(`/api/plugin/${id}`, {
+        credentials: "include", // 🔥 FIX: proteger ruta admin
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setError("No se pudo cargar el plugin.");
+        setPlugin(null);
+        return;
+      }
+
+      // 🔥 Normalizamos datos por seguridad
+      setPlugin({
+        ...data,
+        nombre: data.nombre ?? "",
+        descripcion: data.descripcion ?? "",
+        precio: Number(data.precio ?? 0),
+        precio_anual: Number(data.precio_anual ?? 0),
+        precio_completa: Number(data.precio_completa ?? 0),
+        imagen_url: data.imagen_url ?? "",
+        archivo_url: data.archivo_url ?? "",
+        video_url: data.video_url ?? "",
+        version: data.version ?? "1.0",
+      });
+    }
+
+    load();
+  }, [id]);
+
+  if (error) return <p className="p-4 text-red-600">{error}</p>;
+  if (!plugin) return <p className="p-4">Cargando plugin…</p>;
+
+  return (
+    <div className="space-y-6 p-4 max-w-2xl mx-auto">
+      <Link
+        href="/panel/admin/plugins"
+        className="flex items-center gap-2 text-blue-600"
+      >
+        <ArrowLeft size={18} /> Volver
+      </Link>
+
+      <h1 className="text-3xl font-bold">{plugin.nombre}</h1>
+
+      {plugin.imagen_url ? (
+        <img
+          src={plugin.imagen_url}
+          alt={plugin.nombre}
+          className="w-64 h-64 object-cover rounded shadow"
+        />
+      ) : (
+        <div className="w-64 h-64 bg-gray-400 rounded" />
+      )}
+
+      <p className="opacity-80">{plugin.descripcion}</p>
+
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow space-y-2">
+        <p>
+          <strong>Estándar:</strong>{" "}
+          {plugin.precio > 0 ? `${plugin.precio} €` : "—"}
+        </p>
+        <p>
+          <strong>Anual:</strong>{" "}
+          {plugin.precio_anual > 0 ? `${plugin.precio_anual} €` : "—"}
+        </p>
+        <p>
+          <strong>Completa:</strong>{" "}
+          {plugin.precio_completa > 0
+            ? `${plugin.precio_completa} €`
+            : "—"}
+        </p>
+      </div>
+
+      <p>
+        <strong>Archivo:</strong>{" "}
+        {plugin.archivo_url ? plugin.archivo_url.split("/").pop() : "—"}
+      </p>
+
+      <p>
+        <strong>Video:</strong> {plugin.video_url || "—"}
+      </p>
+
+      <p>
+        <strong>Versión:</strong> {plugin.version}
+      </p>
+    </div>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\page.jsx
 ============================================================
 
@@ -1386,10 +1496,11 @@ export default function MisDatosClient() {
   });
   const [editFact, setEditFact] = useState(false);
 
-  // Checkbox
   const [usarMismosDatos, setUsarMismosDatos] = useState(false);
 
+  // ===============================================
   // CARGA INICIAL
+  // ===============================================
   useEffect(() => {
     async function load() {
       try {
@@ -1411,18 +1522,18 @@ export default function MisDatosClient() {
           pais: d1.user.user_metadata?.pais ?? "",
         });
 
-        // Facturación
-        const r2 = await fetch("/api/user/perfil", { cache: "no-store" });
+        // FACTURACIÓN
+        const r2 = await fetch("/api/user/facturacion", { cache: "no-store" });
         const d2 = await r2.json();
 
         setFactForm({
-          nombre: d2.nombre ?? "",
-          nif: d2.nif ?? "",
-          direccion: d2.direccion ?? "",
-          ciudad: d2.ciudad ?? "",
-          cp: d2.cp ?? "",
-          pais: d2.pais ?? "",
-          telefono: d2.telefono ?? "",
+          nombre: d2?.nombre ?? "",
+          nif: d2?.nif ?? "",
+          direccion: d2?.direccion ?? "",
+          ciudad: d2?.ciudad ?? "",
+          cp: d2?.cp ?? "",
+          pais: d2?.pais ?? "",
+          telefono: d2?.telefono ?? "",
         });
       } finally {
         setLoading(false);
@@ -1432,14 +1543,18 @@ export default function MisDatosClient() {
     load();
   }, []);
 
-  // HANDLERS — FIX TOTAL
+  // ===============================================
+  // HANDLERS CORRECTOS
+  // ===============================================
   const updateUserField = (key, value) =>
-    setUserForm((prev) => ({ ...prev, value }));
+    setUserForm((prev) => ({ ...prev, [key]: value }));
 
   const updateFactField = (key, value) =>
-    setFactForm((prev) => ({ ...prev, value }));
+    setFactForm((prev) => ({ ...prev, [key]: value }));
 
-  // GUARDAR USUARIO
+  // ===============================================
+  // GUARDAR DATOS USUARIO
+  // ===============================================
   async function guardarUsuario() {
     const res = await fetch("/api/user/update", {
       method: "POST",
@@ -1453,12 +1568,11 @@ export default function MisDatosClient() {
     }
   }
 
+  // ===============================================
   // GUARDAR FACTURACION
+  // ===============================================
   async function guardarFacturacion() {
-    const payload = {
-      ...factForm,
-      usarDatosUsuario: usarMismosDatos,
-    };
+    const payload = { ...factForm, usarDatosUsuario: usarMismosDatos };
 
     const res = await fetch("/api/facturacion/guardar", {
       method: "POST",
@@ -1580,7 +1694,7 @@ export default function MisDatosClient() {
           editable={editFact}
         />
 
-        {/* Checkbox moderno */}
+        {/* Checkbox */}
         <div className="flex items-center mt-1">
           <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
             <input
@@ -1951,43 +2065,57 @@ export default function UserPagosPage() {
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft, CreditCard, CheckCircle } from "lucide-react";
-
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
+import { use as usePromise } from "react";
+import { ArrowLeft, FileDown } from "lucide-react";
 
 export default function UserPagoDetallePage({ params }) {
-  const { id } = params;
+  // Next.js 16 → params es PROMESA
+  const { id } = usePromise(params);
+
   const [pago, setPago] = useState(null);
+  const [plugin, setPlugin] = useState(null);
+  const [licencias, setLicencias] = useState([]);
+  const [facturacion, setFacturacion] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // =======================================
+  // CARGA
+  // =======================================
   useEffect(() => {
     async function load() {
       try {
-        const r = await fetch(`/api/pagos/detalle?pago_id=${id}`, {
+        // 1) PAGO (CORREGIDO)
+        const rPago = await fetch(`/api/pagos/detalle/${id}`, {
           credentials: "include",
         });
+        const dPago = await rPago.json();
 
-        const data = await r.json();
-
-        if (!r.ok) {
-          setError(data.error ?? "Error cargando pago");
+        if (!rPago.ok) {
+          setError(dPago.error ?? "Error cargando pago");
+          setLoading(false);
           return;
         }
 
-        setPago(data);
+        setPago(dPago);
+
+        // 2) Plugin
+        const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
+        setPlugin(await rPlugin.json());
+
+        // 3) Licencias
+        const rLic = await fetch(`/api/user/licencias?pago_id=${id}`);
+        const dLic = await rLic.json();
+        setLicencias(dLic.licencias ?? []);
+
+        // 4) Facturación
+        const rFact = await fetch(`/api/user/facturacion`);
+        const dFact = await rFact.json();
+        setFacturacion(dFact ?? null);
+
       } catch (err) {
         setError("Error de conexión");
       } finally {
@@ -1995,33 +2123,87 @@ export default function UserPagoDetallePage({ params }) {
       }
     }
 
-    load();
+    if (id) load();
   }, [id]);
 
   if (loading) return <p className="p-4">Cargando pago…</p>;
   if (error) return <p className="p-4 text-red-600">{error}</p>;
   if (!pago) return <p className="p-4">Pago no encontrado.</p>;
 
-  const { licencias = [], facturacion } = pago;
+  // Valores seguros
+  const subtotal = pago.importe_base ?? 0;
+  const iva = pago.iva ?? 0;
+  const total = pago.importe ?? subtotal + iva;
+
+  async function descargarFactura() {
+    const res = await fetch("/api/facturacion/pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pagoId: pago.id }),
+    });
+
+    if (!res.ok) {
+      alert("Error generando factura");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `factura-${pago.id}.pdf`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-3xl mx-auto space-y-6">
+
       <Link href="/panel/user/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
-        <ArrowLeft size={18} /> Volver
+        <ArrowLeft size={18} />
+        Volver
       </Link>
 
-      <h2 className="text-2xl font-bold my-4">Pago #{pago.id}</h2>
+      <h2 className="text-2xl font-bold">Pago #{pago.id}</h2>
 
-      <p><strong>Estado:</strong> {pago.estado}</p>
-      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
-      {pago.fecha && (
+      {/* -------------------------------------
+          RESUMEN DEL PAGO
+      -------------------------------------- */}
+      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-1">
+        <p><strong>Plugin:</strong> {plugin?.nombre}</p>
+        <p><strong>Estado:</strong> {pago.estado}</p>
+        <p><strong>Tipo licencia:</strong> {pago.tipo}</p>
+        <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
         <p>
           <strong>Fecha:</strong>{" "}
-          {new Date(pago.fecha).toLocaleString()}
+          {pago.fecha ? new Date(pago.fecha).toLocaleString() : "—"}
         </p>
-      )}
 
-      <h3 className="text-xl font-bold mt-6 mb-2">Licencias</h3>
+        <div className="mt-3">
+          <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
+          <p><strong>IVA 21%:</strong> {iva.toFixed(2)} €</p>
+          <p className="text-xl font-bold">
+            Total: {total.toFixed(2)} €
+          </p>
+        </div>
+
+        {/* BOTÓN DESCARGAR FACTURA */}
+        {pago.estado === "aprobado" && (
+          <button
+            onClick={descargarFactura}
+            className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            <FileDown size={18} />
+            Descargar factura en PDF
+          </button>
+        )}
+      </div>
+
+      {/* -------------------------------------
+          LICENCIAS
+      -------------------------------------- */}
+      <h3 className="text-xl font-bold">Licencias</h3>
 
       {!licencias.length ? (
         <p>No hay licencias asociadas.</p>
@@ -2029,21 +2211,24 @@ export default function UserPagoDetallePage({ params }) {
         <ul className="space-y-2">
           {licencias.map((l) => (
             <li key={l.id}>
-              <strong>Email Tekla:</strong> {l.email_tekla ?? "—"} — 
-              <strong> Estado:</strong> {l.estado}
+              <strong>Email Tekla:</strong> {l.email_tekla ?? "—"} —{" "}
+              <strong>Estado:</strong> {l.estado}
             </li>
           ))}
         </ul>
       )}
 
-      <h3 className="text-xl font-bold mt-6 mb-2">Datos de facturación</h3>
+      {/* -------------------------------------
+          FACTURACIÓN
+      -------------------------------------- */}
+      <h3 className="text-xl font-bold mt-6">Datos de facturación</h3>
 
       {!facturacion ? (
         <p>No hay datos guardados.</p>
       ) : (
         <div className="space-y-1">
           <p><strong>Nombre:</strong> {facturacion.nombre}</p>
-          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
+          <p><strong>NIF:</strong> {facturacion.nif ?? "—"}</p>
           <p><strong>Dirección:</strong> {facturacion.direccion}</p>
           <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
           <p><strong>País:</strong> {facturacion.pais}</p>
@@ -2052,7 +2237,6 @@ export default function UserPagoDetallePage({ params }) {
     </div>
   );
 }
-
 
 
 ============================================================
@@ -2913,297 +3097,4 @@ export default function Footer() {
   </div>
 </section>
 ``
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
-============================================================
-
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-
-export default function Navbar() {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const [open, setOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [ready, setReady] = useState(false);
-  const [theme, setTheme] = useState("light");
-
-  
-
-  const menuRef = useRef(null);
-
-  // Obtener usuario
-  useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        setUser(data.user ?? null);
-        setReady(true);
-      })
-      .catch(() => setReady(true));
-  }, []);
-
-  // Cargar tema desde localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") || "light";
-    setTheme(saved);
-    document.documentElement.classList.toggle("dark", saved === "dark");
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    localStorage.setItem("theme", newTheme);
-    setTheme(newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
-
-  // Cerrar menú usuario al hacer clic fuera
-  useEffect(() => {
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Cerrar menús al navegar
-  useEffect(() => {
-    setOpen(false);
-    setMenuOpen(false);
-  }, [pathname]);
-
-  // Evitar scroll cuando menú móvil está abierto
-  useEffect(() => {
-    document.body.classList.toggle("overflow-hidden", open);
-  }, [open]);
-
-  // Logout
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
-    router.push("/");
-  };
-
-  if (!ready) return null;
-  console.log("USER METADATA:", user?.user_metadata);
-  const role = user?.user_metadata?.role;
-  const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
-
-  const nombre = user?.user_metadata?.nombre;
-  const avatar =
-    nombre?.charAt(0)?.toUpperCase() ||
-    user?.email?.charAt(0)?.toUpperCase();
-
-  return (
-    <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] border-b border-gray-300 dark:border-gray-700 fixed top-0 left-0 z-50 shadow-sm">
-      <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
-
-        {/* LOGO */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <img
-            src="/logo-ombim.png"
-            alt="OMBIM Logo"
-            className="h-10 w-auto md:h-14 block dark:hidden"
-          />
-          <img
-            src="/logo-ombim-dark.png"
-            alt="OMBIM Logo Dark"
-            className="h-10 w-auto md:h-14 hidden dark:block"
-          />
-          <span className="text-xl md:text-3xl font-bold text-[#1f2937] dark:text-[#e6e6e6]">
-            OMBIM
-          </span>
-        </Link>
-
-        {/* BOTÓN HAMBURGUESA */}
-        <button
-          className="md:hidden relative w-8 h-8 flex items-center justify-center"
-          onClick={() => setOpen(!open)}
-          aria-label="Abrir menú"
-        >
-          <span
-            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
-              open ? "w-6 rotate-45" : "w-7 -translate-y-2"
-            }`}
-          />
-          <span
-            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
-              open ? "opacity-0" : "opacity-100 w-7"
-            }`}
-          />
-          <span
-            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
-              open ? "w-6 -rotate-45" : "w-7 translate-y-2"
-            }`}
-          />
-        </button>
-
-        {/* MENÚ DESKTOP */}
-        <div className="hidden md:flex gap-6 items-center text-lg text-[#1f2937] dark:text-[#e6e6e6]">
-
-          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
-          <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
-          <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
-          <Link href="/plugins" className="hover:text-blue-600 transition">Plugins</Link>
-          <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
-          <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
-
-          {/* CAMBIAR TEMA */}
-          <button
-            onClick={toggleTheme}
-            className="px-3 py-2 rounded-lg border bg-white dark:bg-[#2e2e2e] hover:bg-gray-200 dark:hover:bg-[#3a3a3a] transition"
-          >
-            {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
-          </button>
-
-          {/* MENÚ USUARIO DESKTOP */}
-          {user ? (
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 hover:text-blue-600 transition"
-              >
-                <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                  {avatar}
-                </div>
-                <span>{nombre}</span>
-              </button>
-
-              <div
-                className={`absolute right-0 mt-2 bg-white dark:bg-[#2e2e2e] border border-gray-200 dark:border-gray-600 rounded-lg p-3 w-40 shadow-lg transition-all origin-top-right ${
-                  menuOpen
-                    ? "opacity-100 scale-100"
-                    : "opacity-0 scale-95 pointer-events-none"
-                }`}
-              >
-                <Link
-                  href={panelUrl}
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
-                >
-                  Panel
-                </Link>
-
-                <button
-                  onClick={logout}
-                  className="block w-full text-left px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
-                >
-                  Cerrar sesión
-                </button>
-              </div>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="border px-4 py-2 rounded-lg bg-white dark:bg-[#2e2e2e] hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
-            >
-              Iniciar sesión
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* MENÚ MÓVIL */}
-      {open && (
-        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#2e2e2e] border-t px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6]">
-
-          <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
-          <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
-          <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
-          <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
-          <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
-          <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
-
-          <button onClick={() => { toggleTheme(); setOpen(false); }}>
-            {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
-          </button>
-
-          {user ? (
-            <>
-              <Link href={panelUrl} onClick={() => setOpen(false)}>Panel</Link>
-              <button onClick={logout}>Cerrar sesión</button>
-            </>
-          ) : (
-            <Link href="/login" onClick={() => setOpen(false)}>Iniciar sesión</Link>
-          )}
-        </div>
-      )}
-    </nav>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Projects.jsx
-============================================================
-
-const items = [
-  { title: 'Proyecto 1', desc: 'Descripción breve del proyecto realizado.' },
-  { title: 'Proyecto 2', desc: 'Descripción breve del proyecto realizado.' },
-  { title: 'Proyecto 3', desc: 'Descripción breve del proyecto realizado.' },
-]
-export default function Projects() {
-  return (
-    <section id="proyectos" className="bg-[#f3f4f6] py-20">
-      <div className="container mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-12">Proyectos</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {items.map((p, i) => (
-            <div key={i} className="p-6 rounded-2xl border bg-[#f3f4f6]Soft shadow-sm text-center">
-              <h4 className="font-semibold mb-2">{p.title}</h4>
-              <p className="text-[#1f2937]">{p.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\RevealObserver.jsx
-============================================================
-
-"use client";
-
-import { useEffect } from "react";
-
-export default function RevealObserver() {
-  useEffect(() => {
-    const revealElements = document.querySelectorAll(".reveal");
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.15,       // % visible antes de activar
-        rootMargin: "0px 0px -50px 0px", // para que aparezca un poco antes
-      }
-    );
-
-    revealElements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
-
-  return null;
-}
-
 

@@ -1,14 +1,21 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminUsuarioDetallePage({ params }) {
+  // ✔ Next.js 15/16 → params es PROMESA en client components
+  const [id, setId] = useState(null);
 
-  // 🔥 EN NEXT.JS 16 params ES UN PROMISE
-  const { id } = use(params);
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
 
   const [usuario, setUsuario] = useState(null);
   const [open, setOpen] = useState(false);

@@ -5,7 +5,7 @@ export default function Footer() {
     <footer
       className="
         mt-32 py-14
-        bg-[#f3f4f6]Soft text-[#1f2937]
+        bg-[#f3f4f6] text-[#1f2937]
         dark:bg-[#242424] dark:text-[#e6e6e6]
         border-t border-[#d1d5db] dark:border-[#3a3a3a]
       "

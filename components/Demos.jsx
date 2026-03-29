@@ -21,7 +21,7 @@ export default function Demos() {
 
         <div className="grid md:grid-cols-3 gap-10">
           {demos.map((d, i) => (
-            <div key={i} className="p-5 bg-[#f3f4f6]Soft rounded-2xl shadow">
+            <div key={i} className="p-5 bg-[#f3f4f6] rounded-2xl shadow">
               <video
                 className="w-full rounded-xl mb-4"
                 autoPlay

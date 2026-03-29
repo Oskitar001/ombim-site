@@ -30,6 +30,7 @@ export default function ConfirmDialog({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{title}</h2>
           <button
+            type="button"
             className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-300"
             onClick={onCancel}
           >
@@ -45,6 +46,7 @@ export default function ConfirmDialog({
         {/* BUTTONS */}
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600"
             onClick={onCancel}
           >
@@ -52,6 +54,7 @@ export default function ConfirmDialog({
           </button>
 
           <button
+            type="button"
             className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
             onClick={onConfirm}
           >

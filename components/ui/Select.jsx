@@ -4,7 +4,7 @@ export default function Select({ children, className = "", ...props }) {
       {...props}
       className={`
         w-full px-4 py-2.5 rounded-xl
-        bg-[#f3f4f6]Soft dark:bg-[#242424]Soft
+        bg-[#f3f4f6] dark:bg-[#242424]
         text-[#1f2937] dark:text-[#e6e6e6]
         border border-[#d1d5db] dark:border-[#3a3a3a]
         shadow-sm

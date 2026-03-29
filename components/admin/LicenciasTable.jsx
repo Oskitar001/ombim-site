@@ -1,8 +1,8 @@
 export default function LicenciasTable({ licencias }) {
   return (
-    <table className="w-full bg-[#f3f4f6]Soft shadow rounded">
+    <table className="w-full bg-[#f3f4f6] shadow rounded">
       <thead>
-        <tr className="bg-[#f3f4f6]Soft text-left">
+        <tr className="bg-[#f3f4f6] text-left">
           <th className="p-2">Email Tekla</th>
           <th className="p-2">Plugin</th>
           <th className="p-2">Estado</th>

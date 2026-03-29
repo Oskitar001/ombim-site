@@ -5,7 +5,8 @@ export default function Services() {
         <h2 className="text-4xl font-bold text-center mb-12">Servicios</h2>
 
         <div className="grid md:grid-cols-2 gap-10">
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Modelado BIM en Tekla Structures</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Modelado de estructuras metálicas y de hormigón</li>
@@ -15,7 +16,7 @@ export default function Services() {
             </ul>
           </div>
 
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Planos y documentación técnica</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Planos de fabricación</li>
@@ -25,7 +26,7 @@ export default function Services() {
             </ul>
           </div>
 
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Automatizaciones y plugins para Tekla</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Desarrollo de plugins a medida</li>
@@ -35,7 +36,7 @@ export default function Services() {
             </ul>
           </div>
 
-          <div className="p-6 bg-[#f3f4f6]Soft rounded-xl shadow">
+          <div className="p-6 bg-[#f3f4f6] rounded-xl shadow">
             <h3 className="text-2xl font-semibold mb-4">Colaboración externa</h3>
             <ul className="text-[#1f2937] space-y-2">
               <li>• Refuerzo de equipos técnicos</li>
@@ -44,6 +45,7 @@ export default function Services() {
               <li>• Comunicación directa y flexible</li>
             </ul>
           </div>
+
         </div>
       </div>
     </section>

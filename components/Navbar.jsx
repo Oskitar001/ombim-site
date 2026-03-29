@@ -14,8 +14,6 @@ export default function Navbar() {
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState("light");
 
-  
-
   const menuRef = useRef(null);
 
   // Obtener usuario
@@ -65,15 +63,18 @@ export default function Navbar() {
     document.body.classList.toggle("overflow-hidden", open);
   }, [open]);
 
-  // Logout
+  // Logout (FIX crítico: credentials)
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { 
+      method: "POST",
+      credentials: "include"
+    });
     setUser(null);
     router.push("/");
   };
 
   if (!ready) return null;
-  console.log("USER METADATA:", user?.user_metadata);
+
   const role = user?.user_metadata?.role;
   const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
 

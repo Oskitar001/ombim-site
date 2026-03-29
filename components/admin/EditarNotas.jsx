@@ -11,6 +11,8 @@ export default function EditarNotas({ id, notasIniciales, onUpdated }) {
 
     const res = await fetch("/api/admin/licencias/notas", {
       method: "POST",
+      credentials: "include",                         // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ Necesario
       body: JSON.stringify({ id, notas }),
     });
 

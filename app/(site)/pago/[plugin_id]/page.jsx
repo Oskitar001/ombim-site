@@ -20,6 +20,8 @@ export default function Page() {
   const [tipo, setTipo] = useState(planInicial);
 
   useEffect(() => {
+    if (!plugin_id) return; // ✔ FIX mínimo necesario
+
     async function load() {
       try {
         const rUser = await fetch("/api/auth/me");
@@ -36,15 +38,15 @@ export default function Page() {
       }
     }
 
-    if (plugin_id) load();
+    load();
   }, [plugin_id]);
 
   function actualizarEmail(i, valor) {
-    setEmails(prev => prev.map((e, idx) => (idx === i ? valor : e)));
+    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
   }
 
   function añadirFila() {
-    setEmails(prev => [...prev, ""]);
+    setEmails((prev) => [...prev, ""]);
   }
 
   async function crearPago() {
@@ -53,8 +55,8 @@ export default function Page() {
       return;
     }
 
-    const emailsLimpios = emails.map(e => e.trim());
-    if (emailsLimpios.some(e => e === "")) {
+    const emailsLimpios = emails.map((e) => e.trim());
+    if (emailsLimpios.some((e) => e === "")) {
       setError("Debes completar TODOS los emails Tekla.");
       return;
     }
@@ -96,7 +98,7 @@ export default function Page() {
   const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
 
   // DESGLOSE IVA
-  const subtotal = precioUnitario * emails.length;   // sin IVA
+  const subtotal = precioUnitario * emails.length; // sin IVA
   const iva = subtotal * 0.21;
   const total = subtotal + iva;
 
@@ -122,7 +124,9 @@ export default function Page() {
           )}
 
           {precioCompleta > 0 && (
-            <option value="completa">Completa – {precioCompleta.toFixed(2)} €</option>
+            <option value="completa">
+              Completa – {precioCompleta.toFixed(2)} €
+            </option>
           )}
         </select>
       </div>
@@ -142,19 +146,22 @@ export default function Page() {
           />
         ))}
 
-        <button
-          onClick={añadirFila}
-          className="text-blue-600 underline mb-4"
-        >
+        <button onClick={añadirFila} className="text-blue-600 underline mb-4">
           Añadir otro email
         </button>
       </div>
 
-      {/* DESGLOSE DE PRECIOS (AQUÍ FALTABA EL IVA) */}
+      {/* DESGLOSE DE PRECIOS */}
       <div className="space-y-1 text-lg">
-        <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
-        <p><strong>IVA (21%):</strong> {iva.toFixed(2)} €</p>
-        <p className="text-2xl font-bold"><strong>Total:</strong> {total.toFixed(2)} €</p>
+        <p>
+          <strong>Subtotal:</strong> {subtotal.toFixed(2)} €
+        </p>
+        <p>
+          <strong>IVA (21%):</strong> {iva.toFixed(2)} €
+        </p>
+        <p className="text-2xl font-bold">
+          <strong>Total:</strong> {total.toFixed(2)} €
+        </p>
       </div>
 
       {error && <p className="text-red-600">{error}</p>}

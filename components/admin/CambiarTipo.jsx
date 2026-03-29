@@ -11,6 +11,8 @@ export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
 
     const res = await fetch("/api/admin/licencias/tipo", {
       method: "POST",
+      credentials: "include",               // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ necesario para el backend
       body: JSON.stringify({ id, tipo_id: tipo }),
     });
 

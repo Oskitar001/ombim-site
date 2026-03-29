@@ -1,11 +1,21 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function AdminPagoDetallePage({ params }) {
-  const { id } = use(params);
+
+  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
 
   const [pago, setPago] = useState(null);
   const [emails, setEmails] = useState([]);
@@ -23,6 +33,8 @@ export default function AdminPagoDetallePage({ params }) {
   // CARGAR PAGO
   // ============================================
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       try {
         const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
@@ -52,7 +64,8 @@ export default function AdminPagoDetallePage({ params }) {
       }
     }
 
-    if (id) load();
+    load();
+
   }, [id]);
 
   // ============================================
@@ -134,8 +147,12 @@ export default function AdminPagoDetallePage({ params }) {
         <p><strong>Estado:</strong> {pago.estado}</p>
 
         <div className="mt-3">
-          <p><strong>Subtotal:</strong> {pago.importe_base?.toFixed(2)} €</p>
-          <p><strong>IVA (21%):</strong> {pago.iva?.toFixed(2)} €</p>
+          <p>
+            <strong>Subtotal:</strong> {pago.importe_base?.toFixed(2)} €
+          </p>
+          <p>
+            <strong>IVA (21%):</strong> {pago.iva?.toFixed(2)} €
+          </p>
           <p className="text-xl font-bold">
             TOTAL (IVA incluido): {pago.importe?.toFixed(2)} €
           </p>
@@ -168,8 +185,9 @@ export default function AdminPagoDetallePage({ params }) {
 
           <button
             onClick={async () => {
-              const vacios = emails.some(x => !x.trim());
-              if (vacios) return alert("Todos los emails Tekla deben estar completos.");
+              const vacios = emails.some((x) => !x.trim());
+              if (vacios)
+                return alert("Todos los emails Tekla deben estar completos.");
 
               const r = await fetch("/api/pagos/guardar-emails", {
                 method: "POST",
@@ -177,7 +195,7 @@ export default function AdminPagoDetallePage({ params }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   pago_id: pago.id,
-                  emails: emails.map(e => ({
+                  emails: emails.map((e) => ({
                     licencia_id: null,
                     email_tekla: e.trim(),
                   })),
@@ -204,13 +222,27 @@ export default function AdminPagoDetallePage({ params }) {
 
       {facturacion && (
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded mt-2 text-sm flex flex-col gap-1">
-          <p><strong>Nombre:</strong> {facturacion.nombre ?? "—"}</p>
-          <p><strong>NIF:</strong> {facturacion.nif ?? "—"}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion ?? "—"}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad ?? "—"}</p>
-          <p><strong>CP:</strong> {facturacion.cp ?? "—"}</p>
-          <p><strong>País:</strong> {facturacion.pais ?? "—"}</p>
-          <p><strong>Teléfono:</strong> {facturacion.telefono ?? "—"}</p>
+          <p>
+            <strong>Nombre:</strong> {facturacion.nombre ?? "—"}
+          </p>
+          <p>
+            <strong>NIF:</strong> {facturacion.nif ?? "—"}
+          </p>
+          <p>
+            <strong>Dirección:</strong> {facturacion.direccion ?? "—"}
+          </p>
+          <p>
+            <strong>Ciudad:</strong> {facturacion.ciudad ?? "—"}
+          </p>
+          <p>
+            <strong>CP:</strong> {facturacion.cp ?? "—"}
+          </p>
+          <p>
+            <strong>País:</strong> {facturacion.pais ?? "—"}
+          </p>
+          <p>
+            <strong>Teléfono:</strong> {facturacion.telefono ?? "—"}
+          </p>
         </div>
       )}
 
@@ -218,7 +250,6 @@ export default function AdminPagoDetallePage({ params }) {
           BOTONES
       ======================== */}
       <div className="mt-10 flex flex-col gap-3 max-w-sm">
-        
         <button
           onClick={() => setOpenValidar(true)}
           className="bg-green-600 text-white py-2 rounded"
@@ -293,4 +324,3 @@ export default function AdminPagoDetallePage({ params }) {
     </>
   );
 }
-``

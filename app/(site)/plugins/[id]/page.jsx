@@ -15,5 +15,6 @@ export default async function PluginPage({ params }) {
 
   const plugin = await res.json();
 
+  // ✔ FIX: JSX real, NO entidades HTML escapadas
   return <PluginClient plugin={plugin} pluginId={id} />;
 }

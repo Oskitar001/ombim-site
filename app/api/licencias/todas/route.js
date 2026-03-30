@@ -9,12 +9,14 @@ export async function GET(req) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const id = new URL(req.url).searchParams.get("id");
+  // ✔ FIX: normalizar id
+  const id = new URL(req.url).searchParams.get("id")?.trim();
 
   if (!id) {
     return NextResponse.json({ error: "Falta id" }, { status: 400 });
   }
 
+  // ✔ FIX: capturar error del SELECT
   const { data, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
@@ -22,6 +24,7 @@ export async function GET(req) {
     .single();
 
   if (error || !data) {
+    console.error("Error cargando licencia:", error);
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 

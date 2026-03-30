@@ -5,8 +5,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET(req, context) {
-  const { pago_id } = await context.params;
-  const supabase = supabaseRoute();
+  // ❌ context.params no es promesa — quitar await
+  const { pago_id } = context.params;
+
+  // ❗ FIX crítico: supabaseRoute es async en Next 16
+  const supabase = await supabaseRoute();
 
   // 1) Obtener datos del pago
   const { data: pago, error } = await supabase
@@ -36,16 +39,21 @@ export async function GET(req, context) {
   }
 
   // 2) Emails asociados
-  const { data: emails } = await supabase
+  const { data: emails, error: emailsError } = await supabase
     .from("pagos_emails")
     .select("email_tekla")
     .eq("pago_id", pago_id);
+
+  // Evitar errores si hubo fallo en consulta
+  const listaEmails = Array.isArray(emails)
+    ? emails.map((e) => e.email_tekla)
+    : [];
 
   // 3) Respuesta final
   return NextResponse.json({
     ...pago,
 
-    emails: emails?.map((e) => e.email_tekla) ?? [],
+    emails: listaEmails,
 
     importe_base: pago.importe_base ?? 0,
     iva: pago.iva ?? 0,

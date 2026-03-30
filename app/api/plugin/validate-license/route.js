@@ -1,4 +1,4 @@
-// app/api/plugin/validate-license/route.js
+// /app/api/plugin/validate-license/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -11,7 +11,10 @@ export async function POST(req) {
     return NextResponse.json({ estado: "error", mensaje: "json_invalido" });
   }
 
-  const { email_tekla, plugin_id, maquina_id } = payload;
+  // Normalización segura
+  const email_tekla = payload?.email_tekla?.trim()?.toLowerCase();
+  const plugin_id = payload?.plugin_id;
+  const maquina_id = payload?.maquina_id;
 
   if (!email_tekla || !plugin_id) {
     return NextResponse.json({
@@ -28,9 +31,10 @@ export async function POST(req) {
     .eq("plugin_id", plugin_id)
     .order("fecha_creacion", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error || !lic) {
+    console.error("Error obteniendo licencia:", error);
     return NextResponse.json({ estado: "sin_licencia" });
   }
 
@@ -39,31 +43,46 @@ export async function POST(req) {
     return NextResponse.json({ estado: "bloqueada" });
   }
 
-  // trial expirado
+  // pendiente (EVITA activar licencias antes de validarlas)
+  if (lic.estado === "pendiente") {
+    return NextResponse.json({ estado: "pendiente" });
+  }
+
+  // trial or anual expirado
   if (lic.fecha_expiracion) {
-    if (new Date(lic.fecha_expiracion) < new Date()) {
+    const exp = new Date(lic.fecha_expiracion);
+    if (exp < new Date()) {
       return NextResponse.json({ estado: "expirada" });
     }
   }
 
-  // sin activaciones disponibles
-  if (lic.activaciones_usadas >= lic.max_activaciones) {
+  // sin activaciones
+  const usadas = Number(lic.activaciones_usadas ?? 0);
+  const max = Number(lic.max_activaciones ?? 0);
+
+  if (usadas >= max) {
     return NextResponse.json({ estado: "sin_activaciones" });
   }
 
   // registrar activación
-  await supabaseAdmin
+  const nuevas = usadas + 1;
+
+  const { error: updateErr } = await supabaseAdmin
     .from("licencias")
     .update({
-      activaciones_usadas: lic.activaciones_usadas + 1,
+      activaciones_usadas: nuevas,
       maquina_id: maquina_id ?? lic.maquina_id
     })
     .eq("id", lic.id);
 
+  if (updateErr) {
+    console.error("Error actualizando licencia:", updateErr);
+    return NextResponse.json({ estado: "error_actualizando" });
+  }
+
   return NextResponse.json({
     estado: lic.estado,
-    activaciones_restantes:
-      lic.max_activaciones - (lic.activaciones_usadas + 1),
+    activaciones_restantes: max - nuevas,
     fecha_expiracion: lic.fecha_expiracion ?? null
   });
 }

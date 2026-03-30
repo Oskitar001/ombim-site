@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+/* ======================================================
+   MIS DATOS — ESTILO PREMIUM (igual que panel admin)
+====================================================== */
+
 export default function MisDatosClient() {
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +34,7 @@ export default function MisDatosClient() {
   const [usarMismosDatos, setUsarMismosDatos] = useState(false);
 
   // ===============================================
-  // CARGA INICIAL
+  // CARGA INICIAL (AUTH + FACT)
   // ===============================================
   useEffect(() => {
     async function load() {
@@ -117,47 +121,46 @@ export default function MisDatosClient() {
     }
   }
 
-  if (loading) return <p className="p-4">Cargando…</p>;
+  if (loading)
+    return <p className="p-4 text-gray-600 dark:text-gray-300">Cargando…</p>;
 
   return (
     <div className="p-4 space-y-10 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Mis datos</h1>
 
       {/* -------------------- DATOS DE USUARIO -------------------- */}
-      <section className="p-6 rounded-lg bg-white shadow dark:bg-gray-800 space-y-4">
-        <h2 className="text-xl font-bold">Datos de usuario</h2>
-
-        <div>
-          <label className="font-semibold">Email</label>
+      <UserSection title="Datos de usuario">
+        {/* EMAIL */}
+        <Field label="Email">
           <input
             disabled
-            className="w-full p-2 border rounded bg-gray-200 dark:bg-gray-700"
+            className="input-premium-disabled"
             value={usuario.email}
           />
-        </div>
+        </Field>
 
-        <CampoEditable
+        <EditableField
           label="Nombre"
           value={userForm.nombre}
           onChange={(v) => updateUserField("nombre", v)}
           editable={editUser}
         />
 
-        <CampoEditable
+        <EditableField
           label="Empresa"
           value={userForm.empresa}
           onChange={(v) => updateUserField("empresa", v)}
           editable={editUser}
         />
 
-        <CampoEditable
+        <EditableField
           label="Teléfono"
           value={userForm.telefono}
           onChange={(v) => updateUserField("telefono", v)}
           editable={editUser}
         />
 
-        <CampoEditable
+        <EditableField
           label="País"
           value={userForm.pais}
           onChange={(v) => updateUserField("pais", v)}
@@ -170,55 +173,53 @@ export default function MisDatosClient() {
           onCancel={() => setEditUser(false)}
           onSave={guardarUsuario}
         />
-      </section>
+      </UserSection>
 
       {/* -------------------- FACTURACIÓN -------------------- */}
-      <section className="p-6 rounded-lg bg-white shadow dark:bg-gray-800 space-y-4">
-        <h2 className="text-xl font-bold">Datos de facturación</h2>
-
-        <CampoEditable
+      <UserSection title="Datos de facturación">
+        <EditableField
           label="Nombre / Razón social"
           value={factForm.nombre}
           onChange={(v) => updateFactField("nombre", v)}
           editable={editFact}
         />
 
-        <CampoEditable
+        <EditableField
           label="NIF / CIF"
           value={factForm.nif}
           onChange={(v) => updateFactField("nif", v)}
           editable={editFact}
         />
 
-        <CampoEditable
+        <EditableField
           label="Dirección"
           value={factForm.direccion}
           onChange={(v) => updateFactField("direccion", v)}
           editable={editFact}
         />
 
-        <CampoEditable
+        <EditableField
           label="Ciudad"
           value={factForm.ciudad}
           onChange={(v) => updateFactField("ciudad", v)}
           editable={editFact}
         />
 
-        <CampoEditable
+        <EditableField
           label="Código Postal"
           value={factForm.cp}
           onChange={(v) => updateFactField("cp", v)}
           editable={editFact}
         />
 
-        <CampoEditable
+        <EditableField
           label="País"
           value={factForm.pais}
           onChange={(v) => updateFactField("pais", v)}
           editable={editFact}
         />
 
-        <CampoEditable
+        <EditableField
           label="Teléfono"
           value={factForm.telefono}
           onChange={(v) => updateFactField("telefono", v)}
@@ -226,7 +227,7 @@ export default function MisDatosClient() {
         />
 
         {/* Checkbox */}
-        <div className="flex items-center mt-1">
+        <div className="flex items-center mt-2">
           <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
@@ -257,26 +258,51 @@ export default function MisDatosClient() {
           onCancel={() => setEditFact(false)}
           onSave={guardarFacturacion}
         />
-      </section>
+      </UserSection>
     </div>
   );
 }
 
-// -----------------------------------------------------------------------------
-// AUXILIARES
-// -----------------------------------------------------------------------------
+/* ======================================================
+   COMPONENTES PREMIUM
+====================================================== */
 
-function CampoEditable({ label, value, onChange, editable }) {
+function UserSection({ title, children }) {
   return (
-    <div>
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
       <label className="font-semibold">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function EditableField({ label, value, onChange, editable }) {
+  return (
+    <Field label={label}>
       <input
         disabled={!editable}
-        className="w-full p-2 border rounded dark:bg-gray-900"
+        className={`input-premium ${!editable ? "opacity-60" : ""}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-    </div>
+    </Field>
   );
 }
 
@@ -285,7 +311,7 @@ function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
     return (
       <button
         onClick={onEdit}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
+        className="btn-premium bg-blue-600 hover:bg-blue-700"
       >
         Editar
       </button>
@@ -295,17 +321,49 @@ function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
     <div className="flex gap-3">
       <button
         onClick={onCancel}
-        className="px-4 py-2 bg-gray-400 text-white rounded"
+        className="btn-premium bg-gray-500 hover:bg-gray-600"
       >
         Cancelar
       </button>
 
       <button
         onClick={onSave}
-        className="px-4 py-2 bg-green-600 text-white rounded"
+        className="btn-premium bg-green-600 hover:bg-green-700"
       >
         Guardar
       </button>
     </div>
   );
 }
+
+/* ======================================================
+   ESTILOS PREMIUM REUTILIZABLES
+====================================================== */
+
+/* input normal */
+const inputPremium = `
+  w-full px-3 py-2 rounded-lg
+  bg-gray-100 dark:bg-gray-800
+  border border-gray-300 dark:border-gray-700
+  focus:ring-2 focus:ring-blue-600
+  transition
+`;
+
+/* input disabled */
+const inputDisabled = `
+  w-full px-3 py-2 rounded-lg
+  bg-gray-200 dark:bg-gray-700
+  text-gray-600 dark:text-gray-400
+  border border-gray-300 dark:border-gray-600
+`;
+
+/* botones */
+const btnPremium = `
+  px-4 py-2 rounded-lg text-white font-semibold shadow
+  transition
+`;
+
+/* Para poder usar las clases */
+globalThis["input-premium"] = inputPremium;
+globalThis["input-premium-disabled"] = inputDisabled;
+globalThis["btn-premium"] = btnPremium;

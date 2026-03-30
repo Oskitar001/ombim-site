@@ -1,12 +1,844 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import ConfirmDialog from "@/components/ConfirmDialog";
+
+import {
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+  Mail,
+  Trash2,
+  BadgeCheck,
+} from "lucide-react";
+
+export default function AdminPagoDetallePage() {
+  const params = useParams();
+  const id = params.id;
+
+  const [pago, setPago] = useState(null);
+  const [emails, setEmails] = useState([]);
+  const [facturacion, setFacturacion] = useState(null);
+  const [numeroFactura, setNumeroFactura] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [openValidar, setOpenValidar] = useState(false);
+  const [openRechazar, setOpenRechazar] = useState(false);
+  const [openReenviar, setOpenReenviar] = useState(false);
+  const [openBorrar, setOpenBorrar] = useState(false);
+
+  /* ===================================
+     CARGA INICIAL
+  ====================================== */
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
+          credentials: "include",
+        });
+
+        const data = await r.json();
+
+        if (!r.ok) {
+          setError(data.error ?? "Error cargando el pago");
+          setLoading(false);
+          return;
+        }
+
+        setPago(data.pago);
+        setNumeroFactura(data.pago.numero_factura ?? "");
+        setEmails(data.pago.emails ?? []);
+        setFacturacion(data.facturacion ?? null);
+
+      } catch {
+        setError("Error de conexión.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [id]);
+
+  /* ===================================
+     ACCIONES
+  ====================================== */
+
+  async function guardarNumeroFactura() {
+    if (!numeroFactura.trim()) {
+      return alert("Debes introducir un número de factura.");
+    }
+
+    const r = await fetch("/api/admin/pagos/numero-factura", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pago_id: id,
+        numero_factura: numeroFactura.trim(),
+      }),
+    });
+
+    if (!r.ok) return alert("Error guardando número de factura");
+
+    alert("Número guardado correctamente.");
+    window.location.reload();
+  }
+
+  async function confirmarValidacion() {
+    const r = await fetch("/api/admin/pagos/validar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pago_id: id }),
+    });
+
+    if (!r.ok) return alert("Error validando el pago.");
+    window.location.reload();
+  }
+
+  async function confirmarRechazo() {
+    const r = await fetch("/api/admin/pagos/rechazar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pago_id: id }),
+    });
+
+    if (!r.ok) return alert("Error rechazando el pago.");
+    window.location.reload();
+  }
+
+  async function confirmarReenvio() {
+    const r = await fetch("/api/email/compra", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pago_id: id }),
+    });
+
+    if (!r.ok) return alert("Error reenviando email.");
+    alert("Email reenviado.");
+  }
+
+  async function confirmarBorrado() {
+    const r = await fetch("/api/admin/pagos/borrar-todos", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!r.ok) return alert("Error borrando el pago.");
+    window.location.href = "/panel/admin/pagos?deleted=1";
+  }
+
+  /* ===================================
+     RENDER
+  ====================================== */
+
+  if (loading) return <p>Cargando…</p>;
+  if (error) return <p>{error}</p>;
+  if (!pago) return <p>Pago no encontrado.</p>;
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-10 p-4">
+
+      {/* VOLVER */}
+      <Link href="/panel/admin/pagos" className="text-blue-600 hover:underline flex items-center gap-1">
+        <ArrowLeft size={18} /> Volver
+      </Link>
+
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold">Pago #{pago.id}</h1>
+
+      {/* ======================= FACTURA ======================= */}
+      <Section title="Factura">
+        <div className="space-y-3">
+
+          {/* BADGES */}
+          {pago.numero_factura && (
+            <Badge color="blue">
+              <BadgeCheck size={14} /> Factura lista
+            </Badge>
+          )}
+
+          {!pago.numero_factura && pago.factura_solicitada && (
+            <Badge color="yellow">
+              📄 Factura solicitada por el usuario
+            </Badge>
+          )}
+
+          {!pago.numero_factura && !pago.factura_solicitada && (
+            <Badge color="gray">— No solicitada —</Badge>
+          )}
+
+          {/* INPUT */}
+          <label className="font-semibold block">Número de factura</label>
+          <input
+            type="text"
+            value={numeroFactura}
+            onChange={(e) => setNumeroFactura(e.target.value)}
+            placeholder="Ej: OMBIM-2026-000123"
+            className="w-full border p-2 rounded dark:bg-gray-800"
+          />
+          <button
+            onClick={guardarNumeroFactura}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-2"
+          >
+            Guardar número
+          </button>
+        </div>
+      </Section>
+
+      {/* ======================= RESUMEN ECONÓMICO ======================= */}
+      <Section title="Resumen económico">
+        <Field label="Tipo" value={pago.tipo} />
+        <Field label="Licencias" value={pago.cantidad_licencias} />
+        <Field label="Estado" value={pago.estado} />
+
+        <div className="mt-4 space-y-1">
+          <p><strong>Subtotal:</strong> {pago.importe_base.toFixed(2)} €</p>
+          <p><strong>IVA:</strong> {pago.iva.toFixed(2)} €</p>
+          <p className="text-xl font-bold">
+            Total: {pago.importe.toFixed(2)} €
+          </p>
+        </div>
+      </Section>
+
+      {/* ======================= EMAILS TEKLA ======================= */}
+      <Section title="Emails Tekla">
+        <div className="space-y-3">
+          {emails.map((email, i) => (
+            <input
+              key={i}
+              value={email}
+              onChange={(ev) => {
+                const copia = [...emails];
+                copia[i] = ev.target.value;
+                setEmails(copia);
+              }}
+              className="border p-2 rounded w-full dark:bg-gray-900"
+            />
+          ))}
+
+          <button
+            onClick={() => setEmails([...emails, ""])}
+            className="bg-gray-500 text-white py-1 rounded"
+          >
+            Añadir email
+          </button>
+
+          <button
+            onClick={async () => {
+              const vacios = emails.some((x) => !x.trim());
+              if (vacios) return alert("Todos los emails deben estar completos.");
+
+              const r = await fetch("/api/pagos/guardar-emails", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  pago_id: id,
+                  emails: emails.map((e) => ({
+                    email_tekla: e.trim(),
+                  })),
+                }),
+              });
+
+              if (!r.ok) return alert("Error guardando emails.");
+              window.location.reload();
+            }}
+            className="bg-blue-600 text-white py-2 rounded"
+          >
+            Guardar emails
+          </button>
+        </div>
+      </Section>
+
+      {/* ======================= FACTURACIÓN ======================= */}
+      <Section title="Datos de facturación">
+        {!facturacion && (
+          <p className="text-gray-500">No hay datos de facturación.</p>
+        )}
+
+        {facturacion && (
+          <div className="grid gap-2 text-sm">
+            <Field label="Nombre" value={facturacion.nombre} />
+            <Field label="NIF" value={facturacion.nif} />
+            <Field label="Dirección" value={facturacion.direccion} />
+            <Field label="Ciudad" value={facturacion.ciudad} />
+            <Field label="CP" value={facturacion.cp} />
+            <Field label="País" value={facturacion.pais} />
+            <Field label="Teléfono" value={facturacion.telefono} />
+          </div>
+        )}
+      </Section>
+
+      {/* ======================= ACCIONES ======================= */}
+      <Section title="Acciones">
+        <div className="space-y-3 max-w-sm">
+
+          <ActionButton color="green" onClick={() => setOpenValidar(true)}>
+            <CheckCircle size={18} /> Validar pago
+          </ActionButton>
+
+          <ActionButton color="orange" onClick={() => setOpenRechazar(true)}>
+            <XCircle size={18} /> Rechazar pago
+          </ActionButton>
+
+          <ActionButton color="blue" onClick={() => setOpenReenviar(true)}>
+            <Mail size={18} /> Reenviar email
+          </ActionButton>
+
+          <ActionButton color="red" onClick={() => setOpenBorrar(true)}>
+            <Trash2 size={18} /> Borrar pago(s)
+          </ActionButton>
+        </div>
+      </Section>
+
+      {/* ======================= DIÁLOGOS ======================= */}
+      <ConfirmDialog
+        open={openValidar}
+        title="Validar pago"
+        description="Se crearán las licencias asociadas."
+        confirmText="Validar"
+        cancelText="Cancelar"
+        onCancel={() => setOpenValidar(false)}
+        onConfirm={confirmarValidacion}
+      />
+
+      <ConfirmDialog
+        open={openRechazar}
+        title="Rechazar pago"
+        description="El usuario no podrá usar este pago."
+        confirmText="Rechazar"
+        cancelText="Cancelar"
+        onCancel={() => setOpenRechazar(false)}
+        onConfirm={confirmarRechazo}
+      />
+
+      <ConfirmDialog
+        open={openReenviar}
+        title="Reenviar email"
+        description="Se enviará de nuevo el email de compra."
+        confirmText="Reenviar"
+        cancelText="Cancelar"
+        onCancel={() => setOpenReenviar(false)}
+        onConfirm={confirmarReenvio}
+      />
+
+      <ConfirmDialog
+        open={openBorrar}
+        title="¿Borrar este pago y duplicados?"
+        description="Esta acción no se puede deshacer."
+        confirmText="Borrar"
+        cancelText="Cancelar"
+        onCancel={() => setOpenBorrar(false)}
+        onConfirm={confirmarBorrado}
+      />
+    </div>
+  );
+}
+
+/* -----------------------------------
+   COMPONENTES PREMIUM
+-------------------------------------- */
+
+function Section({ title, children }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow p-6 space-y-4">
+      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, value }) {
+  return (
+    <p>
+      <strong>{label}:</strong> {value}
+    </p>
+  );
+}
+
+function Badge({ children, color }) {
+  const styles = {
+    blue: "bg-blue-200 text-blue-900",
+    yellow: "bg-yellow-200 text-yellow-900",
+    gray: "bg-gray-300 text-gray-900",
+  };
+
+  return (
+    <span className={`px-3 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${styles[color]}`}>
+      {children}
+    </span>
+  );
+}
+
+function ActionButton({ children, color, onClick }) {
+  const styles = {
+    green: "bg-green-600 hover:bg-green-700",
+    orange: "bg-orange-600 hover:bg-orange-700",
+    blue: "bg-blue-600 hover:bg-blue-700",
+    red: "bg-red-600 hover:bg-red-700",
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${styles[color]} text-white w-full py-2 rounded-lg flex items-center justify-center gap-2 shadow`}
+    >
+      {children}
+    </button>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\borrar\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Trash2, AlertTriangle } from "lucide-react";
+
+export default function BorrarPluginPage() {
+  const { id } = useParams();
+
+  const [plugin, setPlugin] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // ======================================================
+  // CARGAR DATOS DEL PLUGIN
+  // ======================================================
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch(`/api/admin/plugins/${id}`, {
+          credentials: "include",
+        });
+
+        const d = await r.json();
+
+        if (!r.ok) {
+          alert(d.error ?? "Error cargando plugin");
+          return;
+        }
+
+        setPlugin(d);
+      } catch (e) {
+        alert("Error conectando con el servidor");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [id]);
+
+  // ======================================================
+  // ELIMINAR PLUGIN
+  // ======================================================
+  async function borrar() {
+    const r = await fetch("/api/admin/plugins/borrar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    const d = await r.json();
+
+    if (!r.ok) {
+      alert(d.error ?? "Error borrando plugin");
+      return;
+    }
+
+    window.location.href = "/panel/admin/plugins?deleted=1";
+  }
+
+  // ======================================================
+  // UI
+  // ======================================================
+
+  if (loading) return <p className="p-4">Cargando…</p>;
+  if (!plugin) return <p className="p-4">Plugin no encontrado.</p>;
+
+  return (
+    <div className="p-4 max-w-2xl mx-auto space-y-8">
+
+      {/* VOLVER */}
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2 text-blue-600 hover:underline">
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold text-red-600 flex items-center gap-2">
+        <Trash2 size={30} /> Eliminar Plugin
+      </h1>
+
+      {/* CARD PRINCIPAL */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow p-6 space-y-6">
+
+        {/* INFO PLUGIN */}
+        <div className="flex gap-4 items-center">
+          {plugin.imagen_url ? (
+            <img
+              src={plugin.imagen_url}
+              alt={plugin.nombre}
+              className="w-24 h-24 rounded-lg object-cover shadow"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-lg bg-gray-300 dark:bg-gray-700" />
+          )}
+
+          <div>
+            <h2 className="text-xl font-bold">{plugin.nombre}</h2>
+            <p className="text-sm opacity-80">{plugin.descripcion}</p>
+          </div>
+        </div>
+
+        {/* PRECIOS */}
+        <div className="space-y-1 text-sm">
+          <p>
+            <strong>Estándar:</strong>{" "}
+            {plugin.precio > 0 ? `${plugin.precio} €` : "—"}
+          </p>
+          <p>
+            <strong>Anual:</strong>{" "}
+            {plugin.precio_anual > 0 ? `${plugin.precio_anual} €` : "—"}
+          </p>
+          <p>
+            <strong>Completa:</strong>{" "}
+            {plugin.precio_completa > 0 ? `${plugin.precio_completa} €` : "—"}
+          </p>
+        </div>
+
+        {/* ADVERTENCIA */}
+        <div className="p-4 rounded-lg border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900 text-red-900 dark:text-red-100 flex gap-3">
+          <AlertTriangle size={26} className="text-red-700 dark:text-red-300" />
+          <p>
+            Estás a punto de eliminar este plugin <strong>PERMANENTEMENTE</strong>.<br />
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+
+        {/* BOTONES */}
+        <div className="flex justify-end gap-4">
+
+          <Link href="/panel/admin/plugins">
+            <button className="px-4 py-2 border border-gray-400 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800">
+              Cancelar
+            </button>
+          </Link>
+
+          <button
+            onClick={borrar}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 shadow"
+          >
+            <Trash2 size={18} /> Eliminar definitivamente
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\editar\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default function EditarPluginPage() {
+  const { id } = useParams();
+
+  const [form, setForm] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: 0,
+    precio_anual: 0,
+    precio_completa: 0,
+    archivo_url: "",
+    video_url: "",
+    imagen_url: "",
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  function update(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  /* ===========================
+     CARGAR DATOS DEL PLUGIN
+  ============================ */
+  useEffect(() => {
+    async function load() {
+      const r = await fetch(`/api/admin/plugins/${id}`, {
+        credentials: "include",
+      });
+
+      const d = await r.json();
+
+      if (!r.ok) {
+        alert(d.error ?? "Error cargando plugin");
+        return;
+      }
+
+      setForm({
+        nombre: d.nombre ?? "",
+        descripcion: d.descripcion ?? "",
+        precio: d.precio ?? 0,
+        precio_anual: d.precio_anual ?? 0,
+        precio_completa: d.precio_completa ?? 0,
+        archivo_url: d.archivo_url ?? "",
+        video_url: d.video_url ?? "",
+        imagen_url: d.imagen_url ?? "",
+      });
+
+      setLoading(false);
+    }
+
+    load();
+  }, [id]);
+
+  /* ===========================
+     SUBIR IMAGEN
+  ============================ */
+  async function subirImagen(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop();
+    const name = `${Date.now()}.${ext}`;
+
+    const res = await fetch(`/api/admin/upload-image?name=${name}`, {
+      method: "POST",
+      credentials: "include",
+      body: file,
+    });
+
+    const json = await res.json();
+    if (!json?.url) {
+      alert("Error subiendo imagen");
+      return;
+    }
+
+    update("imagen_url", json.url);
+  }
+
+  /* ===========================
+     SUBIR TSEP
+  ============================ */
+  async function subirTsep(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop();
+    if (ext !== "tsep") {
+      alert("El archivo debe ser .tsep");
+      return;
+    }
+
+    const name = `${Date.now()}.${ext}`;
+
+    const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
+      method: "POST",
+      credentials: "include",
+      body: file,
+    });
+
+    const json = await res.json();
+    if (!json?.url) {
+      alert("Error subiendo archivo TSEP");
+      return;
+    }
+
+    update("archivo_url", json.url);
+  }
+
+  /* ===========================
+     GUARDAR CAMBIOS
+  ============================ */
+  async function guardar() {
+    const payload = {
+      ...form,
+      precio: Number(form.precio) || 0,
+      precio_anual: Number(form.precio_anual) || 0,
+      precio_completa: Number(form.precio_completa) || 0,
+    };
+
+    const r = await fetch(`/api/admin/plugins/editar/${id}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const d = await r.json();
+
+    if (!r.ok) {
+      alert(d.error ?? "Error guardando cambios");
+      return;
+    }
+
+    window.location.href = "/panel/admin/plugins";
+  }
+
+  if (loading) return <p className="p-4">Cargando plugin…</p>;
+
+  /* ===========================
+     UI PREMIUM
+  ============================ */
+  return (
+    <div className="space-y-8 p-4 max-w-2xl mx-auto">
+
+      {/* Volver */}
+      <Link
+        href="/panel/admin/plugins"
+        className="flex items-center gap-2 text-blue-600 hover:underline"
+      >
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      <h1 className="text-3xl font-bold">Editar Plugin</h1>
+
+      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow rounded-xl p-6 space-y-6">
+
+        <Field label="Nombre">
+          <input
+            className="input-premium"
+            value={form.nombre}
+            onChange={(e) => update("nombre", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Descripción">
+          <textarea
+            rows={4}
+            className="input-premium"
+            value={form.descripcion}
+            onChange={(e) => update("descripcion", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Precio (€)">
+          <input
+            type="number"
+            className="input-premium"
+            value={form.precio}
+            onChange={(e) => update("precio", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Precio anual (€)">
+          <input
+            type="number"
+            className="input-premium"
+            value={form.precio_anual}
+            onChange={(e) => update("precio_anual", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Precio completa (€)">
+          <input
+            type="number"
+            className="input-premium"
+            value={form.precio_completa}
+            onChange={(e) => update("precio_completa", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Archivo (.tsep)">
+          <input
+            type="file"
+            accept=".tsep"
+            className="input-premium"
+            onChange={subirTsep}
+          />
+          {form.archivo_url && (
+            <p className="text-green-600 text-sm mt-1">Archivo subido ✓</p>
+          )}
+        </Field>
+
+        <Field label="Video URL (YouTube)">
+          <input
+            className="input-premium"
+            value={form.video_url}
+            onChange={(e) => update("video_url", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Imagen del plugin">
+          <input
+            type="file"
+            accept="image/*"
+            className="input-premium"
+            onChange={subirImagen}
+          />
+
+          {form.imagen_url && (
+            <img
+              src={form.imagen_url}
+              className="w-32 h-32 object-cover mt-2 rounded shadow"
+            />
+          )}
+        </Field>
+
+        <button
+          onClick={guardar}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 shadow text-lg font-semibold"
+        >
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      <label className="font-semibold">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
 ============================================================
 
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 
 export default function NuevoPluginPage() {
   const [form, setForm] = useState({
@@ -36,7 +868,7 @@ export default function NuevoPluginPage() {
 
     const res = await fetch(`/api/admin/upload-image?name=${name}`, {
       method: "POST",
-      credentials: "include", // 🔥 FIX
+      credentials: "include",
       body: file,
     });
 
@@ -66,7 +898,7 @@ export default function NuevoPluginPage() {
 
     const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
       method: "POST",
-      credentials: "include", // 🔥 FIX
+      credentials: "include",
       body: file,
     });
 
@@ -92,7 +924,7 @@ export default function NuevoPluginPage() {
 
     const res = await fetch("/api/admin/plugins/nuevo", {
       method: "POST",
-      credentials: "include", // 🔥 FIX
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -108,109 +940,112 @@ export default function NuevoPluginPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 max-w-xl mx-auto">
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
+    <div className="space-y-8 p-4 max-w-2xl mx-auto">
+
+      {/* VOLVER */}
+      <Link
+        href="/panel/admin/plugins"
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+      >
         <ArrowLeft size={20} /> Volver
       </Link>
 
+      {/* TÍTULO */}
       <h1 className="text-3xl font-bold">Nuevo Plugin</h1>
 
-      <div className="space-y-4">
+      {/* FORM CARD PREMIUM */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow rounded-xl p-6 space-y-6">
+
         {/* Nombre */}
-        <div>
-          <label>Nombre</label>
+        <Field label="Nombre">
           <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.nombre}
             onChange={(e) => update("nombre", e.target.value)}
           />
-        </div>
+        </Field>
 
         {/* Descripción */}
-        <div>
-          <label>Descripción</label>
+        <Field label="Descripción">
           <textarea
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             rows={4}
             value={form.descripcion}
             onChange={(e) => update("descripcion", e.target.value)}
           />
-        </div>
+        </Field>
 
-        {/* Precio por defecto */}
-        <div>
-          <label>Precio por defecto (€)</label>
+        {/* Precio */}
+        <Field label="Precio por defecto (€)">
           <input
             type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.precio}
             onChange={(e) => update("precio", e.target.value)}
           />
-        </div>
+        </Field>
 
-        {/* Precio anual */}
-        <div>
-          <label>Precio Anual (€)</label>
+        <Field label="Precio anual (€)">
           <input
             type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.precio_anual}
             onChange={(e) => update("precio_anual", e.target.value)}
           />
-        </div>
+        </Field>
 
-        {/* Precio completa */}
-        <div>
-          <label>Precio Completa (€)</label>
+        <Field label="Precio completa (€)">
           <input
             type="number"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.precio_completa}
             onChange={(e) => update("precio_completa", e.target.value)}
           />
-        </div>
+        </Field>
 
         {/* Archivo TSEP */}
-        <div>
-          <label>Archivo (.tsep)</label>
+        <Field label="Archivo (.tsep)">
           <input
             type="file"
             accept=".tsep"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             onChange={subirTsep}
           />
           {form.archivo_url && (
-            <p className="text-green-600 text-sm">Archivo subido correctamente</p>
+            <p className="text-green-600 text-sm mt-1">
+              Archivo subido correctamente
+            </p>
           )}
-        </div>
+        </Field>
 
         {/* Video */}
-        <div>
-          <label>Video URL (YouTube)</label>
+        <Field label="Video URL (YouTube)">
           <input
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             value={form.video_url}
             onChange={(e) => update("video_url", e.target.value)}
           />
-        </div>
+        </Field>
 
         {/* Imagen */}
-        <div>
-          <label>Imagen del plugin</label>
+        <Field label="Imagen del plugin">
           <input
             type="file"
             accept="image/*"
-            className="w-full p-2 rounded border dark:bg-gray-900"
+            className="input-premium"
             onChange={subirImagen}
           />
           {form.imagen_url && (
-            <p className="text-green-600 text-sm">Imagen subida correctamente</p>
+            <p className="text-green-600 text-sm mt-1">
+              Imagen subida correctamente
+            </p>
           )}
-        </div>
+        </Field>
 
+        {/* Botón Guardar */}
         <button
           onClick={guardar}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 shadow text-lg font-semibold"
         >
           Guardar Plugin
         </button>
@@ -218,6 +1053,23 @@ export default function NuevoPluginPage() {
     </div>
   );
 }
+
+/* ============================
+   COMPONENTE PREMIUM FIELD
+============================ */
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      <label className="font-semibold">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+/* ============================
+   ESTILOS PREMIUM INPUT
+============================ */
+/* Usar Tailwind con clases reutilizables */
 
 
 ============================================================
@@ -241,8 +1093,6 @@ export default function AdminPluginsPage() {
       // Obtener plugins
       const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
       const d1 = await r1.json();
-
-      // 🔥 FIX: ahora la API SIEMPRE devuelve { plugins: [...] }
       setPlugins(Array.isArray(d1.plugins) ? d1.plugins : []);
 
       // Obtener descargas por plugin
@@ -250,6 +1100,7 @@ export default function AdminPluginsPage() {
       const d2 = await r2.json();
       setDescargas(d2.descargasPorPlugin ?? {});
     }
+
     load();
   }, []);
 
@@ -271,114 +1122,194 @@ export default function AdminPluginsPage() {
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Plugins</h2>
+    <div className="space-y-6 p-4 max-w-6xl mx-auto">
 
-      <Link
-        href="/panel/admin/plugins/nuevo"
-        className="text-blue-600 flex items-center gap-2 mb-4"
-      >
-        <Package size={18} /> Nuevo plugin
-      </Link>
+      {/* TÍTULO */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold flex items-center gap-2">
+          <Package size={28} />
+          Plugins
+        </h2>
 
-      <table className="w-full border border-gray-300 dark:border-gray-700">
-        <thead>
-          <tr className="bg-gray-300 dark:bg-gray-700">
-            <th>Imagen</th>
-            <th>Nombre</th>
-            <th>Precios</th>
-            <th>Descargas</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+        <Link
+          href="/panel/admin/plugins/nuevo"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow hover:bg-blue-700"
+        >
+          <Package size={18} />
+          Nuevo plugin
+        </Link>
+      </div>
 
-        <tbody>
-          {plugins.map((p) => (
-            <tr
-              key={p.id}
-              className="border-b border-gray-300 dark:border-gray-700"
-            >
-              <td className="p-2 text-center">
-                {p.imagen_url ? (
-                  <img
-                    src={p.imagen_url}
-                    alt={p.nombre}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                ) : (
-                  <div className="w-16 h-16 bg-gray-400 rounded" />
-                )}
-              </td>
+      {/* ============================
+          MÓVIL → CARDS PREMIUM
+      ============================ */}
+      <div className="grid gap-4 md:hidden">
+        {plugins.map((p) => (
+          <div
+            key={p.id}
+            className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow p-4 space-y-3"
+          >
+            {/* Imagen */}
+            <div className="flex items-center gap-4">
+              {p.imagen_url ? (
+                <img
+                  src={p.imagen_url}
+                  alt={p.nombre}
+                  className="w-20 h-20 object-cover rounded-xl"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gray-400 rounded-xl" />
+              )}
 
-              <td className="font-semibold">{p.nombre}</td>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold">{p.nombre}</h3>
+                <p className="text-sm opacity-75">
+                  Descargas: {descargas[p.id] ?? 0}
+                </p>
+              </div>
+            </div>
 
-              {/* Mostrar precios */}
-              <td className="p-2 text-sm">
-                <div>
-                  <strong>Estándar:</strong>{" "}
-                  {p.precio > 0 ? `${p.precio} €` : "—"}
-                </div>
-                <div>
-                  <strong>Anual:</strong>{" "}
-                  {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
-                </div>
-                <div>
-                  <strong>Completa:</strong>{" "}
-                  {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
-                </div>
-              </td>
+            {/* Precios */}
+            <div className="text-sm space-y-1">
+              <p>
+                <strong>Estándar:</strong>{" "}
+                {p.precio > 0 ? `${p.precio} €` : "—"}
+              </p>
+              <p>
+                <strong>Anual:</strong>{" "}
+                {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
+              </p>
+              <p>
+                <strong>Completa:</strong>{" "}
+                {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
+              </p>
+            </div>
 
-              <td className="text-center">
-                <span className="flex items-center gap-1 justify-center">
-                  <Download size={16} />
-                  {descargas[p.id] ?? 0}
-                </span>
-              </td>
+            {/* Acciones */}
+            <div className="flex gap-4 justify-end">
+              <Link href={`/panel/admin/plugins/${p.id}`}>
+                <Eye className="text-blue-600 hover:text-blue-800" />
+              </Link>
 
-              <td className="flex gap-3 py-2 justify-center">
-                <Link href={`/panel/admin/plugins/${p.id}`}>
-                  <Eye className="text-blue-600 hover:text-blue-800" />
-                </Link>
+              <Link href={`/panel/admin/plugins/editar/${p.id}`}>
+                <Edit3 className="text-yellow-500 hover:text-yellow-600" />
+              </Link>
 
-                <Link href={`/panel/admin/plugins/editar/${p.id}`}>
-                  <Edit3 className="text-yellow-500 hover:text-yellow-600" />
-                </Link>
+              <button onClick={() => confirmarBorrar(p)}>
+                <Trash2 className="text-red-600 hover:text-red-800" />
+              </button>
+            </div>
+          </div>
+        ))}
 
-                <button onClick={() => confirmarBorrar(p)}>
-                  <Trash2 className="text-red-600 hover:text-red-800" />
-                </button>
-              </td>
-            </tr>
-          ))}
+        {!plugins.length && (
+          <p className="text-center opacity-70">No hay plugins creados.</p>
+        )}
+      </div>
 
-          {!plugins.length && (
+      {/* ============================
+          ESCRITORIO → TABLA PREMIUM
+      ============================ */}
+      <div className="hidden md:block rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow">
+        <table className="w-full">
+          <thead className="bg-gray-200 dark:bg-gray-800 text-left text-sm uppercase tracking-wide">
             <tr>
-              <td colSpan="5" className="text-center p-4 opacity-70">
-                No hay plugins creados.
-              </td>
+              <th className="p-3">Imagen</th>
+              <th className="p-3">Nombre</th>
+              <th className="p-3">Precios</th>
+              <th className="p-3 text-center">Descargas</th>
+              <th className="p-3 text-center">Acciones</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
 
-      {/* MODAL BORRADO */}
+          <tbody className="text-sm">
+            {plugins.map((p) => (
+              <tr
+                key={p.id}
+                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+              >
+                <td className="p-3 text-center">
+                  {p.imagen_url ? (
+                    <img
+                      src={p.imagen_url}
+                      alt={p.nombre}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-400 rounded" />
+                  )}
+                </td>
+
+                <td className="p-3 font-semibold">{p.nombre}</td>
+
+                <td className="p-3 space-y-1">
+                  <div>
+                    <strong>Estándar:</strong>{" "}
+                    {p.precio > 0 ? `${p.precio} €` : "—"}
+                  </div>
+                  <div>
+                    <strong>Anual:</strong>{" "}
+                    {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
+                  </div>
+                  <div>
+                    <strong>Completa:</strong>{" "}
+                    {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
+                  </div>
+                </td>
+
+                <td className="p-3 text-center font-semibold">
+                  {descargas[p.id] ?? 0}
+                </td>
+
+                <td className="p-3">
+                  <div className="flex gap-4 justify-center">
+                    <Link href={`/panel/admin/plugins/${p.id}`}>
+                      <Eye className="text-blue-600 hover:text-blue-800" />
+                    </Link>
+
+                    <Link href={`/panel/admin/plugins/editar/${p.id}`}>
+                      <Edit3 className="text-yellow-500 hover:text-yellow-600" />
+                    </Link>
+
+                    <button onClick={() => confirmarBorrar(p)}>
+                      <Trash2 className="text-red-600 hover:text-red-800" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+
+            {!plugins.length && (
+              <tr>
+                <td colSpan="5" className="text-center p-4 opacity-70">
+                  No hay plugins creados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ============================
+          MODAL BORRADO PREMIUM
+      ============================ */}
       {open && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4 max-w-md">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl max-w-md w-full space-y-4 border border-gray-300 dark:border-gray-700">
             <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
-            <p>Esta acción no se puede deshacer.</p>
+            <p className="opacity-80">Esta acción no se puede deshacer.</p>
 
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded"
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400"
               >
                 Cancelar
               </button>
 
               <button
                 onClick={borrar}
-                className="px-4 py-2 bg-red-600 text-white rounded"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 shadow"
               >
                 Eliminar
               </button>
@@ -386,6 +1317,7 @@ export default function AdminPluginsPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
@@ -397,108 +1329,204 @@ export default function AdminPluginsPage() {
 
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Edit3,
+  Trash2,
+  Download,
+  ExternalLink,
+} from "lucide-react";
 
-export default function PluginDetalleAdmin() {
+export default function DetallePluginPage() {
   const { id } = useParams();
+
   const [plugin, setPlugin] = useState(null);
-  const [error, setError] = useState("");
+  const [descargas, setDescargas] = useState(0);
+  const [loading, setLoading] = useState(true);
 
+  /* ============================
+      CARGAR DATOS DEL PLUGIN
+  ============================ */
   useEffect(() => {
-    if (!id) return;
-
     async function load() {
-      const res = await fetch(`/api/plugin/${id}`, {
-        credentials: "include", // 🔥 FIX: proteger ruta admin
-      });
+      try {
+        const r1 = await fetch(`/api/admin/plugins/${id}`, {
+          credentials: "include",
+        });
+        const d1 = await r1.json();
 
-      const data = await res.json();
+        if (!r1.ok) {
+          alert(d1.error ?? "Error cargando plugin");
+          return;
+        }
 
-      if (!res.ok || data.error) {
-        setError("No se pudo cargar el plugin.");
-        setPlugin(null);
-        return;
+        setPlugin(d1);
+
+        const r2 = await fetch("/api/admin/dashboard", {
+          credentials: "include",
+        });
+        const d2 = await r2.json();
+
+        setDescargas(d2.descargasPorPlugin?.[id] ?? 0);
+      } catch (e) {
+        alert("Error conectando con el servidor.");
+      } finally {
+        setLoading(false);
       }
-
-      // 🔥 Normalizamos datos por seguridad
-      setPlugin({
-        ...data,
-        nombre: data.nombre ?? "",
-        descripcion: data.descripcion ?? "",
-        precio: Number(data.precio ?? 0),
-        precio_anual: Number(data.precio_anual ?? 0),
-        precio_completa: Number(data.precio_completa ?? 0),
-        imagen_url: data.imagen_url ?? "",
-        archivo_url: data.archivo_url ?? "",
-        video_url: data.video_url ?? "",
-        version: data.version ?? "1.0",
-      });
     }
 
     load();
   }, [id]);
 
-  if (error) return <p className="p-4 text-red-600">{error}</p>;
-  if (!plugin) return <p className="p-4">Cargando plugin…</p>;
+  if (loading) return <p className="p-4">Cargando plugin…</p>;
+  if (!plugin) return <p className="p-4">Plugin no encontrado.</p>;
 
   return (
-    <div className="space-y-6 p-4 max-w-2xl mx-auto">
+    <div className="p-4 max-w-3xl mx-auto space-y-8">
+
+      {/* VOLVER */}
       <Link
         href="/panel/admin/plugins"
-        className="flex items-center gap-2 text-blue-600"
+        className="flex items-center gap-2 text-blue-600 hover:underline"
       >
-        <ArrowLeft size={18} /> Volver
+        <ArrowLeft size={20} /> Volver
       </Link>
 
-      <h1 className="text-3xl font-bold">{plugin.nombre}</h1>
+      {/* TÍTULO PRINCIPAL */}
+      <h1 className="text-3xl font-bold flex items-center gap-3">
+        {plugin.nombre}
+      </h1>
 
-      {plugin.imagen_url ? (
-        <img
-          src={plugin.imagen_url}
-          alt={plugin.nombre}
-          className="w-64 h-64 object-cover rounded shadow"
-        />
-      ) : (
-        <div className="w-64 h-64 bg-gray-400 rounded" />
-      )}
+      {/* CARD PRINCIPAL */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 shadow p-6 space-y-6">
 
-      <p className="opacity-80">{plugin.descripcion}</p>
+        {/* IMAGEN + INFO */}
+        <div className="flex gap-6 items-start flex-col sm:flex-row">
 
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow space-y-2">
-        <p>
-          <strong>Estándar:</strong>{" "}
-          {plugin.precio > 0 ? `${plugin.precio} €` : "—"}
-        </p>
-        <p>
-          <strong>Anual:</strong>{" "}
-          {plugin.precio_anual > 0 ? `${plugin.precio_anual} €` : "—"}
-        </p>
-        <p>
-          <strong>Completa:</strong>{" "}
-          {plugin.precio_completa > 0
-            ? `${plugin.precio_completa} €`
-            : "—"}
-        </p>
+          {/* Imagen */}
+          {plugin.imagen_url ? (
+            <img
+              src={plugin.imagen_url}
+              alt={plugin.nombre}
+              className="w-40 h-40 object-cover rounded-lg shadow"
+            />
+          ) : (
+            <div className="w-40 h-40 bg-gray-400 rounded-lg" />
+          )}
+
+          <div className="space-y-3 flex-1">
+
+            {/* Descripción */}
+            <p className="opacity-80">{plugin.descripcion}</p>
+
+            {/* Descargas */}
+            <p className="flex items-center gap-2 text-sm">
+              <Download size={18} />
+              <strong>{descargas}</strong> descargas
+            </p>
+          </div>
+        </div>
+
+        {/* PRECIOS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+          <CardPrice
+            label="Estándar"
+            value={plugin.precio}
+            color="blue"
+          />
+
+          <CardPrice
+            label="Anual"
+            value={plugin.precio_anual}
+            color="green"
+          />
+
+          <CardPrice
+            label="Completa"
+            value={plugin.precio_completa}
+            color="purple"
+          />
+        </div>
+
+        {/* ARCHIVO Y VIDEO */}
+        <div className="space-y-3 border-t pt-4 dark:border-gray-700">
+
+          <div>
+            <strong>Archivo TSEP:</strong>
+            {plugin.archivo_url ? (
+              <a
+                href={plugin.archivo_url}
+                target="_blank"
+                className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
+              >
+                Descargar <ExternalLink size={14} />
+              </a>
+            ) : (
+              <span className="opacity-60">No disponible</span>
+            )}
+          </div>
+
+          <div>
+            <strong>Video (YouTube):</strong>
+            {plugin.video_url ? (
+              <a
+                href={plugin.video_url}
+                target="_blank"
+                className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
+              >
+                Ver video <ExternalLink size={14} />
+              </a>
+            ) : (
+              <span className="opacity-60">No disponible</span>
+            )}
+          </div>
+        </div>
+
+        {/* ACCIONES */}
+        <div className="flex gap-4 justify-end pt-4 border-t dark:border-gray-700">
+
+          <Link href={`/panel/admin/plugins/editar/${id}`}>
+            <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg flex items-center gap-2 shadow">
+              <Edit3 size={18} /> Editar
+            </button>
+          </Link>
+
+          <Link href={`/panel/admin/plugins/borrar/${id}`}>
+            <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 shadow">
+              <Trash2 size={18} /> Borrar
+            </button>
+          </Link>
+        </div>
+
       </div>
+    </div>
+  );
+}
 
-      <p>
-        <strong>Archivo:</strong>{" "}
-        {plugin.archivo_url ? plugin.archivo_url.split("/").pop() : "—"}
-      </p>
+/* ============================================
+   COMPONENTE CARD DE PRECIO
+=============================================== */
+function CardPrice({ label, value, color }) {
+  const colors = {
+    blue: "text-blue-600 dark:text-blue-400",
+    green: "text-green-600 dark:text-green-400",
+    purple: "text-purple-600 dark:text-purple-400",
+  };
 
-      <p>
-        <strong>Video:</strong> {plugin.video_url || "—"}
-      </p>
-
-      <p>
-        <strong>Versión:</strong> {plugin.version}
+  return (
+    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm border dark:border-gray-700">
+      <p className="font-semibold">{label}</p>
+      <p className={`text-2xl font-bold mt-1 ${colors[color]}`}>
+        {value > 0 ? `${value} €` : "—"}
       </p>
     </div>
   );
 }
+
 
 
 ============================================================
@@ -509,129 +1537,127 @@ export default function PluginDetalleAdmin() {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Users, Pencil, Trash2, Eye } from "lucide-react";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import { Users, Eye } from "lucide-react";
 
 export default function AdminUsuariosPage() {
-    const [usuarios, setUsuarios] = useState([]);
-    const [open, setOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [me, setMe] = useState(null);
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    // Obtener lista de usuarios
-    useEffect(() => {
-        async function load() {
-            const r = await fetch("/api/admin/usuarios", { credentials: "include" });
-            const d = await r.json();
-            setUsuarios(d.users ?? []);
-        }
-        load();
-    }, []);
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch("/api/admin/usuarios", {
+          credentials: "include",
+        });
 
-    // Obtener datos del admin actual
-    useEffect(() => {
-        fetch("/api/auth/me", { credentials: "include" })
-            .then((r) => r.json())
-            .then((d) => setMe(d.user ?? null));
-    }, []);
+        const d = await r.json();
 
-    return (
-        <div>
-            <h2 className="text-2xl font-bold mb-4">Usuarios</h2>
+        setUsuarios(Array.isArray(d.users) ? d.users : []);
+      } catch (e) {
+        console.error("Error cargando usuarios", e);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-            <table className="w-full border border-gray-300 dark:border-gray-700">
-                <thead>
-                    <tr className="bg-gray-200 dark:bg-gray-700">
-                        <th className="p-2">Email</th>
-                        <th className="p-2">Rol</th>
-                        <th className="p-2">Último login</th>
-                        <th className="p-2">Acciones</th>
-                    </tr>
-                </thead>
+    load();
+  }, []);
 
-                <tbody>
-                    {usuarios.map((u) => (
-                        <tr key={u.id} className="border-b dark:border-gray-700">
-                            <td className="p-2">{u.email}</td>
+  if (loading) return <p className="p-4">Cargando usuarios...</p>;
 
-                            <td className="p-2">{u.user_metadata?.role ?? "user"}</td>
+  return (
+    <div className="p-4 max-w-6xl mx-auto space-y-8">
 
-                            <td className="p-2">
-                                {u.last_sign_in_at
-                                    ? new Date(u.last_sign_in_at).toLocaleString()
-                                    : "—"}
-                            </td>
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Users size={28} /> Usuarios
+      </h1>
 
-                            <td className="flex gap-4 p-2">
+      {/* =======================
+          MÓVIL → VERSION CARDS
+      ======================= */}
+      <div className="grid gap-4 md:hidden">
+        {usuarios.map((u) => (
+          <div
+            key={u.id}
+            className="p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 shadow space-y-3"
+          >
+            <p className="font-semibold text-lg">{u.email}</p>
 
-                                <Link href={`/panel/admin/usuarios/${u.id}`}>
-                                    <Eye className="text-blue-500 hover:text-blue-700" />
-                                </Link>
+            <p className="opacity-70 text-sm">
+              Registrado:{" "}
+              {u.created_at
+                ? new Date(u.created_at).toLocaleString()
+                : "—"}
+            </p>
 
-                                {me && me.id !== u.id && (
-                                    <>
-                                        <button
-                                            onClick={async () => {
-                                                await fetch("/api/admin/usuarios/editar", {
-                                                    method: "POST",
-                                                    credentials: "include",
-                                                    headers: {
-                                                        "Content-Type": "application/json",
-                                                    },
-                                                    body: JSON.stringify({
-                                                        id: u.id,
-                                                        role:
-                                                            u.user_metadata?.role === "admin"
-                                                                ? "user"
-                                                                : "admin",
-                                                    }),
-                                                });
-                                                location.reload();
-                                            }}
-                                        >
-                                            <Pencil className="text-yellow-500 hover:text-yellow-600" />
-                                        </button>
+            <div className="flex justify-end">
+              <Link
+                href={`/panel/admin/usuarios/${u.id}`}
+                className="text-blue-600 dark:text-blue-400 flex items-center gap-1 font-semibold"
+              >
+                <Eye size={16} /> Ver detalles
+              </Link>
+            </div>
+          </div>
+        ))}
 
-                                        <button
-                                            onClick={() => {
-                                                setSelectedUser(u.id);
-                                                setOpen(true);
-                                            }}
-                                        >
-                                            <Trash2 className="text-red-600 hover:text-red-800" />
-                                        </button>
-                                    </>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
+        {!usuarios.length && (
+          <p className="text-center opacity-70">No hay usuarios registrados.</p>
+        )}
+      </div>
 
-                    {usuarios.length === 0 && (
-                        <tr>
-                            <td colSpan={4} className="p-4 text-center opacity-70">
-                                No hay usuarios.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+      {/* =======================
+          DESKTOP → TABLA PREMIUM
+      ======================= */}
+      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden shadow">
+        <table className="w-full text-left">
+          <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+            <tr>
+              <th className="p-3">Email</th>
+              <th className="p-3">Fecha registro</th>
+              <th className="p-3 text-center">Acciones</th>
+            </tr>
+          </thead>
 
-            <ConfirmDialog
-                open={open}
-                onCancel={() => setOpen(false)}
-                onConfirm={async () => {
-                    await fetch("/api/admin/usuarios/borrar", {
-                        method: "POST",
-                        credentials: "include",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id: selectedUser }),
-                    });
-                    setOpen(false);
-                    location.reload();
-                }}
-            />
-        </div>
-    );
+          <tbody className="text-sm">
+            {usuarios.map((u) => (
+              <tr
+                key={u.id}
+                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 transition"
+              >
+                <td className="p-3 font-medium">{u.email}</td>
+
+                <td className="p-3">
+                  {u.created_at
+                    ? new Date(u.created_at).toLocaleString()
+                    : "—"}
+                </td>
+
+                <td className="p-3 text-center">
+                  <Link
+                    href={`/panel/admin/usuarios/${u.id}`}
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center justify-center gap-1"
+                  >
+                    <Eye size={16} /> Ver
+                  </Link>
+                </td>
+              </tr>
+            ))}
+
+            {!usuarios.length && (
+              <tr>
+                <td colSpan="3" className="p-4 text-center opacity-70">
+                  No hay usuarios registrados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  );
 }
 
 
@@ -641,99 +1667,258 @@ export default function AdminUsuariosPage() {
 
 "use client";
 
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Trash2 } from "lucide-react";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import {
+  ArrowLeft,
+  User,
+  KeyRound,
+  CreditCard,
+  Clock,
+  Mail,
+} from "lucide-react";
 
-export default function AdminUsuarioDetallePage({ params }) {
-  // ✔ Next.js 15/16 → params es PROMESA en client components
-  const [id, setId] = useState(null);
+export default function AdminUsuarioDetallePage() {
+  const { id } = useParams();
 
+  const [user, setUser] = useState(null);
+  const [licencias, setLicencias] = useState([]);
+  const [pagos, setPagos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ===============================================================
+  // CARGAR DATOS DEL USUARIO
+  // ===============================================================
   useEffect(() => {
-    async function resolver() {
-      const resolved = await params;
-      setId(resolved.id);
-    }
-    resolver();
-  }, [params]);
-
-  const [usuario, setUsuario] = useState(null);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-
     async function load() {
-      const r = await fetch(`/api/admin/usuarios/${id}`, {
-        credentials: "include",
-      });
+      try {
+        const r = await fetch(`/api/admin/usuarios/${id}`, {
+          credentials: "include",
+        });
 
-      if (!r.ok) {
-        setUsuario(null);
-        return;
+        const d = await r.json();
+
+        if (!r.ok) {
+          alert(d.error ?? "Error cargando usuario");
+          return;
+        }
+
+        setUser(d.user ?? null);
+        setLicencias(d.licencias ?? []);
+        setPagos(d.pagos ?? []);
+
+      } catch (e) {
+        alert("Error conectando al servidor.");
+      } finally {
+        setLoading(false);
       }
-
-      const d = await r.json();
-      setUsuario(d.user ?? null);
     }
 
     load();
   }, [id]);
 
-  async function borrarUsuario() {
-    await fetch("/api/admin/usuarios/borrar", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-
-    window.location.href = "/panel/admin/usuarios";
-  }
-
-  if (!usuario) return <p className="p-4">Cargando usuario...</p>;
+  // ===============================================================
+  if (loading) return <p className="p-4">Cargando usuario…</p>;
+  if (!user) return <p className="p-4">Usuario no encontrado</p>;
+  // ===============================================================
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-5xl mx-auto space-y-12">
+
+      {/* VOLVER */}
       <Link
         href="/panel/admin/usuarios"
-        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+        className="text-blue-600 hover:underline flex items-center gap-2"
       >
-        <ArrowLeft size={18} /> Volver
+        <ArrowLeft size={20} /> Volver
       </Link>
 
-      <h2 className="text-2xl font-bold my-4">Usuario</h2>
+      {/* ================= TÍTULO ================= */}
+      <h1 className="text-3xl font-bold flex items-center gap-3">
+        <User size={32} /> Usuario #{user.id}
+      </h1>
 
-      <p>
-        <strong>Email:</strong> {usuario.email}
-      </p>
-      <p>
-        <strong>Rol:</strong> {usuario.user_metadata?.role ?? "user"}
-      </p>
-      <p>
-        <strong>Último login:</strong>{" "}
-        {usuario.last_sign_in_at
-          ? new Date(usuario.last_sign_in_at).toLocaleString()
-          : "—"}
-      </p>
-      <p>
-        <strong>Creación:</strong>{" "}
-        {new Date(usuario.created_at).toLocaleString()}
-      </p>
+      {/* ================= INFORMACIÓN DEL USUARIO ================= */}
+      <section className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 p-6 rounded-xl shadow space-y-4">
 
-      <button
-        onClick={() => setOpen(true)}
-        className="btn-danger flex items-center gap-2 w-full justify-center mt-6"
-      >
-        <Trash2 size={18} /> Borrar usuario
-      </button>
+        <h2 className="text-xl font-semibold mb-3">Información del usuario</h2>
 
-      <ConfirmDialog
-        open={open}
-        onCancel={() => setOpen(false)}
-        onConfirm={borrarUsuario}
-      />
+        <div className="space-y-2 text-sm">
+          <p className="flex items-center gap-2">
+            <Mail size={18} className="opacity-70" />
+            <strong>Email:</strong> {user.email}
+          </p>
+
+          <p className="flex items-center gap-2">
+            <Clock size={18} className="opacity-70" />
+            <strong>Registrado:</strong>{" "}
+            {user.created_at
+              ? new Date(user.created_at).toLocaleString()
+              : "—"}
+          </p>
+        </div>
+      </section>
+
+      {/* ================= LICENCIAS ================= */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <KeyRound size={24} /> Licencias
+        </h2>
+
+        {/* MÓVIL → CARDS */}
+        <div className="grid md:hidden gap-4">
+          {licencias.length === 0 && (
+            <p className="opacity-70">No tiene licencias registradas.</p>
+          )}
+
+          {licencias.map((l) => (
+            <div
+              key={l.id}
+              className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
+            >
+              <p className="font-semibold text-lg">Licencia #{l.id}</p>
+
+              <p className="text-sm opacity-80">
+                Plugin: {l.plugins?.nombre ?? l.plugin_id}
+              </p>
+
+              <p className="text-sm">Email Tekla: {l.email_tekla}</p>
+
+              <p className="text-sm">
+                Estado: <strong>{l.estado}</strong>
+              </p>
+
+              <p className="text-sm">
+                Activaciones:{" "}
+                {l.activaciones_usadas}/{l.max_activaciones}
+              </p>
+
+              <p className="text-sm opacity-70">
+                Creada: {new Date(l.fecha_creacion).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* DESKTOP → TABLA */}
+        <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">
+              <tr>
+                <th className="p-3">ID</th>
+                <th className="p-3">Plugin</th>
+                <th className="p-3">Email Tekla</th>
+                <th className="p-3">Estado</th>
+                <th className="p-3">Activaciones</th>
+                <th className="p-3">Creada</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {licencias.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="p-4 text-center opacity-70"
+                  >
+                    No tiene licencias registradas
+                  </td>
+                </tr>
+              )}
+
+              {licencias.map((l) => (
+                <tr
+                  key={l.id}
+                  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                >
+                  <td className="p-3">#{l.id}</td>
+                  <td className="p-3">{l.plugins?.nombre ?? l.plugin_id}</td>
+                  <td className="p-3">{l.email_tekla}</td>
+                  <td className="p-3">{l.estado}</td>
+                  <td className="p-3">
+                    {l.activaciones_usadas}/{l.max_activaciones}
+                  </td>
+                  <td className="p-3">
+                    {new Date(l.fecha_creacion).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+      {/* ================= PAGOS ================= */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <CreditCard size={24} /> Pagos
+        </h2>
+
+        {/* MÓVIL */}
+        <div className="grid md:hidden gap-4">
+          {pagos.length === 0 && (
+            <p className="opacity-70">No tiene pagos registrados.</p>
+          )}
+
+          {pagos.map((p) => (
+            <div
+              key={p.id}
+              className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
+            >
+              <p className="font-semibold text-lg">Pago #{p.id}</p>
+              <p className="text-sm">Plugin: {p.plugin_nombre ?? p.plugin_id}</p>
+              <p className="text-sm">Cantidad: {p.cantidad_licencias}</p>
+              <p className="text-sm font-bold">Total: {p.importe} €</p>
+              <p className="text-sm opacity-70">
+                Fecha: {new Date(p.fecha).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* DESKTOP */}
+        <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">
+              <tr>
+                <th className="p-3">ID</th>
+                <th className="p-3">Plugin</th>
+                <th className="p-3">Cantidad</th>
+                <th className="p-3">Total</th>
+                <th className="p-3">Fecha</th>
+              </tr>
+            </thead>
+
+            <tbody className="text-sm">
+              {pagos.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center opacity-70 p-4">
+                    No tiene pagos registrados.
+                  </td>
+                </tr>
+              )}
+
+              {pagos.map((p) => (
+                <tr
+                  key={p.id}
+                  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                >
+                  <td className="p-3">#{p.id}</td>
+                  <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
+                  <td className="p-3">{p.cantidad_licencias}</td>
+                  <td className="p-3 font-bold">{p.importe} €</td>
+                  <td className="p-3">
+                    {new Date(p.fecha).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
     </div>
   );
 }
@@ -1390,6 +2575,72 @@ export default async function PanelAuth({ children }) {
 import { useState, useEffect, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "next/navigation";
+import { ShoppingCart, Mail, Euro } from "lucide-react";
+
+/* -----------------------------------------
+   COMPONENTES PREMIUM REUTILIZABLES
+------------------------------------------ */
+
+function UserSection({ title, children }) {
+  return (
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      {title && (
+        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h3>
+      )}
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      <label className="font-semibold">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function InputPremium({ ...props }) {
+  return (
+    <input
+      {...props}
+      className="
+        w-full px-3 py-2 rounded-lg
+        bg-gray-100 dark:bg-gray-800
+        border border-gray-300 dark:border-gray-700
+        focus:ring-2 focus:ring-blue-600
+        transition
+      "
+    />
+  );
+}
+
+function ButtonPremium({ children, className = "", ...props }) {
+  return (
+    <button
+      {...props}
+      className={`
+        w-full py-3 rounded-lg text-white font-semibold 
+        shadow transition ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* -----------------------------------------
+   PÁGINA PRINCIPAL
+------------------------------------------ */
 
 export default function ComprarPage({ params }) {
   const router = useRouter();
@@ -1401,11 +2652,12 @@ export default function ComprarPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ⭐ nuevo: tipo de licencia (anual / completa)
-  const [tipo, setTipo] = useState("completa");
-
+  const [tipo, setTipo] = useState("completa"); // ⭐ tipo de licencia
   const paymentUID = useRef(uuidv4());
 
+  /* ==========================================
+        CARGA INICIAL
+  ========================================== */
   useEffect(() => {
     async function load() {
       try {
@@ -1434,6 +2686,9 @@ export default function ComprarPage({ params }) {
     setEmails((prev) => [...prev, ""]);
   }
 
+  /* ==========================================
+        ACCIÓN: COMPRAR
+  ========================================== */
   async function comprar(e) {
     e.preventDefault();
     setError("");
@@ -1459,7 +2714,7 @@ export default function ComprarPage({ params }) {
           plugin_id,
           emails_tekla: emailsLimpios,
           payment_uid: paymentUID.current,
-          tipo, // ⭐ añadido correctamente
+          tipo,
         }),
       });
 
@@ -1476,87 +2731,98 @@ export default function ComprarPage({ params }) {
     }
   }
 
-  if (loading) return <p>Cargando…</p>;
-  if (!plugin) return <p>Plugin no encontrado.</p>;
+  if (loading) return <p className="p-4">Cargando…</p>;
+  if (!plugin) return <p className="p-4">Plugin no encontrado.</p>;
 
-  // ============================================
-  // ⭐ CÁLCULO DE PRECIOS (ANUAL / COMPLETA)
-  // ============================================
+  /* ==========================================
+        CÁLCULO DE PRICING
+  ========================================== */
 
   const precioCompleta =
     plugin.precio_completa > 0 ? plugin.precio_completa : plugin.precio;
 
   const precioAnual = plugin.precio_anual > 0 ? plugin.precio_anual : 0;
 
-  const precioUnitario =
-    tipo === "anual" ? precioAnual : precioCompleta;
-
+  const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
   const total = precioUnitario * emails.length;
 
+  /* ==========================================
+        UI PREMIUM
+  ========================================== */
+
   return (
-    <div className="p-4 max-w-xl mx-auto space-y-6">
+    <div className="p-4 max-w-xl mx-auto space-y-8">
 
-      <h2 className="text-3xl font-bold">Comprar licencias</h2>
+      <h2 className="text-3xl font-bold flex items-center gap-2">
+        <ShoppingCart size={30} /> Comprar licencias
+      </h2>
 
-      <p className="text-lg">
-        Plugin: <strong>{plugin.nombre}</strong>
-      </p>
+      <UserSection>
+        <p className="text-lg">
+          Plugin: <strong>{plugin.nombre}</strong>
+        </p>
+      </UserSection>
 
-      {/* ========= Selector de tipo de licencia ========= */}
-      <div className="mt-4">
-        <label className="font-semibold">Tipo de licencia:</label>
-        <select
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
-          className="border p-2 rounded w-full dark:bg-gray-900"
-        >
-          {precioAnual > 0 && (
-            <option value="anual">Anual – {precioAnual} €</option>
-          )}
+      {/* Tipo de licencia */}
+      <UserSection title="Tipo de licencia">
+        <Field label="Selecciona tipo:">
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className="
+              w-full px-3 py-2 rounded-lg 
+              bg-gray-100 dark:bg-gray-800
+              border border-gray-300 dark:border-gray-700
+              focus:ring-2 focus:ring-blue-600
+            "
+          >
+            {precioAnual > 0 && (
+              <option value="anual">Anual – {precioAnual} €</option>
+            )}
+            {precioCompleta > 0 && (
+              <option value="completa">Completa – {precioCompleta} €</option>
+            )}
+          </select>
+        </Field>
+      </UserSection>
 
-          {precioCompleta > 0 && (
-            <option value="completa">Completa – {precioCompleta} €</option>
-          )}
-        </select>
-      </div>
-
-      {/* ========= Emails Tekla ========= */}
-      <div>
-        <h3 className="font-semibold mb-2">Emails Tekla:</h3>
-
+      {/* Emails Tekla */}
+      <UserSection title="Emails Tekla">
         {emails.map((email, i) => (
-          <input
+          <InputPremium
             key={i}
             type="email"
             value={email}
             placeholder="usuario@empresa.com"
             onChange={(e) => actualizarEmail(i, e.target.value)}
-            className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
+            className="mb-2"
           />
         ))}
 
         <button
           onClick={añadirFila}
-          className="text-blue-600 underline mb-4"
+          className="text-blue-600 underline"
         >
           Añadir otro email
         </button>
-      </div>
+      </UserSection>
 
-      {/* ========= Total ========= */}
-      <p className="text-xl font-semibold">
-        Total: {total} €
-      </p>
+      {/* Total */}
+      <UserSection title="Resumen del pago">
+        <p className="text-xl font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-200">
+          <Euro size={20} /> Total: {total} €
+        </p>
 
-      {error && <p className="text-red-600">{error}</p>}
+        {error && <p className="text-red-600">{error}</p>}
+      </UserSection>
 
-      {/* ========= Botón comprar ========= */}
-      <button
+      {/* Botón comprar */}
+      <ButtonPremium
         onClick={comprar}
-        className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
+        className="bg-blue-600 hover:bg-blue-700"
       >
         Comprar
-      </button>
+      </ButtonPremium>
     </div>
   );
 }
@@ -1571,6 +2837,10 @@ export default function ComprarPage({ params }) {
 
 import { useEffect, useState } from "react";
 import { Download, Box } from "lucide-react";
+
+/* -----------------------------------------------------
+   DESCARGAS USER — ESTILO PREMIUM
+----------------------------------------------------- */
 
 export default function DescargasUserPage() {
   const [plugins, setPlugins] = useState(null);
@@ -1597,41 +2867,90 @@ export default function DescargasUserPage() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+
+      {/* Título */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <Download size={30} /> Descargas disponibles
       </h1>
 
-      {plugins.length === 0 && (
-        <p className="text-gray-500">
-          No tienes plugins disponibles para descargar.
-        </p>
-      )}
+      {/* Contenedor premium */}
+      <UserSection>
+        {plugins.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">
+            No tienes plugins disponibles para descargar.
+          </p>
+        )}
 
-      <div className="flex flex-col gap-4">
-        {plugins.map((p) => (
-          <div
-            key={p.id}
-            className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex justify-between items-center"
-          >
-            <div className="flex items-center gap-3">
-              <Box size={26} className="text-gray-700 dark:text-gray-300" />
-              <div>
-                <p className="font-semibold text-lg">{p.nombre}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Versión: {p.version ?? "1.0"}
-                </p>
-              </div>
-            </div>
+        <div className="space-y-4">
+          {plugins.map((p) => (
+            <DownloadCard key={p.id} plugin={p} />
+          ))}
+        </div>
+      </UserSection>
 
-            <a
-              href={`/api/plugin/download?plugin_id=${p.id}`}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Download size={18} /> Descargar
-            </a>
-          </div>
-        ))}
+    </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM
+----------------------------------------------------- */
+
+/* Contenedor premium reutilizable */
+function UserSection({ children }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-xl shadow 
+        border border-gray-300 dark:border-gray-700
+        p-6 space-y-4
+      "
+    >
+      {children}
+    </div>
+  );
+}
+
+/* Tarjeta premium de descarga */
+function DownloadCard({ plugin }) {
+  return (
+    <div
+      className="
+        p-6 
+        bg-gray-100 dark:bg-gray-800 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow 
+        flex justify-between items-center
+      "
+    >
+      {/* Información plugin */}
+      <div className="flex items-center gap-4">
+        <Box size={30} className="text-gray-700 dark:text-gray-300" />
+
+        <div>
+          <p className="font-semibold text-lg">{plugin.nombre}</p>
+
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Versión: {plugin.version ?? "1.0"}
+          </p>
+        </div>
       </div>
+
+      {/* Botón descarga */}
+      <a
+        href={`/api/plugin/download?plugin_id=${plugin.id}`}
+        className="
+          bg-blue-600 text-white 
+          px-4 py-2 rounded-lg 
+          flex items-center gap-2 
+          hover:bg-blue-700
+          shadow 
+          transition
+        "
+      >
+        <Download size={18} /> Descargar
+      </a>
     </div>
   );
 }
@@ -1652,7 +2971,8 @@ import {
   Download,
   User,
   Menu,
-  X
+  X,
+  ArrowLeft
 } from "lucide-react";
 
 export default function UserLayout({ children }) {
@@ -1661,188 +2981,172 @@ export default function UserLayout({ children }) {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800">
 
-      {/* =============================
+      {/* ====================================
           BOTÓN HAMBURGUESA (MÓVIL)
-      ============================= */}
+      ==================================== */}
       <button
-        className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 p-2 rounded"
+        className="md:hidden absolute top-4 left-4 z-[999] 
+                   bg-white dark:bg-gray-700 
+                   p-2 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600"
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
       </button>
 
-      {/* =============================
+      {/* ====================================
           OVERLAY OSCURO (MÓVIL)
-      ============================= */}
+      ==================================== */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] md:hidden"
           onClick={() => setOpen(false)}
         ></div>
       )}
 
-      {/* =============================
-          SIDEBAR MÓVIL (DRAWER)
-      ============================= */}
+      {/* ====================================
+          SIDEBAR MÓVIL (DRAWER PREMIUM)
+      ==================================== */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-4 z-30 shadow-xl
-          bg-gray-100 dark:bg-gray-900
+          fixed top-0 left-0 h-full w-64 p-4 z-[999]
+          bg-white dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
+          shadow-xl rounded-r-xl
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:hidden
         `}
       >
-        {/* Cerrar menú */}
+        {/* Botón cerrar */}
         <button
-          className="absolute top-4 right-4"
+          className="absolute top-4 right-4 p-1 rounded 
+                     hover:bg-gray-200 dark:hover:bg-gray-700"
           onClick={() => setOpen(false)}
         >
           <X size={24} />
         </button>
 
-        <h2 className="text-xl font-bold mb-6">Panel Usuario</h2>
+        <h2 className="text-2xl font-bold mb-6 mt-2 text-gray-900 dark:text-gray-100">
+          Panel Usuario
+        </h2>
 
         <nav className="space-y-3 text-lg">
-
-          <Link
-            href="/panel/user"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Home size={18} />
+          <PanelLink href="/panel/user" icon={<Home size={18} />} onClick={() => setOpen(false)}>
             Inicio
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/licencias"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <KeyRound size={18} />
+          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />} onClick={() => setOpen(false)}>
             Mis licencias
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/pagos"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <CreditCard size={18} />
+          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />} onClick={() => setOpen(false)}>
             Mis pagos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/mis-datos"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <User size={18} />
+          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />} onClick={() => setOpen(false)}>
             Mis datos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/descargas"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Download size={18} />
+          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />} onClick={() => setOpen(false)}>
             Descargas
-          </Link>
+          </PanelLink>
 
-          <Link
+          <PanelLink
             href="/"
+            icon={<ArrowLeft size={18} />}
+            className="mt-4"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
           >
-            ← Volver a ombim.site
-          </Link>
-
+            Volver a ombim.site
+          </PanelLink>
         </nav>
       </aside>
 
-      {/* =============================
-          SIDEBAR DESKTOP
-      ============================= */}
+      {/* ====================================
+          SIDEBAR DESKTOP (PREMIUM)
+      ==================================== */}
       <aside
         className="
-          hidden md:block
+          hidden md:flex flex-col
           w-64 
-          bg-gray-100 dark:bg-gray-900 
-          p-4 space-y-4 
+          bg-white dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
+          shadow-xl
+          p-6 space-y-6
+          md:mt-20        /* 👈 MARGEN SUPERIOR AÑADIDO SOLO PARA ESCRITORIO */
         "
       >
-        <h2 className="text-xl font-bold mb-4">Panel Usuario</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Panel Usuario
+        </h2>
 
         <nav className="space-y-2 text-base">
 
-          <Link
-            href="/panel/user"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Home size={18} />
+          <PanelLink href="/panel/user" icon={<Home size={18} />}>
             Inicio
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/licencias"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <KeyRound size={18} />
+          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />}>
             Mis licencias
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/pagos"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <CreditCard size={18} />
+          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />}>
             Mis pagos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/mis-datos"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <User size={18} />
+          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />}>
             Mis datos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/descargas"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Download size={18} />
+          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />}>
             Descargas
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
-          >
-            ← Volver a ombim.site
-          </Link>
+          <PanelLink href="/" icon={<ArrowLeft size={18} />} className="mt-4">
+            Volver a ombim.site
+          </PanelLink>
 
         </nav>
       </aside>
 
-      {/* =============================
-          CONTENIDO PRINCIPAL
-      ============================= */}
+      {/* ====================================
+          CONTENIDO PRINCIPAL (ESTILO ADMIN)
+      ==================================== */}
       <main
         className="
           flex-1 
           p-6 
+          pt-24 md:pt-12
           overflow-y-auto 
           bg-gray-50 dark:bg-gray-800
-          md:ml-0
         "
       >
         {children}
       </main>
+
     </div>
+  );
+}
+
+/* ==========================================================
+   COMPONENTE PREMIUM PARA LINKS DEL SIDEBAR
+========================================================== */
+function PanelLink({ href, icon, children, onClick, className = "" }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`
+        flex items-center gap-3 p-2 rounded-lg
+        text-gray-800 dark:text-gray-200
+        hover:bg-gray-200 dark:hover:bg-gray-700
+        transition
+        ${className}
+      `}
+    >
+      {icon}
+      {children}
+    </Link>
   );
 }
 
@@ -1855,1478 +3159,198 @@ export default function UserLayout({ children }) {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { KeyRound, Clock, Star, Calendar, Ban, Eye } from "lucide-react";
+import { KeyRound, Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
+
+/* -----------------------------------------------------
+   LICENCIAS USER — ESTÉTICA PREMIUM TOTAL
+----------------------------------------------------- */
 
 export default function UserLicenciasPage() {
-    const [licencias, setLicencias] = useState(null);
+  const [licencias, setLicencias] = useState(null);
 
-    useEffect(() => {
-        async function load() {
-            const res = await fetch("/api/user/licencias", {
-                credentials: "include",
-            });
-            const data = await res.json();
-            setLicencias(data.licencias ?? []);
-        }
-        load();
-    }, []);
-
-    if (licencias === null) {
-        return <p>Cargando licencias...</p>;
-    }
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Mis licencias</h2>
-
-            {licencias.length === 0 && <p>Todavía no tienes licencias.</p>}
-
-            <table className="min-w-full border border-gray-300 dark:border-gray-700">
-                <thead>
-                    <tr className="bg-gray-200 dark:bg-gray-700">
-                        <th className="p-2">Plugin</th>
-                        <th className="p-2">Email Tekla</th>
-                        <th className="p-2">Tipo</th>
-                        <th className="p-2">Estado</th>
-                        <th className="p-2">Activaciones</th>
-                        <th className="p-2">Expira</th>
-                        <th className="p-2"></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {licencias.map((l) => (
-                        <tr key={l.id} className="border-b dark:border-gray-700">
-                            <td className="p-2">{l.plugin_nombre ?? l.plugin_id}</td>
-                            <td className="p-2">{l.email_tekla}</td>
-
-                            <td className="p-2">
-                                {l.tipo === "trial" && (
-                                    <span className="px-2 py-1 text-xs bg-blue-200 text-blue-800 rounded flex items-center gap-1 w-fit">
-                                        <Clock size={14} /> Trial
-                                    </span>
-                                )}
-                                {l.tipo === "anual" && (
-                                    <span className="px-2 py-1 text-xs bg-yellow-200 text-yellow-800 rounded flex items-center gap-1 w-fit">
-                                        <Calendar size={14} /> Anual
-                                    </span>
-                                )}
-                                {l.tipo === "completa" && (
-                                    <span className="px-2 py-1 text-xs bg-purple-200 text-purple-800 rounded flex items-center gap-1 w-fit">
-                                        <Star size={14} /> Completa
-                                    </span>
-                                )}
-                            </td>
-
-                            <td className="p-2">
-                                {l.estado === "activa" && (
-                                    <span className="text-green-700 font-semibold">Activa</span>
-                                )}
-                                {l.estado === "bloqueada" && (
-                                    <span className="text-red-700 font-semibold">Bloqueada</span>
-                                )}
-                                {l.estado === "trial" && (
-                                    <span className="text-blue-700 font-semibold">Trial</span>
-                                )}
-                                {l.estado === "expirada" && (
-                                    <span className="text-orange-700 font-semibold">Expirada</span>
-                                )}
-                            </td>
-
-                            <td className="p-2">
-                                {l.activaciones_usadas}/{l.max_activaciones}
-                            </td>
-
-                            <td className="p-2">
-                                {l.tipo === "anual" && l.fecha_expiracion
-                                    ? new Date(l.fecha_expiracion).toLocaleDateString()
-                                    : "—"}
-                            </td>
-
-                            <td className="p-2">
-                                <Link
-                                    href={`/panel/user/licencias/${l.id}`}
-                                    className="flex items-center gap-1 text-blue-600 hover:underline"
-                                >
-                                    <Eye size={16} /> Ver
-                                </Link>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { ArrowLeft } from "lucide-react";
-
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span className="absolute hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        {label}
-      </span>
-    </span>
-  );
-}
-
-export default function UserLicenciaDetallePage({ params }) {
-  // ✔ Next.js 15/16 → params es PROMESA en componentes cliente
-  const [id, setId] = useState(null);
-
-  useEffect(() => {
-    async function resolver() {
-      const resolved = await params;
-      setId(resolved.id);
-    }
-    resolver();
-  }, [params]);
-
-  const [licencia, setLicencia] = useState(null);
-  const [open, setOpen] = useState(false);
-  const [accion, setAccion] = useState(null);
-
-  useEffect(() => {
-    if (!id) return;
-
-    async function load() {
-      const r = await fetch(`/api/user/licencia?id=${id}`);
-      const d = await r.json();
-      setLicencia(d.licencia ?? null);
-    }
-
-    load();
-  }, [id]);
-
-  if (!licencia) return <p className="p-4">Cargando licencia...</p>;
-
-  return (
-    <div className="p-4">
-      <Link
-        href="/panel/user/licencias"
-        className="flex items-center gap-2 text-blue-600 mb-4"
-      >
-        <ArrowLeft size={18} /> Volver
-      </Link>
-
-      <h2 className="text-2xl font-bold mb-4">Licencia #{licencia.id}</h2>
-
-      <p>
-        <strong>Plugin:</strong> {licencia.plugin_nombre}
-      </p>
-      <p>
-        <strong>Email Tekla:</strong> {licencia.email_tekla}
-      </p>
-
-      <p>
-        <strong>Estado:</strong>{" "}
-        {licencia.estado === "pendiente" && (
-          <span className="text-yellow-500">Pendiente</span>
-        )}
-        {licencia.estado === "activa" && (
-          <span className="text-green-600">Activa</span>
-        )}
-        {licencia.estado === "trial" && (
-          <span className="text-blue-600">Trial</span>
-        )}
-        {licencia.estado === "bloqueada" && (
-          <span className="text-red-600">Bloqueada</span>
-        )}
-      </p>
-
-      <p>
-        <strong>Activaciones:</strong>{" "}
-        {licencia.activaciones_usadas} / {licencia.max_activaciones}
-      </p>
-
-      <p>
-        <strong>Creada:</strong>{" "}
-        {new Date(licencia.fecha_creacion).toLocaleString()}
-      </p>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\MisDatosClient.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-
-export default function MisDatosClient() {
-  const [loading, setLoading] = useState(true);
-
-  // USER (AUTH)
-  const [usuario, setUsuario] = useState(null);
-  const [userForm, setUserForm] = useState({
-    nombre: "",
-    empresa: "",
-    telefono: "",
-    pais: "",
-  });
-  const [editUser, setEditUser] = useState(false);
-
-  // FACTURACION
-  const [factForm, setFactForm] = useState({
-    nombre: "",
-    nif: "",
-    direccion: "",
-    ciudad: "",
-    cp: "",
-    pais: "",
-    telefono: "",
-  });
-  const [editFact, setEditFact] = useState(false);
-
-  const [usarMismosDatos, setUsarMismosDatos] = useState(false);
-
-  // ===============================================
-  // CARGA INICIAL
-  // ===============================================
   useEffect(() => {
     async function load() {
-      try {
-        // Usuario
-        const r1 = await fetch("/api/auth/me", { cache: "no-store" });
-        const d1 = await r1.json();
-
-        if (!d1.user) {
-          setLoading(false);
-          return;
-        }
-
-        setUsuario(d1.user);
-
-        setUserForm({
-          nombre: d1.user.user_metadata?.nombre ?? "",
-          empresa: d1.user.user_metadata?.empresa ?? "",
-          telefono: d1.user.user_metadata?.telefono ?? "",
-          pais: d1.user.user_metadata?.pais ?? "",
-        });
-
-        // FACTURACIÓN
-        const r2 = await fetch("/api/user/facturacion", { cache: "no-store" });
-        const d2 = await r2.json();
-
-        setFactForm({
-          nombre: d2?.nombre ?? "",
-          nif: d2?.nif ?? "",
-          direccion: d2?.direccion ?? "",
-          ciudad: d2?.ciudad ?? "",
-          cp: d2?.cp ?? "",
-          pais: d2?.pais ?? "",
-          telefono: d2?.telefono ?? "",
-        });
-      } finally {
-        setLoading(false);
-      }
+      const res = await fetch("/api/user/licencias", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setLicencias(data.licencias ?? []);
     }
-
     load();
   }, []);
 
-  // ===============================================
-  // HANDLERS CORRECTOS
-  // ===============================================
-  const updateUserField = (key, value) =>
-    setUserForm((prev) => ({ ...prev, [key]: value }));
-
-  const updateFactField = (key, value) =>
-    setFactForm((prev) => ({ ...prev, [key]: value }));
-
-  // ===============================================
-  // GUARDAR DATOS USUARIO
-  // ===============================================
-  async function guardarUsuario() {
-    const res = await fetch("/api/user/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userForm),
-    });
-
-    if (res.ok) {
-      setEditUser(false);
-      location.reload();
-    }
+  if (licencias === null) {
+    return <p className="p-4">Cargando licencias...</p>;
   }
-
-  // ===============================================
-  // GUARDAR FACTURACION
-  // ===============================================
-  async function guardarFacturacion() {
-    const payload = { ...factForm, usarDatosUsuario: usarMismosDatos };
-
-    const res = await fetch("/api/facturacion/guardar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      setEditFact(false);
-      location.reload();
-    }
-  }
-
-  if (loading) return <p className="p-4">Cargando…</p>;
-
-  return (
-    <div className="p-4 space-y-10 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Mis datos</h1>
-
-      {/* -------------------- DATOS DE USUARIO -------------------- */}
-      <section className="p-6 rounded-lg bg-white shadow dark:bg-gray-800 space-y-4">
-        <h2 className="text-xl font-bold">Datos de usuario</h2>
-
-        <div>
-          <label className="font-semibold">Email</label>
-          <input
-            disabled
-            className="w-full p-2 border rounded bg-gray-200 dark:bg-gray-700"
-            value={usuario.email}
-          />
-        </div>
-
-        <CampoEditable
-          label="Nombre"
-          value={userForm.nombre}
-          onChange={(v) => updateUserField("nombre", v)}
-          editable={editUser}
-        />
-
-        <CampoEditable
-          label="Empresa"
-          value={userForm.empresa}
-          onChange={(v) => updateUserField("empresa", v)}
-          editable={editUser}
-        />
-
-        <CampoEditable
-          label="Teléfono"
-          value={userForm.telefono}
-          onChange={(v) => updateUserField("telefono", v)}
-          editable={editUser}
-        />
-
-        <CampoEditable
-          label="País"
-          value={userForm.pais}
-          onChange={(v) => updateUserField("pais", v)}
-          editable={editUser}
-        />
-
-        <BotonesEditarGuardar
-          editMode={editUser}
-          onEdit={() => setEditUser(true)}
-          onCancel={() => setEditUser(false)}
-          onSave={guardarUsuario}
-        />
-      </section>
-
-      {/* -------------------- FACTURACIÓN -------------------- */}
-      <section className="p-6 rounded-lg bg-white shadow dark:bg-gray-800 space-y-4">
-        <h2 className="text-xl font-bold">Datos de facturación</h2>
-
-        <CampoEditable
-          label="Nombre / Razón social"
-          value={factForm.nombre}
-          onChange={(v) => updateFactField("nombre", v)}
-          editable={editFact}
-        />
-
-        <CampoEditable
-          label="NIF / CIF"
-          value={factForm.nif}
-          onChange={(v) => updateFactField("nif", v)}
-          editable={editFact}
-        />
-
-        <CampoEditable
-          label="Dirección"
-          value={factForm.direccion}
-          onChange={(v) => updateFactField("direccion", v)}
-          editable={editFact}
-        />
-
-        <CampoEditable
-          label="Ciudad"
-          value={factForm.ciudad}
-          onChange={(v) => updateFactField("ciudad", v)}
-          editable={editFact}
-        />
-
-        <CampoEditable
-          label="Código Postal"
-          value={factForm.cp}
-          onChange={(v) => updateFactField("cp", v)}
-          editable={editFact}
-        />
-
-        <CampoEditable
-          label="País"
-          value={factForm.pais}
-          onChange={(v) => updateFactField("pais", v)}
-          editable={editFact}
-        />
-
-        <CampoEditable
-          label="Teléfono"
-          value={factForm.telefono}
-          onChange={(v) => updateFactField("telefono", v)}
-          editable={editFact}
-        />
-
-        {/* Checkbox */}
-        <div className="flex items-center mt-1">
-          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              disabled={!editFact}
-              checked={usarMismosDatos}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setUsarMismosDatos(checked);
-
-                if (checked) {
-                  setFactForm((prev) => ({
-                    ...prev,
-                    nombre: userForm.nombre || prev.nombre,
-                    pais: userForm.pais || prev.pais,
-                    telefono: userForm.telefono || prev.telefono,
-                  }));
-                }
-              }}
-              className="w-4 h-4 rounded border-gray-400 accent-blue-600"
-            />
-            Usar también los datos del usuario
-          </label>
-        </div>
-
-        <BotonesEditarGuardar
-          editMode={editFact}
-          onEdit={() => setEditFact(true)}
-          onCancel={() => setEditFact(false)}
-          onSave={guardarFacturacion}
-        />
-      </section>
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
-// AUXILIARES
-// -----------------------------------------------------------------------------
-
-function CampoEditable({ label, value, onChange, editable }) {
-  return (
-    <div>
-      <label className="font-semibold">{label}</label>
-      <input
-        disabled={!editable}
-        className="w-full p-2 border rounded dark:bg-gray-900"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
-}
-
-function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
-  if (!editMode)
-    return (
-      <button
-        onClick={onEdit}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        Editar
-      </button>
-    );
-
-  return (
-    <div className="flex gap-3">
-      <button
-        onClick={onCancel}
-        className="px-4 py-2 bg-gray-400 text-white rounded"
-      >
-        Cancelar
-      </button>
-
-      <button
-        onClick={onSave}
-        className="px-4 py-2 bg-green-600 text-white rounded"
-      >
-        Guardar
-      </button>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\page.jsx
-============================================================
-
-// /app/panel/mis-datos/page.jsx
-import MisDatosClient from "./MisDatosClient";
-
-export default function Page() {
-  return <MisDatosClient />;
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  KeyRound,
-  CreditCard,
-  Download,
-  User,
-  CheckCircle,
-  Clock,
-  Ban,
-} from "lucide-react";
-
-export default function UserDashboardPage() {
-  const [licencias, setLicencias] = useState([]);
-  const [pagos, setPagos] = useState([]);
-  const [plugins, setPlugins] = useState([]);
-  const [userEmail, setUserEmail] = useState("");
-
-  useEffect(() => {
-    async function load() {
-      const r1 = await fetch("/api/user/licencias");
-      setLicencias((await r1.json()).licencias || []);
-
-      const r2 = await fetch("/api/user/pagos");
-      setPagos((await r2.json()).pagos || []);
-
-      const r3 = await fetch("/api/user/plugins");
-      setPlugins((await r3.json()).plugins || []);
-
-      const me = await fetch("/api/auth/me");
-      const user = await me.json();
-      setUserEmail(user?.user?.email || "");
-    }
-    load();
-  }, []);
-
-  const activas = licencias.filter((l) => l.estado === "activa").length;
-  const trials = licencias.filter((l) => l.estado === "trial").length;
-  const bloqueadas = licencias.filter((l) => l.estado === "bloqueada").length;
-  const totalCompras = pagos.length;
-
-  return (
-    <div className="space-y-10">
-
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <User size={30} /> Bienvenido, {userEmail}
-        </h1>
-      </div>
-
-      {/* TARJETAS PRINCIPALES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        <Card title="Licencias activas" value={activas} icon={<CheckCircle className="text-green-500" />} />
-        <Card title="Trials" value={trials} icon={<Clock className="text-yellow-500" />} />
-        <Card title="Bloqueadas" value={bloqueadas} icon={<Ban className="text-red-500" />} />
-        <Card title="Total compras" value={totalCompras} icon={<CreditCard className="text-blue-500" />} />
-
-      </div>
-
-      {/* ÚLTIMAS LICENCIAS */}
-      <Section title="Últimas licencias">
-        {licencias.length === 0 && <p className="text-gray-500">No tienes licencias todavía.</p>}
-
-        {licencias.slice(0, 5).map((l) => (
-          <Row key={l.id}>
-            <div>
-              <p className="font-semibold">{l.plugin_id}</p>
-              <p className="text-sm opacity-70">Email Tekla: {l.email_tekla}</p>
-            </div>
-            <Link href={`/panel/user/licencias/${l.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-              Ver
-            </Link>
-          </Row>
-        ))}
-      </Section>
-
-      {/* ÚLTIMOS PAGOS */}
-      <Section title="Últimos pagos">
-        {pagos.length === 0 && <p className="text-gray-500">Aún no hay pagos.</p>}
-
-        {pagos.slice(0, 5).map((p) => (
-          <Row key={p.id}>
-            <div>
-              <p className="font-semibold">Pago #{p.id}</p>
-              <p className="text-sm opacity-70">Estado: {p.estado}</p>
-            </div>
-            <Link href={`/panel/user/pagos/${p.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-              Ver
-            </Link>
-          </Row>
-        ))}
-      </Section>
-
-    </div>
-  );
-}
-
-function Card({ title, value, icon }) {
-  return (
-    <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="font-bold text-lg">{title}</h2>
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">{title}</h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Row({ children }) {
-  return (
-    <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded shadow flex justify-between">
-      {children}
-    </div>
-  );
-}
-``
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { CreditCard, Eye } from "lucide-react";
-
-/* Tooltip PRO */
-function Tooltip({ label, children }) {
-  return (
-    <div className="relative group flex items-center">
-      {children}
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          pointer-events-none whitespace-nowrap
-        "
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
-
-export default function UserPagosPage() {
-  const [pagos, setPagos] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/user/pagos", {
-          credentials: "include",
-        });
-
-        const data = await res.json();
-        setPagos(data.pagos || []);
-      } catch (err) {
-        console.error("Error cargando pagos:", err);
-        setPagos([]);
-      }
-    }
-
-    load();
-  }, []);
-
-  if (pagos === null) return <p>Cargando pagos...</p>;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
 
-      {/* Título */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <CreditCard size={30} />
-        Mis Pagos
-      </h1>
+      <h2 className="text-3xl font-bold">Mis licencias</h2>
 
-      {/* No hay pagos */}
-      {pagos.length === 0 && (
-        <p className="text-gray-500">Todavía no tienes pagos registrados.</p>
-      )}
-
-      {/* Tabla */}
-      <div className="overflow-x-auto rounded shadow-sm">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700">
-              <th>ID</th>
-              <th>Plugin</th>
-              <th>Lic.</th>
-              <th>Estado</th>
-              <th>Factura</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {pagos.map((p) => (
-              <tr
-                key={p.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td>{p.id}</td>
-                <td>{p.plugin_id}</td>
-                <td>{p.cantidad_licencias}</td>
-
-                {/* Estado del pago */}
-                <td>
-                  {p.estado === "pendiente" && (
-                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold">
-                      Pendiente
-                    </span>
-                  )}
-
-                  {p.estado === "aprobado" && (
-                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold">
-                      Aprobado
-                    </span>
-                  )}
-                </td>
-
-                {/* ESTADO FACTURA */}
-                <td>
-                  {/* Ya tiene número → listo para descargar */}
-                  {p.numero_factura ? (
-                    <span className="bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded text-xs font-semibold">
-                      Lista
-                    </span>
-                  ) : p.factura_solicitada ? (
-                    <span className="bg-yellow-200 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded text-xs font-semibold">
-                      Solicitada
-                    </span>
-                  ) : (
-                    <span className="bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded text-xs font-semibold">
-                      No solicitada
-                    </span>
-                  )}
-                </td>
-
-                {/* Fecha */}
-                <td>{new Date(p.fecha).toLocaleString()}</td>
-
-                {/* Acciones */}
-                <td>
-                  <Tooltip label="Ver detalles del pago">
-                    <Link
-                      href={`/panel/user/pagos/${p.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    >
-                      <Eye size={16} /> Ver
-                    </Link>
-                  </Tooltip>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
-
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, FileDown } from "lucide-react";
-
-export default function UserPagoDetallePage() {
-  const params = useParams();
-  const id = params.id;
-
-  const [pago, setPago] = useState(null);
-  const [plugin, setPlugin] = useState(null);
-  const [licencias, setLicencias] = useState([]);
-  const [facturacion, setFacturacion] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // =======================================
-  // CARGA
-  // =======================================
-  useEffect(() => {
-    async function load() {
-      try {
-        // 1) PAGO
-        const rPago = await fetch(`/api/pagos/detalle/${id}`, {
-          credentials: "include",
-        });
-        const dPago = await rPago.json();
-
-        if (!rPago.ok) {
-          setError(dPago.error ?? "Error cargando pago");
-          setLoading(false);
-          return;
-        }
-
-        setPago(dPago); // ESTO YA ES CORRECTO gracias al endpoint corregido
-
-        // 2) Plugin
-        const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
-        setPlugin(await rPlugin.json());
-
-        // 3) Licencias vinculadas a este pago
-        const rLic = await fetch(`/api/user/licencias?pago_id=${id}`);
-        const dLic = await rLic.json();
-        setLicencias(dLic.licencias ?? []);
-
-        // 4) Facturación
-        const rFact = await fetch(`/api/user/facturacion`);
-        const dFact = await rFact.json();
-        setFacturacion(dFact ?? null);
-
-      } catch (err) {
-        setError("Error de conexión");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) load();
-  }, [id]);
-
-  if (loading) return <p className="p-4">Cargando pago…</p>;
-  if (error) return <p className="p-4 text-red-600">{error}</p>;
-  if (!pago) return <p className="p-4">Pago no encontrado.</p>;
-
-  // Valores seguros
-  const subtotal = pago.importe_base ?? 0;
-  const iva = pago.iva ?? 0;
-  const total = pago.importe ?? subtotal + iva;
-
-  // Descargar factura PDF
-  async function descargarFactura() {
-    const res = await fetch("/api/facturacion/pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pagoId: pago.id }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      alert(data.mensaje ?? "Error generando factura");
-      return;
-    }
-
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `factura-${pago.id}.pdf`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }
-
-  // Solicitar factura
-  async function solicitarFactura() {
-    const r = await fetch("/api/facturacion/solicitar", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pagoId: pago.id }),
-    });
-
-    if (!r.ok) {
-      alert("Error solicitando la factura.");
-      return;
-    }
-
-    alert("Solicitud enviada. El administrador debe asignar un número de factura.");
-  }
-
-  return (
-    <div className="p-4 max-w-3xl mx-auto space-y-6">
-
-      <Link href="/panel/user/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
-        <ArrowLeft size={18} />
-        Volver
-      </Link>
-
-      <h2 className="text-2xl font-bold">Pago #{pago.id}</h2>
-
-      {/* -------------------------------------
-          RESUMEN DEL PAGO
-      -------------------------------------- */}
-      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
-        <p><strong>Plugin:</strong> {plugin?.nombre}</p>
-
-        <p>
-          <strong>Estado:</strong>{" "}
-          {pago.estado === "pendiente" && (
-            <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">
-              Pendiente
-            </span>
-          )}
-          {pago.estado === "aprobado" && (
-            <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
-              Aprobado
-            </span>
-          )}
-        </p>
-
-        <p><strong>Tipo licencia:</strong> {pago.tipo}</p>
-        <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
-        <p>
-          <strong>Fecha:</strong>{" "}
-          {pago.fecha ? new Date(pago.fecha).toLocaleString() : "—"}
-        </p>
-
-        <div className="mt-3">
-          <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
-          <p><strong>IVA 21%:</strong> {iva.toFixed(2)} €</p>
-          <p className="text-xl font-bold">
-            Total: {total.toFixed(2)} €
-          </p>
-        </div>
-
-        {/* -------------------------------------
-            BOTÓN SOLICITAR / DESCARGAR FACTURA
-        -------------------------------------- */}
-
-        {pago.estado === "aprobado" && (
-          <>
-            {pago.numero_factura ? (
-              <button
-                onClick={descargarFactura}
-                className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                <FileDown size={18} />
-                Descargar factura en PDF
-              </button>
-            ) : (
-              <button
-                onClick={solicitarFactura}
-                className="mt-4 flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-              >
-                Solicitar factura
-              </button>
-            )}
-          </>
+      <UserSection title="Listado de licencias">
+        {licencias.length === 0 && (
+          <p className="text-gray-600 dark:text-gray-400">Todavía no tienes licencias.</p>
         )}
-      </div>
 
-      {/* -------------------------------------
-          LICENCIAS
-      -------------------------------------- */}
-      <h3 className="text-xl font-bold">Licencias</h3>
+        {licencias.length > 0 && (
+          <div className="overflow-x-auto rounded-xl shadow border border-gray-300 dark:border-gray-700">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+                <tr>
+                  <th className="p-3">Plugin</th>
+                  <th className="p-3">Email Tekla</th>
+                  <th className="p-3">Tipo</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Activaciones</th>
+                  <th className="p-3">Expira</th>
+                  <th className="p-3 text-right"></th>
+                </tr>
+              </thead>
 
-      {!licencias.length ? (
-        <p>No hay licencias asociadas.</p>
-      ) : (
-        <ul className="space-y-2">
-          {licencias.map((l) => (
-            <li key={l.id}>
-              <strong>Email Tekla:</strong> {l.email_tekla ?? "—"} —{" "}
-              <strong>Estado:</strong> {l.estado}
-            </li>
-          ))}
-        </ul>
-      )}
+              <tbody className="text-sm">
+                {licencias.map((l) => (
+                  <tr
+                    key={l.id}
+                    className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  >
+                    {/* Plugin */}
+                    <td className="p-3 font-semibold">
+                      {l.plugin_nombre ?? l.plugin_id}
+                    </td>
 
-      {/* -------------------------------------
-          FACTURACIÓN
-      -------------------------------------- */}
-      <h3 className="text-xl font-bold mt-6">Datos de facturación</h3>
+                    {/* Email */}
+                    <td className="p-3">{l.email_tekla}</td>
 
-      {!facturacion ? (
-        <p>No hay datos guardados.</p>
-      ) : (
-        <div className="space-y-1">
-          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
-          <p><strong>NIF:</strong> {facturacion.nif ?? "—"}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
-          <p><strong>País:</strong> {facturacion.pais}</p>
-        </div>
-      )}
-    </div>
-  );
-}
+                    {/* Tipo */}
+                    <td className="p-3">
+                      {l.tipo === "trial" && (
+                        <Badge color="blue" icon={<Clock size={14} />}>
+                          Trial
+                        </Badge>
+                      )}
 
+                      {l.tipo === "anual" && (
+                        <Badge color="yellow" icon={<Calendar size={14} />}>
+                          Anual
+                        </Badge>
+                      )}
 
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\perfil\page.jsx
-============================================================
+                      {l.tipo === "completa" && (
+                        <Badge color="purple" icon={<Star size={14} />}>
+                          Completa
+                        </Badge>
+                      )}
+                    </td>
 
-"use client";
+                    {/* Estado */}
+                    <td className="p-3">
+                      <EstadoBadge estado={l.estado} />
+                    </td>
 
-import { useState, useEffect } from "react";
+                    {/* Activaciones */}
+                    <td className="p-3">
+                      {l.activaciones_usadas}/{l.max_activaciones}
+                    </td>
 
-export default function PerfilUsuario() {
-  const [user, setUser] = useState(null);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState("");
+                    {/* Fecha expiración */}
+                    <td className="p-3">
+                      {l.tipo === "anual" && l.fecha_expiracion
+                        ? new Date(l.fecha_expiracion).toLocaleDateString()
+                        : "—"}
+                    </td>
 
-  useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.user) return;
-        setUser(d.user);
-        setEmail(d.user.email);
-        setName(d.user.user_metadata?.name ?? "");
-      });
-  }, []);
-
-  async function guardar() {
-    setMsg("");
-
-    const r = await fetch("/api/user/update", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        password: password || undefined,
-        name,
-      }),
-    });
-
-    const d = await r.json();
-
-    if (!r.ok) {
-      setMsg("Error: " + d.error);
-      return;
-    }
-
-    setMsg("Datos actualizados");
-  }
-
-  if (!user) return <p>Cargando…</p>;
-
-  return (
-    <div className="space-y-6 p-4">
-      <h2 className="text-2xl font-bold">Mi Perfil</h2>
-
-      <div>
-        <label>Email</label>
-        <input className="border p-2 w-full dark:bg-gray-900"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)} />
-      </div>
-
-      <div>
-        <label>Nombre</label>
-        <input className="border p-2 w-full dark:bg-gray-900"
-          value={name}
-          onChange={(e) => setName(e.target.value)} />
-      </div>
-
-      <div>
-        <label>Nueva contraseña (opcional)</label>
-        <input type="password"
-          className="border p-2 w-full dark:bg-gray-900"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)} />
-      </div>
-
-      {msg && <p className="text-green-600">{msg}</p>}
-
-      <button
-        onClick={guardar}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-        Guardar cambios
-      </button>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\plugins\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Box, Download, KeyRound } from "lucide-react";
-
-/* Tooltip PRO */
-function Tooltip({ label, children }) {
-  return (
-    <div className="relative group flex items-center">
-      {children}
-      <div
-        className="
-          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-          opacity-0 group-hover:opacity-100 transition
-          bg-black text-white text-xs py-1 px-2 rounded shadow
-          pointer-events-none whitespace-nowrap
-        "
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
-
-export default function UserPluginsPage() {
-  const [plugins, setPlugins] = useState(null);
-  const [licencias, setLicencias] = useState([]);
-
-  useEffect(() => {
-    async function load() {
-      /* Obtener plugins disponibles */
-      const rP = await fetch("/api/user/plugins", { credentials: "include" });
-      const dP = await rP.json();
-      setPlugins(dP.plugins || []);
-
-      /* Obtener licencias para contar cuántas tiene de cada plugin */
-      const rL = await fetch("/api/user/licencias");
-      const dL = await rL.json();
-      setLicencias(dL.licencias || []);
-    }
-
-    load();
-  }, []);
-
-  if (plugins === null) return <p>Cargando plugins...</p>;
-
-  /* Licencias por plugin_id */
-  const licPorPlugin = licencias.reduce((acc, l) => {
-    acc[l.plugin_id] = (acc[l.plugin_id] || 0) + 1;
-    return acc;
-  }, {});
-
-  return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-
-      {/* Título */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Box size={30} /> Mis Plugins
-      </h1>
-
-      {/* Si no hay plugins */}
-      {plugins.length === 0 && (
-        <p className="text-gray-500">Aún no tienes plugins asociados.</p>
-      )}
-
-      {/* Tarjetas */}
-      <div className="flex flex-col gap-4">
-        {plugins.map((p) => (
-          <div
-            key={p.id}
-            className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex justify-between items-center"
-          >
-            {/* Info del plugin */}
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold text-lg">{p.nombre}</p>
-              <p className="text-sm text-gray-700 dark:text-gray-400">
-                Versión: {p.version}
-              </p>
-
-              <p className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-400">
-                <KeyRound size={14} /> {licPorPlugin[p.id] || 0} licencias asociadas
-              </p>
-            </div>
-
-            {/* Botón descargar */}
-            <Tooltip label="Descargar plugin">
-              <a
-                href={p.url_descarga}
-                download
-                className="btn-primary flex items-center gap-2"
-              >
-                <Download size={18} /> Descargar
-              </a>
-            </Tooltip>
+                    {/* Acción */}
+                    <td className="p-3 text-right">
+                      <Link
+                        href={`/panel/user/licencias/${l.id}`}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        <Eye size={16} /> Ver
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
-
+        )}
+      </UserSection>
     </div>
   );
 }
 
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM (reutilizables)
+----------------------------------------------------- */
 
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
-============================================================
-
-"use client";
-
-export default function AboutSection() {
+function UserSection({ title, children }) {
   return (
-    <section className="py-20 max-w-5xl mx-auto px-6 reveal">
-      <h2 className="text-3xl font-bold mb-8 text-center">Sobre mí</h2>
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-xl shadow 
+        border border-gray-300 dark:border-gray-700
+        p-6 space-y-4
+      "
+    >
+      {title && (
+        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h3>
+      )}
 
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-        Soy Óscar Martínez, especialista en Tekla Structures con más de 23 años de experiencia
-        en modelado avanzado, fabricación, prefabricado y montaje. Durante más de dos décadas
-        trabajé en proyectos reales que me permitieron conocer cada fase del proceso constructivo:
-        desde la ingeniería, al taller y la obra.
-      </p>
-
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-        Actualmente ayudo a empresas a mejorar su productividad mediante automatizaciones,
-        plugins personalizados y flujos BIM optimizados. Mi objetivo es claro: que tus modelos
-        sean más rápidos de producir, más precisos y totalmente adaptados a tus necesidades reales.
-      </p>
-    </section>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
-============================================================
-
-"use client";
-
-import { useState } from "react";
-
-export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
-  const [tipo, setTipo] = useState(tipoActual);
-  const [loading, setLoading] = useState(false);
-
-  async function guardar() {
-    setLoading(true);
-
-    const res = await fetch("/api/admin/licencias/tipo", {
-      method: "POST",
-      credentials: "include",               // ✔ FIX CRÍTICO
-      headers: { "Content-Type": "application/json" }, // ✔ necesario para el backend
-      body: JSON.stringify({ id, tipo_id: tipo }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
-
-    onUpdated();
-  }
-
-  return (
-    <div className="mt-6">
-      <h3 className="font-bold mb-2">Tipo de licencia</h3>
-
-      <select
-        className="border p-2 w-full"
-        value={tipo}
-        onChange={(e) => setTipo(e.target.value)}
-      >
-        {tipos.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.nombre}
-          </option>
-        ))}
-      </select>
-
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
-        onClick={guardar}
-        disabled={loading}
-      >
-        Guardar tipo
-      </button>
+      {children}
     </div>
   );
 }
 
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CrearLicenciaModal.jsx
-============================================================
-
-"use client";
-
-import { useState } from "react";
-
-export default function CrearLicenciaModal({ onClose, onCreated }) {
-  const [email, setEmail] = useState("");
-  const [plugin, setPlugin] = useState("");
-  const [notas, setNotas] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function crear() {
-    setLoading(true);
-
-    const res = await fetch("/api/admin/licencias/crear", {
-      method: "POST",
-      credentials: "include",                // ✔ FIX CRÍTICO
-      headers: { "Content-Type": "application/json" }, // ✔ Necesario
-      body: JSON.stringify({
-        email_tekla: email,
-        plugin_id: plugin,
-        notas,
-      }),
-    });
-
-    const data = await res.json();
-
-    setLoading(false);
-
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
-
-    onCreated();
-    onClose();
-  }
+function Badge({ color, icon, children }) {
+  const colors = {
+    blue: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    yellow: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    purple: "bg-purple-200 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-[#f3f4f6] p-6 rounded shadow w-96">
-        <h2 className="text-xl font-bold mb-4">Crear licencia</h2>
-
-        <input
-          className="border p-2 w-full mb-2"
-          placeholder="Email Tekla"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          className="border p-2 w-full mb-2"
-          placeholder="Plugin ID"
-          value={plugin}
-          onChange={(e) => setPlugin(e.target.value)}
-        />
-
-        <textarea
-          className="border p-2 w-full mb-2"
-          placeholder="Notas"
-          value={notas}
-          onChange={(e) => setNotas(e.target.value)}
-        />
-
-        <div className="flex justify-end gap-2">
-          <button className="px-4 py-2" onClick={onClose}>
-            Cancelar
-          </button>
-
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-            onClick={crear}
-            disabled={loading}
-          >
-            {loading ? "Creando..." : "Crear"}
-          </button>
-        </div>
-      </div>
-    </div>
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded 
+        ${colors[color]}
+      `}
+    >
+      {icon} {children}
+    </span>
   );
 }
 
+/* Estado (versión premium unificada con detalle de licencia) */
+function EstadoBadge({ estado }) {
+  const styles = {
+    activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    trial: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    bloqueada: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
+    expirada: "bg-orange-200 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  };
 
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\EditarNotas.jsx
-============================================================
-
-"use client";
-
-import { useState } from "react";
-
-export default function EditarNotas({ id, notasIniciales, onUpdated }) {
-  const [notas, setNotas] = useState(notasIniciales);
-  const [loading, setLoading] = useState(false);
-
-  async function guardar() {
-    setLoading(true);
-
-    const res = await fetch("/api/admin/licencias/notas", {
-      method: "POST",
-      credentials: "include",                         // ✔ FIX CRÍTICO
-      headers: { "Content-Type": "application/json" }, // ✔ Necesario
-      body: JSON.stringify({ id, notas }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
-
-    onUpdated();
-  }
+  const icons = {
+    activa: <CheckCircle size={14} />,
+    pendiente: <Clock size={14} />,
+    trial: <Star size={14} />,
+    bloqueada: <Ban size={14} />,
+    expirada: <Calendar size={14} />,
+  };
 
   return (
-    <div className="mt-6">
-      <h3 className="font-bold mb-2">Notas</h3>
-
-      <textarea
-        className="border p-2 w-full h-32"
-        value={notas}
-        onChange={(e) => setNotas(e.target.value)}
-      />
-
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
-        onClick={guardar}
-        disabled={loading}
-      >
-        Guardar notas
-      </button>
-    </div>
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
+        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
+      `}
+    >
+      {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
+    </span>
   );
 }
 

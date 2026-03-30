@@ -3,7 +3,70 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, FileDown } from "lucide-react";
+import {
+  ArrowLeft,
+  FileDown,
+  CheckCircle,
+  Clock,
+  Ban,
+  Calendar,
+} from "lucide-react";
+
+/* Badge PREMIUM por estado */
+function BadgeEstado({ estado }) {
+  const styles = {
+    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    aprobado: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    bloqueado: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
+  };
+
+  const icons = {
+    pendiente: <Clock size={14} />,
+    aprobado: <CheckCircle size={14} />,
+    bloqueado: <Ban size={14} />,
+  };
+
+  return (
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
+        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
+      `}
+    >
+      {icons[estado]} {estado}
+    </span>
+  );
+}
+
+/* Contenedor premium */
+function UserSection({ title, children }) {
+  return (
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      {title && (
+        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h3>
+      )}
+      {children}
+    </section>
+  );
+}
+
+/* Campo premium */
+function Field({ label, children }) {
+  return (
+    <p>
+      <strong>{label}: </strong>
+      <span className="text-gray-700 dark:text-gray-300">{children}</span>
+    </p>
+  );
+}
 
 export default function UserPagoDetallePage() {
   const params = useParams();
@@ -17,9 +80,9 @@ export default function UserPagoDetallePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // =======================================
-  // CARGA
-  // =======================================
+  /* =======================================
+     CARGA
+  ======================================= */
   useEffect(() => {
     async function load() {
       try {
@@ -35,13 +98,13 @@ export default function UserPagoDetallePage() {
           return;
         }
 
-        setPago(dPago); // ESTO YA ES CORRECTO gracias al endpoint corregido
+        setPago(dPago);
 
         // 2) Plugin
         const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
         setPlugin(await rPlugin.json());
 
-        // 3) Licencias vinculadas a este pago
+        // 3) Licencias vinculadas
         const rLic = await fetch(`/api/user/licencias?pago_id=${id}`);
         const dLic = await rLic.json();
         setLicencias(dLic.licencias ?? []);
@@ -50,7 +113,6 @@ export default function UserPagoDetallePage() {
         const rFact = await fetch(`/api/user/facturacion`);
         const dFact = await rFact.json();
         setFacturacion(dFact ?? null);
-
       } catch (err) {
         setError("Error de conexión");
       } finally {
@@ -65,12 +127,12 @@ export default function UserPagoDetallePage() {
   if (error) return <p className="p-4 text-red-600">{error}</p>;
   if (!pago) return <p className="p-4">Pago no encontrado.</p>;
 
-  // Valores seguros
+  /* Valores seguros */
   const subtotal = pago.importe_base ?? 0;
   const iva = pago.iva ?? 0;
   const total = pago.importe ?? subtotal + iva;
 
-  // Descargar factura PDF
+  /* Descargar factura PDF */
   async function descargarFactura() {
     const res = await fetch("/api/facturacion/pdf", {
       method: "POST",
@@ -94,7 +156,7 @@ export default function UserPagoDetallePage() {
     window.URL.revokeObjectURL(url);
   }
 
-  // Solicitar factura
+  /* Solicitar factura */
   async function solicitarFactura() {
     const r = await fetch("/api/facturacion/solicitar", {
       method: "POST",
@@ -112,60 +174,55 @@ export default function UserPagoDetallePage() {
   }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 max-w-3xl mx-auto space-y-10">
 
-      <Link href="/panel/user/pagos" className="flex items-center gap-2 text-blue-600 hover:underline">
+      {/* Volver */}
+      <Link
+        href="/panel/user/pagos"
+        className="flex items-center gap-2 text-blue-600 hover:underline"
+      >
         <ArrowLeft size={18} />
         Volver
       </Link>
 
-      <h2 className="text-2xl font-bold">Pago #{pago.id}</h2>
+      {/* Título */}
+      <h2 className="text-3xl font-bold">Pago #{pago.id}</h2>
 
-      {/* -------------------------------------
-          RESUMEN DEL PAGO
-      -------------------------------------- */}
-      <div className="border p-4 rounded bg-gray-100 dark:bg-gray-900 space-y-2">
-        <p><strong>Plugin:</strong> {plugin?.nombre}</p>
+      {/* ==================================
+          RESUMEN PREMIUM
+      ================================== */}
+      <UserSection title="Resumen del pago">
+        <Field label="Plugin">{plugin?.nombre}</Field>
 
-        <p>
-          <strong>Estado:</strong>{" "}
-          {pago.estado === "pendiente" && (
-            <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">
-              Pendiente
-            </span>
-          )}
-          {pago.estado === "aprobado" && (
-            <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-semibold">
-              Aprobado
-            </span>
-          )}
-        </p>
+        <Field label="Estado">
+          <BadgeEstado estado={pago.estado} />
+        </Field>
 
-        <p><strong>Tipo licencia:</strong> {pago.tipo}</p>
-        <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
-        <p>
-          <strong>Fecha:</strong>{" "}
+        <Field label="Tipo licencia">{pago.tipo}</Field>
+
+        <Field label="Cantidad">{pago.cantidad_licencias}</Field>
+
+        <Field label="Fecha">
           {pago.fecha ? new Date(pago.fecha).toLocaleString() : "—"}
-        </p>
+        </Field>
 
-        <div className="mt-3">
-          <p><strong>Subtotal:</strong> {subtotal.toFixed(2)} €</p>
-          <p><strong>IVA 21%:</strong> {iva.toFixed(2)} €</p>
-          <p className="text-xl font-bold">
-            Total: {total.toFixed(2)} €
-          </p>
+        <div className="pt-4 space-y-1">
+          <Field label="Subtotal">{subtotal.toFixed(2)} €</Field>
+          <Field label="IVA 21%">{iva.toFixed(2)} €</Field>
+          <p className="text-xl font-bold">Total: {total.toFixed(2)} €</p>
         </div>
 
-        {/* -------------------------------------
-            BOTÓN SOLICITAR / DESCARGAR FACTURA
-        -------------------------------------- */}
-
+        {/* Factura: solicitar / descargar */}
         {pago.estado === "aprobado" && (
           <>
             {pago.numero_factura ? (
               <button
                 onClick={descargarFactura}
-                className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="
+                  mt-4 flex items-center gap-2 
+                  bg-blue-600 hover:bg-blue-700
+                  text-white px-4 py-2 rounded-lg shadow
+                "
               >
                 <FileDown size={18} />
                 Descargar factura en PDF
@@ -173,49 +230,62 @@ export default function UserPagoDetallePage() {
             ) : (
               <button
                 onClick={solicitarFactura}
-                className="mt-4 flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+                className="
+                  mt-4 flex items-center gap-2 
+                  bg-yellow-600 hover:bg-yellow-700
+                  text-white px-4 py-2 rounded-lg shadow
+                "
               >
                 Solicitar factura
               </button>
             )}
           </>
         )}
-      </div>
+      </UserSection>
 
-      {/* -------------------------------------
-          LICENCIAS
-      -------------------------------------- */}
-      <h3 className="text-xl font-bold">Licencias</h3>
+      {/* ==================================
+          LICENCIAS VINCULADAS
+      ================================== */}
+      <UserSection title="Licencias vinculadas">
+        {!licencias.length ? (
+          <p>No hay licencias asociadas.</p>
+        ) : (
+          <ul className="space-y-2">
+            {licencias.map((l) => (
+              <li
+                key={l.id}
+                className="
+                  p-3 rounded-lg 
+                  bg-gray-100 dark:bg-gray-800 
+                  border border-gray-300 dark:border-gray-700
+                "
+              >
+                <strong>Email Tekla: </strong>
+                {l.email_tekla ?? "—"} —{" "}
+                <strong>Estado: </strong>
+                {l.estado}
+              </li>
+            ))}
+          </ul>
+        )}
+      </UserSection>
 
-      {!licencias.length ? (
-        <p>No hay licencias asociadas.</p>
-      ) : (
-        <ul className="space-y-2">
-          {licencias.map((l) => (
-            <li key={l.id}>
-              <strong>Email Tekla:</strong> {l.email_tekla ?? "—"} —{" "}
-              <strong>Estado:</strong> {l.estado}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* -------------------------------------
+      {/* ==================================
           FACTURACIÓN
-      -------------------------------------- */}
-      <h3 className="text-xl font-bold mt-6">Datos de facturación</h3>
-
-      {!facturacion ? (
-        <p>No hay datos guardados.</p>
-      ) : (
-        <div className="space-y-1">
-          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
-          <p><strong>NIF:</strong> {facturacion.nif ?? "—"}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
-          <p><strong>País:</strong> {facturacion.pais}</p>
-        </div>
-      )}
+      ================================== */}
+      <UserSection title="Datos de facturación">
+        {!facturacion ? (
+          <p>No hay datos guardados.</p>
+        ) : (
+          <div className="space-y-1">
+            <Field label="Nombre">{facturacion.nombre}</Field>
+            <Field label="NIF">{facturacion.nif ?? "—"}</Field>
+            <Field label="Dirección">{facturacion.direccion}</Field>
+            <Field label="Ciudad">{facturacion.ciudad}</Field>
+            <Field label="País">{facturacion.pais}</Field>
+          </div>
+        )}
+      </UserSection>
     </div>
   );
 }

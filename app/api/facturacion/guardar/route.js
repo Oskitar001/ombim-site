@@ -8,15 +8,37 @@ export async function POST(req) {
   const supabase = await supabaseServer();
   const body = await req.json();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userErr
+  } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
   }
 
   const { usarDatosUsuario, ...factForm } = body;
 
-  let {
+  // ✔ Sanitizado y normalización
+  let nombre = factForm?.nombre?.trim() ?? "";
+  let nif = factForm?.nif?.trim() ?? "";
+  let direccion = factForm?.direccion?.trim() ?? "";
+  let ciudad = factForm?.ciudad?.trim() ?? "";
+  let cp = factForm?.cp?.trim() ?? "";
+  let pais = factForm?.pais?.trim() ?? "";
+  let telefono = factForm?.telefono?.trim() ?? "";
+
+  const um = user.user_metadata ?? {};
+
+  // ✔ Copiar datos del usuario solo si se marca la casilla
+  if (usarDatosUsuario) {
+    nombre = um.nombre || um.empresa || nombre;
+    pais = um.pais || pais;
+    telefono = um.telefono || telefono;
+  }
+
+  const payload = {
+    user_id: user.id,
     nombre,
     nif,
     direccion,
@@ -24,35 +46,16 @@ export async function POST(req) {
     cp,
     pais,
     telefono,
-  } = factForm;
+    updated_at: new Date().toISOString()
+  };
 
-  const um = user.user_metadata ?? {};
-
-  // AUTOCOPIAR SOLO SI MARCA LA CASILLA
-  if (usarDatosUsuario) {
-    nombre = um.nombre || um.empresa || nombre;
-    pais = um.pais || pais;
-    telefono = um.telefono || telefono;
-  }
-
-  // Guardar facturación
-  const { error } = await supabase.from("facturacion").upsert(
-    {
-      user_id: user.id,
-      nombre,
-      nif,
-      direccion,
-      ciudad,
-      cp,
-      pais,
-      telefono,
-      updated_at: new Date(),
-    },
-    { onConflict: "user_id" }
-  );
+  // ✔ upsert seguro
+  const { error } = await supabase
+    .from("facturacion")
+    .upsert(payload, { onConflict: "user_id" });
 
   if (error) {
-    console.error(error);
+    console.error("Error guardando facturación:", error);
     return NextResponse.json(
       { error: "error_guardando_facturacion" },
       { status: 500 }

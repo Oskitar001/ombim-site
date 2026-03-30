@@ -2,106 +2,197 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { KeyRound, Clock, Star, Calendar, Ban, Eye } from "lucide-react";
+import { KeyRound, Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
+
+/* -----------------------------------------------------
+   LICENCIAS USER — ESTÉTICA PREMIUM TOTAL
+----------------------------------------------------- */
 
 export default function UserLicenciasPage() {
-    const [licencias, setLicencias] = useState(null);
+  const [licencias, setLicencias] = useState(null);
 
-    useEffect(() => {
-        async function load() {
-            const res = await fetch("/api/user/licencias", {
-                credentials: "include",
-            });
-            const data = await res.json();
-            setLicencias(data.licencias ?? []);
-        }
-        load();
-    }, []);
-
-    if (licencias === null) {
-        return <p>Cargando licencias...</p>;
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/user/licencias", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setLicencias(data.licencias ?? []);
     }
+    load();
+  }, []);
 
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Mis licencias</h2>
+  if (licencias === null) {
+    return <p className="p-4">Cargando licencias...</p>;
+  }
 
-            {licencias.length === 0 && <p>Todavía no tienes licencias.</p>}
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
 
-            <table className="min-w-full border border-gray-300 dark:border-gray-700">
-                <thead>
-                    <tr className="bg-gray-200 dark:bg-gray-700">
-                        <th className="p-2">Plugin</th>
-                        <th className="p-2">Email Tekla</th>
-                        <th className="p-2">Tipo</th>
-                        <th className="p-2">Estado</th>
-                        <th className="p-2">Activaciones</th>
-                        <th className="p-2">Expira</th>
-                        <th className="p-2"></th>
-                    </tr>
-                </thead>
+      <h2 className="text-3xl font-bold">Mis licencias</h2>
 
-                <tbody>
-                    {licencias.map((l) => (
-                        <tr key={l.id} className="border-b dark:border-gray-700">
-                            <td className="p-2">{l.plugin_nombre ?? l.plugin_id}</td>
-                            <td className="p-2">{l.email_tekla}</td>
+      <UserSection title="Listado de licencias">
+        {licencias.length === 0 && (
+          <p className="text-gray-600 dark:text-gray-400">Todavía no tienes licencias.</p>
+        )}
 
-                            <td className="p-2">
-                                {l.tipo === "trial" && (
-                                    <span className="px-2 py-1 text-xs bg-blue-200 text-blue-800 rounded flex items-center gap-1 w-fit">
-                                        <Clock size={14} /> Trial
-                                    </span>
-                                )}
-                                {l.tipo === "anual" && (
-                                    <span className="px-2 py-1 text-xs bg-yellow-200 text-yellow-800 rounded flex items-center gap-1 w-fit">
-                                        <Calendar size={14} /> Anual
-                                    </span>
-                                )}
-                                {l.tipo === "completa" && (
-                                    <span className="px-2 py-1 text-xs bg-purple-200 text-purple-800 rounded flex items-center gap-1 w-fit">
-                                        <Star size={14} /> Completa
-                                    </span>
-                                )}
-                            </td>
+        {licencias.length > 0 && (
+          <div className="overflow-x-auto rounded-xl shadow border border-gray-300 dark:border-gray-700">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+                <tr>
+                  <th className="p-3">Plugin</th>
+                  <th className="p-3">Email Tekla</th>
+                  <th className="p-3">Tipo</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Activaciones</th>
+                  <th className="p-3">Expira</th>
+                  <th className="p-3 text-right"></th>
+                </tr>
+              </thead>
 
-                            <td className="p-2">
-                                {l.estado === "activa" && (
-                                    <span className="text-green-700 font-semibold">Activa</span>
-                                )}
-                                {l.estado === "bloqueada" && (
-                                    <span className="text-red-700 font-semibold">Bloqueada</span>
-                                )}
-                                {l.estado === "trial" && (
-                                    <span className="text-blue-700 font-semibold">Trial</span>
-                                )}
-                                {l.estado === "expirada" && (
-                                    <span className="text-orange-700 font-semibold">Expirada</span>
-                                )}
-                            </td>
+              <tbody className="text-sm">
+                {licencias.map((l) => (
+                  <tr
+                    key={l.id}
+                    className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  >
+                    {/* Plugin */}
+                    <td className="p-3 font-semibold">
+                      {l.plugin_nombre ?? l.plugin_id}
+                    </td>
 
-                            <td className="p-2">
-                                {l.activaciones_usadas}/{l.max_activaciones}
-                            </td>
+                    {/* Email */}
+                    <td className="p-3">{l.email_tekla}</td>
 
-                            <td className="p-2">
-                                {l.tipo === "anual" && l.fecha_expiracion
-                                    ? new Date(l.fecha_expiracion).toLocaleDateString()
-                                    : "—"}
-                            </td>
+                    {/* Tipo */}
+                    <td className="p-3">
+                      {l.tipo === "trial" && (
+                        <Badge color="blue" icon={<Clock size={14} />}>
+                          Trial
+                        </Badge>
+                      )}
 
-                            <td className="p-2">
-                                <Link
-                                    href={`/panel/user/licencias/${l.id}`}
-                                    className="flex items-center gap-1 text-blue-600 hover:underline"
-                                >
-                                    <Eye size={16} /> Ver
-                                </Link>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
+                      {l.tipo === "anual" && (
+                        <Badge color="yellow" icon={<Calendar size={14} />}>
+                          Anual
+                        </Badge>
+                      )}
+
+                      {l.tipo === "completa" && (
+                        <Badge color="purple" icon={<Star size={14} />}>
+                          Completa
+                        </Badge>
+                      )}
+                    </td>
+
+                    {/* Estado */}
+                    <td className="p-3">
+                      <EstadoBadge estado={l.estado} />
+                    </td>
+
+                    {/* Activaciones */}
+                    <td className="p-3">
+                      {l.activaciones_usadas}/{l.max_activaciones}
+                    </td>
+
+                    {/* Fecha expiración */}
+                    <td className="p-3">
+                      {l.tipo === "anual" && l.fecha_expiracion
+                        ? new Date(l.fecha_expiracion).toLocaleDateString()
+                        : "—"}
+                    </td>
+
+                    {/* Acción */}
+                    <td className="p-3 text-right">
+                      <Link
+                        href={`/panel/user/licencias/${l.id}`}
+                        className="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        <Eye size={16} /> Ver
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
-        </div>
-    );
+          </div>
+        )}
+      </UserSection>
+    </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM (reutilizables)
+----------------------------------------------------- */
+
+function UserSection({ title, children }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-xl shadow 
+        border border-gray-300 dark:border-gray-700
+        p-6 space-y-4
+      "
+    >
+      {title && (
+        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h3>
+      )}
+
+      {children}
+    </div>
+  );
+}
+
+function Badge({ color, icon, children }) {
+  const colors = {
+    blue: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    yellow: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    purple: "bg-purple-200 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  };
+
+  return (
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded 
+        ${colors[color]}
+      `}
+    >
+      {icon} {children}
+    </span>
+  );
+}
+
+/* Estado (versión premium unificada con detalle de licencia) */
+function EstadoBadge({ estado }) {
+  const styles = {
+    activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    trial: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    bloqueada: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
+    expirada: "bg-orange-200 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  };
+
+  const icons = {
+    activa: <CheckCircle size={14} />,
+    pendiente: <Clock size={14} />,
+    trial: <Star size={14} />,
+    bloqueada: <Ban size={14} />,
+    expirada: <Calendar size={14} />,
+  };
+
+  return (
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
+        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
+      `}
+    >
+      {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
+    </span>
+  );
 }

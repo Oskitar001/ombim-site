@@ -8,18 +8,31 @@ export async function POST(req) {
   const supabase = await supabaseServer();
   const body = await req.json();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
   }
 
-  const { nombre, empresa, telefono, pais } = body;
+  // Sanitizar/normalizar datos
+  const nombre = body?.nombre?.trim() ?? "";
+  const empresa = body?.empresa?.trim() ?? "";
+  const telefono = body?.telefono?.trim() ?? "";
+  const pais = body?.pais?.trim() ?? "";
 
-  // SOLO actualizar user_metadata
-  await supabase.auth.updateUser({
+  // Actualizar metadata
+  const { error: updateErr } = await supabase.auth.updateUser({
     data: { nombre, empresa, telefono, pais },
   });
 
+  if (updateErr) {
+    console.error("Error actualizando user_metadata:", updateErr);
+    return NextResponse.json({ error: "error_actualizando" }, { status: 500 });
+  }
+
   return NextResponse.json({ ok: true });
 }
+``

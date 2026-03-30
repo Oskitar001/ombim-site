@@ -23,8 +23,10 @@ export async function GET() {
 
   if (error) {
     console.error("Error cargando plugins:", error);
-    return NextResponse.json([], { status: 500 });
+    // ✔ Devolver formato consistente
+    return NextResponse.json({ plugins: [] }, { status: 500 });
   }
 
+  // ✔ Asegurar siempre JSON válido
   return NextResponse.json(data ?? []);
 }

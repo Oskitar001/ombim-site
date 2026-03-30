@@ -4,7 +4,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function POST(req) {
   const { pago_id, emails_tekla } = await req.json();
 
-  if (!pago_id || !emails_tekla?.length) {
+  // ⚠ FIX: asegurar que es array antes de usar .map
+  if (!pago_id || !Array.isArray(emails_tekla) || emails_tekla.length === 0) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
@@ -19,12 +20,12 @@ export async function POST(req) {
     return Response.json({ error: "pago_no_encontrado" }, { status: 404 });
   }
 
-  // ⭐ Asegurar que el tipo es válido (anual / completa)
+  // ⭐ Asegurar tipo válido
   if (!["anual", "completa"].includes(pago.tipo)) {
     return Response.json({ error: "tipo_invalido" }, { status: 400 });
   }
 
-  // 2. Configuración según tipo
+  // 2. Configuración
   const maxActivaciones = pago.tipo === "completa" ? 5 : 1;
 
   let fechaExp = null;
@@ -41,7 +42,10 @@ export async function POST(req) {
     pago_id,
     plugin_id: pago.plugin_id,
     user_id: pago.user_id,
-    email_tekla: email,
+
+    // ⚠ FIX: normalización del email
+    email_tekla: email.trim(),
+
     tipo: pago.tipo,
     estado: "activa",
     max_activaciones: maxActivaciones,
@@ -62,7 +66,7 @@ export async function POST(req) {
     );
   }
 
-  // 4. Marcar pago como aprobado + guardar fecha_validacion
+  // 4. Marcar pago como aprobado
   await supabaseAdmin
     .from("pagos")
     .update({ estado: "aprobado", fecha_validacion: ahora })

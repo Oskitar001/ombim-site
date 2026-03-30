@@ -15,17 +15,19 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
-  // comprobar existencia
-  const { data: lic } = await supabaseAdmin
+  // ✔ Añadir control de error real del SELECT
+  const { data: lic, error: licError } = await supabaseAdmin
     .from("licencias")
     .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic) {
+  if (licError || !lic) {
+    console.error("Error buscando licencia:", licError);
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
+  // ✔ UPDATE con control de error (esto ya existía)
   const { error } = await supabaseAdmin
     .from("licencias")
     .update({ activaciones_usadas: 0 })

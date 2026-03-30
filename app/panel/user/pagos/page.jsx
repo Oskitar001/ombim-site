@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CreditCard, Eye } from "lucide-react";
 
-/* Tooltip PRO */
+/* ------------------------------
+   Tooltip PRO (no se toca)
+------------------------------ */
 function Tooltip({ label, children }) {
   return (
     <div className="relative group flex items-center">
@@ -29,10 +31,7 @@ export default function UserPagosPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/user/pagos", {
-          credentials: "include",
-        });
-
+        const res = await fetch("/api/user/pagos", { credentials: "include" });
         const data = await res.json();
         setPagos(data.pagos || []);
       } catch (err) {
@@ -40,105 +39,136 @@ export default function UserPagosPage() {
         setPagos([]);
       }
     }
-
     load();
   }, []);
 
   if (pagos === null) return <p>Cargando pagos...</p>;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto">
 
       {/* Título */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
-        <CreditCard size={30} />
-        Mis Pagos
+        <CreditCard size={30} /> Mis Pagos
       </h1>
 
-      {/* No hay pagos */}
-      {pagos.length === 0 && (
-        <p className="text-gray-500">Todavía no tienes pagos registrados.</p>
-      )}
+      {/* Contenedor premium */}
+      <UserSection>
+        {/* Sin pagos */}
+        {pagos.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">
+            Todavía no tienes pagos registrados.
+          </p>
+        )}
 
-      {/* Tabla */}
-      <div className="overflow-x-auto rounded shadow-sm">
-        <table className="min-w-full border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700">
-              <th>ID</th>
-              <th>Plugin</th>
-              <th>Lic.</th>
-              <th>Estado</th>
-              <th>Factura</th>
-              <th>Fecha</th>
-              <th></th>
-            </tr>
-          </thead>
+        {pagos.length > 0 && (
+          <div className="overflow-x-auto rounded-xl shadow border border-gray-300 dark:border-gray-700">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+                <tr>
+                  <th className="p-3">ID</th>
+                  <th className="p-3">Plugin</th>
+                  <th className="p-3">Lic.</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Factura</th>
+                  <th className="p-3">Fecha</th>
+                  <th className="p-3 text-right"></th>
+                </tr>
+              </thead>
 
-          <tbody>
-            {pagos.map((p) => (
-              <tr
-                key={p.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td>{p.id}</td>
-                <td>{p.plugin_id}</td>
-                <td>{p.cantidad_licencias}</td>
+              <tbody className="text-sm">
+                {pagos.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  >
+                    <td className="p-3 font-semibold">{p.id}</td>
+                    <td className="p-3">{p.plugin_id}</td>
+                    <td className="p-3">{p.cantidad_licencias}</td>
 
-                {/* Estado del pago */}
-                <td>
-                  {p.estado === "pendiente" && (
-                    <span className="bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded text-xs font-semibold">
-                      Pendiente
-                    </span>
-                  )}
+                    {/* Estado pago */}
+                    <td className="p-3">
+                      {p.estado === "pendiente" && (
+                        <Badge color="yellow">Pendiente</Badge>
+                      )}
+                      {p.estado === "aprobado" && (
+                        <Badge color="green">Aprobado</Badge>
+                      )}
+                    </td>
 
-                  {p.estado === "aprobado" && (
-                    <span className="bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded text-xs font-semibold">
-                      Aprobado
-                    </span>
-                  )}
-                </td>
+                    {/* Estado Factura */}
+                    <td className="p-3">
+                      {p.numero_factura ? (
+                        <Badge color="blue">Lista</Badge>
+                      ) : p.factura_solicitada ? (
+                        <Badge color="yellow">Solicitada</Badge>
+                      ) : (
+                        <Badge color="gray">No solicitada</Badge>
+                      )}
+                    </td>
 
-                {/* ESTADO FACTURA */}
-                <td>
-                  {/* Ya tiene número → listo para descargar */}
-                  {p.numero_factura ? (
-                    <span className="bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded text-xs font-semibold">
-                      Lista
-                    </span>
-                  ) : p.factura_solicitada ? (
-                    <span className="bg-yellow-200 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded text-xs font-semibold">
-                      Solicitada
-                    </span>
-                  ) : (
-                    <span className="bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded text-xs font-semibold">
-                      No solicitada
-                    </span>
-                  )}
-                </td>
+                    {/* Fecha */}
+                    <td className="p-3">
+                      {new Date(p.fecha).toLocaleString()}
+                    </td>
 
-                {/* Fecha */}
-                <td>{new Date(p.fecha).toLocaleString()}</td>
+                    {/* Acciones */}
+                    <td className="p-3 text-right">
+                      <Tooltip label="Ver detalles del pago">
+                        <Link
+                          href={`/panel/user/pagos/${p.id}`}
+                          className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          <Eye size={16} /> Ver
+                        </Link>
+                      </Tooltip>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
 
-                {/* Acciones */}
-                <td>
-                  <Tooltip label="Ver detalles del pago">
-                    <Link
-                      href={`/panel/user/pagos/${p.id}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                    >
-                      <Eye size={16} /> Ver
-                    </Link>
-                  </Tooltip>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-      </div>
-
+            </table>
+          </div>
+        )}
+      </UserSection>
     </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM REUTILIZABLES
+----------------------------------------------------- */
+
+function UserSection({ children }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-xl shadow 
+        border border-gray-300 dark:border-gray-700
+        p-6 space-y-4
+      "
+    >
+      {children}
+    </div>
+  );
+}
+
+function Badge({ children, color }) {
+  const colors = {
+    yellow:
+      "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    green:
+      "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    blue: "bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200",
+    gray: "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  };
+
+  return (
+    <span
+      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${colors[color]}`}
+    >
+      {children}
+    </span>
   );
 }

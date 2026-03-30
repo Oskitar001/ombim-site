@@ -5,7 +5,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function POST(req) {
   const { pago_id, emails } = await req.json();
 
-  if (!pago_id || !emails?.length) {
+  // ✅ FIX: asegurar que emails es array antes de usarlo
+  if (!pago_id || !Array.isArray(emails) || emails.length === 0) {
     return NextResponse.json(
       { error: "Datos incompletos" },
       { status: 400 }
@@ -14,7 +15,8 @@ export async function POST(req) {
 
   // Validación de emails
   for (const entry of emails) {
-    if (!entry.email_tekla || entry.email_tekla.trim() === "") {
+    const email = entry?.email_tekla?.trim();
+    if (!email) {
       return NextResponse.json(
         { error: "Todos los emails deben estar completos" },
         { status: 400 }
@@ -36,7 +38,7 @@ export async function POST(req) {
     );
   }
 
-  // 2️⃣ Insertar los nuevos emails (ON CONFLICT ahora funciona gracias al UNIQUE)
+  // 2️⃣ Insertar los nuevos emails
   const inserts = emails.map((e) => ({
     pago_id,
     email_tekla: e.email_tekla.trim(),
@@ -45,7 +47,7 @@ export async function POST(req) {
   const { error: insertErr } = await supabaseAdmin
     .from("pagos_emails")
     .upsert(inserts, {
-      onConflict: "pago_id,email_tekla"
+      onConflict: "pago_id,email_tekla",
     });
 
   if (insertErr) {

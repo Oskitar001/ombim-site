@@ -1,22 +1,30 @@
-// app/api/user/pagos/route.js
+// /app/api/user/pagos/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  const supabase = supabaseRoute();
+  // ✔ FIX: supabaseRoute es async
+  const supabase = await supabaseRoute();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ pagos: [] }, { status: 401 });
+    return NextResponse.json({ pagos: [] }, { status: 401 });
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("pagos")
     .select("id, plugin_id, cantidad_licencias, estado, fecha, plugins(nombre)")
     .eq("user_id", user.id)
     .order("fecha", { ascending: false });
+
+  // ✔ FIX: controlar error real
+  if (error) {
+    console.error("Error obteniendo pagos:", error);
+    return NextResponse.json({ pagos: [] });
+  }
 
   const pagos = (data ?? []).map((p) => ({
     id: p.id,
@@ -27,5 +35,5 @@ export async function GET() {
     fecha: p.fecha,
   }));
 
-  return Response.json({ pagos });
+  return NextResponse.json({ pagos });
 }

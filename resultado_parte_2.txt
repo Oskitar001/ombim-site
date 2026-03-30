@@ -287,7 +287,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar-factura\route.js
 ============================================================
 
 // /app/api/facturacion/solicitar/route.js
@@ -1833,10 +1833,8 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
 ============================================================
 
-// app/layout.jsx
 import "./globals.css";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import PanelWrapper from "../components/PanelWrapper";
 
 export const metadata = {
   title: "OMBIM",
@@ -1846,10 +1844,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" suppressHydrationWarning>
-     <body className="pt-20 bg-gray-100 dark:bg-[#1b1f24] text-gray-900 dark:text-gray-100 transition-colors">
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
+      <body className="bg-gray-100 dark:bg-[#1b1f24] text-gray-900 dark:text-gray-100 transition-colors">
+        <PanelWrapper>{children}</PanelWrapper>
       </body>
     </html>
   );
@@ -1966,32 +1962,58 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     async function load() {
-      // STATS
-      const r1 = await fetch("/api/admin/dashboard");
+      /* =====================================
+         1. STATS DASHBOARD
+      ===================================== */
+      const r1 = await fetch("/api/admin/dashboard", {
+        credentials: "include",
+      });
       const d1 = await r1.json();
-      setStats(d1 ?? {});
 
-      // ULTIMOS PAGOS
-      const r2 = await fetch("/api/admin/pagos");
+      setStats({
+        totalLicencias: d1.totalLicencias ?? 0,
+        licenciasActivas: d1.licenciasActivas ?? 0,
+        licenciasBloqueadas: d1.licenciasBloqueadas ?? 0,
+        totalPagos: d1.totalPagos ?? 0,
+        pendientes: d1.pendientes ?? 0,
+        descargasTotales: d1.descargasTotales ?? 0,
+        ingresosTotales: d1.ingresosTotales ?? 0,
+      });
+
+      /* =====================================
+         2. ULTIMOS PAGOS
+      ===================================== */
+      const r2 = await fetch("/api/admin/pagos/list", {
+        credentials: "include",
+      });
       const d2 = await r2.json();
-      setUltimosPagos((d2 ?? []).slice(0, 5));
+      setUltimosPagos(Array.isArray(d2) ? d2.slice(0, 5) : []);
 
-      // ULTIMAS LICENCIAS
+      /* =====================================
+         3. ULTIMAS LICENCIAS
+      ===================================== */
       const r3 = await fetch("/api/admin/licencias");
       const d3 = await r3.json();
-      setUltimasLicencias((d3?.licencias ?? []).slice(0, 5));
+      setUltimasLicencias(
+        Array.isArray(d3.licencias) ? d3.licencias.slice(0, 5) : []
+      );
 
-      // ULTIMOS USUARIOS
+      /* =====================================
+         4. ULTIMOS USUARIOS
+      ===================================== */
       const r4 = await fetch("/api/admin/usuarios");
       const d4 = await r4.json();
-      setUltimosUsuarios((d4?.users ?? []).slice(0, 5));
+      setUltimosUsuarios(
+        Array.isArray(d4.users) ? d4.users.slice(0, 5) : []
+      );
     }
 
     load();
   }, []);
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto">
+    <div className="space-y-10 max-w-7xl mx-auto min-h-[80vh]">
+
       {/* TITULO */}
       <h1 className="text-3xl font-bold flex items-center gap-3">
         <Activity size={32} /> Panel de Administración
@@ -2004,8 +2026,8 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TARJETAS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* TARJETAS KPI PREMIUM */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card
           title="Licencias activas"
           value={stats.licenciasActivas}
@@ -2033,51 +2055,65 @@ export default function AdminDashboardPage() {
 
       {/* ULTIMOS PAGOS */}
       <Section title="Últimos pagos">
-        {ultimosPagos.map((p) => (
-          <Row key={p.id}>
-            <div>
-              <p className="font-semibold">Pago #{p.id}</p>
-              <p className="text-sm opacity-70">
-                {p.plugin_id} — {p.estado}
-              </p>
-            </div>
-            <span>{new Date(p.fecha).toLocaleString()}</span>
-          </Row>
-        ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          {ultimosPagos.map((p) => (
+            <CardRow key={p.id}>
+              <div className="space-y-1">
+                <p className="font-semibold">Pago #{p.id}</p>
+                <p className="text-sm opacity-70">
+                  {p.plugin_id} — {p.estado}
+                </p>
+              </div>
+              <span className="text-sm text-right opacity-70">
+                {new Date(p.fecha).toLocaleString()}
+              </span>
+            </CardRow>
+          ))}
+        </div>
       </Section>
 
       {/* ULTIMAS LICENCIAS */}
       <Section title="Últimas licencias">
-        {ultimasLicencias.map((l) => (
-          <Row key={l.id}>
-            <div>
-              <p className="font-semibold">Licencia #{l.id}</p>
-              <p className="text-sm opacity-70">
-                {l.plugin_id} — {l.email_tekla}
-              </p>
-            </div>
-            <span>{new Date(l.fecha_creacion).toLocaleString()}</span>
-          </Row>
-        ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          {ultimasLicencias.map((l) => (
+            <CardRow key={l.id}>
+              <div className="space-y-1">
+                <p className="font-semibold">Licencia #{l.id}</p>
+                <p className="text-sm opacity-70">
+                  {l.plugin_id} — {l.email_tekla}
+                </p>
+              </div>
+              <span className="text-sm text-right opacity-70">
+                {new Date(l.fecha_creacion).toLocaleString()}
+              </span>
+            </CardRow>
+          ))}
+        </div>
       </Section>
 
       {/* ULTIMOS USUARIOS */}
       <Section title="Últimos usuarios">
-        {ultimosUsuarios.map((u) => (
-          <Row key={u.id}>
-            <p className="font-semibold">{u.email}</p>
-            <span>{new Date(u.created_at).toLocaleString()}</span>
-          </Row>
-        ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          {ultimosUsuarios.map((u) => (
+            <CardRow key={u.id}>
+              <p className="font-semibold">{u.email}</p>
+              <span className="text-sm text-right opacity-70">
+                {new Date(u.created_at).toLocaleString()}
+              </span>
+            </CardRow>
+          ))}
+        </div>
       </Section>
+
     </div>
   );
 }
 
-// --------- COMPONENTES REUTILIZABLES ---------
+/* ==================== COMPONENTES ==================== */
+
 function Card({ title, value, icon }) {
   return (
-    <div className="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow flex flex-col gap-3">
+    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 hover:shadow-xl transition">
       <div className="flex items-center gap-3">
         {icon}
         <h2 className="text-lg font-bold">{title}</h2>
@@ -2090,14 +2126,20 @@ function Card({ title, value, icon }) {
 function Section({ title, children }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">{title}</h2>
-      <div className="space-y-3">{children}</div>
+      <h2 className="text-2xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+        {title}
+      </h2>
+      {children}
     </div>
   );
 }
 
-function Row({ children }) {
-  return <div className="p-4 bg-gray-200 dark:bg-gray-800 rounded shadow flex justify-between">{children}</div>;
+function CardRow({ children }) {
+  return (
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 flex justify-between items-start hover:shadow-md transition">
+      {children}
+    </div>
+  );
 }
 
 
@@ -2105,7 +2147,6 @@ function Row({ children }) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
 ============================================================
 
-// app/panel/admin/layout.jsx
 "use client";
 
 import Link from "next/link";
@@ -2128,55 +2169,54 @@ export default function AdminLayout({ children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800">
 
-      {/* =============================
-          MENÚ LATERAL — DESKTOP
-      ============================= */}
-      <aside className="hidden md:block w-64 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-6 space-y-6 shadow-xl">
-        <h2 className="text-2xl font-bold mb-4">Panel Admin</h2>
+      {/* ---------- SIDEBAR ESCRITORIO PRIMERO EN EL DOM ---------- */}
+      <aside
+        className="
+          hidden md:flex
+          flex-col
+          w-64
+          bg-gray-100 dark:bg-gray-900
+          p-4 space-y-4
+          border-r border-gray-300 dark:border-gray-700
+          z-20
+        "
+      >
+        <h2 className="text-xl font-bold mb-4">Panel Admin</h2>
 
-        <nav className="flex flex-col space-y-2">
-          <Link href="/panel/admin/dashboard" className="flex items-center gap-3 hover:text-white">
-            <LayoutDashboard size={20} />
-            <span>Dashboard</span>
+        <nav className="space-y-2 text-base">
+          <Link href="/panel/admin/dashboard" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <LayoutDashboard size={18} /> Dashboard
           </Link>
 
-          <Link href="/panel/admin/licencias" className="flex items-center gap-3 hover:text-white">
-            <Ticket size={20} />
-            <span>Licencias</span>
+          <Link href="/panel/admin/licencias" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Ticket size={18} /> Licencias
           </Link>
 
-          <Link href="/panel/admin/pagos" className="flex items-center gap-3 hover:text-white">
-            <CreditCard size={20} />
-            <span>Pagos</span>
+          <Link href="/panel/admin/pagos" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <CreditCard size={18} /> Pagos
           </Link>
 
-          <Link href="/panel/admin/plugins" className="flex items-center gap-3 hover:text-white">
-            <Package size={20} />
-            <span>Plugins</span>
+          <Link href="/panel/admin/plugins" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Package size={18} /> Plugins
           </Link>
 
-          <Link href="/panel/admin/logs" className="flex items-center gap-3 hover:text-white">
-            <Scroll size={20} />
-            <span>Logs</span>
+          <Link href="/panel/admin/logs" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Scroll size={18} /> Logs
           </Link>
 
-          <Link href="/panel/admin/usuarios" className="flex items-center gap-3 hover:text-white">
-            <Users size={20} />
-            <span>Usuarios</span>
+          <Link href="/panel/admin/usuarios" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Users size={18} /> Usuarios
           </Link>
 
-          <Link href="/" className="flex items-center gap-3 hover:text-white mt-4">
-            <ArrowLeft size={20} />
-            <span>Volver</span>
+          <Link href="/" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
+            <ArrowLeft size={18} /> Volver
           </Link>
         </nav>
       </aside>
 
-      {/* =============================
-          MENÚ HAMBURGUESA — MÓVIL
-      ============================= */}
+      {/* ---------- BOTON HAMBURGUESA (MÓVIL) ---------- */}
       <button
         className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 p-2 rounded"
         onClick={() => setOpen(true)}
@@ -2184,7 +2224,7 @@ export default function AdminLayout({ children }) {
         <Menu size={24} />
       </button>
 
-      {/* Overlay oscuro */}
+      {/* ---------- OVERLAY (MÓVIL) ---------- */}
       {open && (
         <div
           className="fixed inset-0 bg-black/50 z-20 md:hidden"
@@ -2192,66 +2232,58 @@ export default function AdminLayout({ children }) {
         ></div>
       )}
 
-      {/* Drawer */}
+      {/* ---------- SIDEBAR MÓVIL ---------- */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-6 z-30 shadow-xl
-          bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200
+          fixed top-0 left-0 h-full w-64 p-4 z-30 shadow-xl
+          bg-gray-100 dark:bg-gray-900
+          border-r border-gray-300 dark:border-gray-700
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:hidden
         `}
       >
-        {/* Cerrar */}
-        <button
-          className="absolute top-4 right-4"
-          onClick={() => setOpen(false)}
-        >
+        <button className="absolute top-4 right-4" onClick={() => setOpen(false)}>
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6">Panel Admin</h2>
+        <h2 className="text-xl font-bold mb-6">Panel Admin</h2>
 
-        <nav className="flex flex-col space-y-3 text-lg">
-          <Link href="/panel/admin/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
-            <LayoutDashboard size={20} />
-            <span>Dashboard</span>
+        <nav className="space-y-3 text-lg">
+          <Link href="/panel/admin/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <LayoutDashboard size={18} /> Dashboard
           </Link>
 
-          <Link href="/panel/admin/licencias" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
-            <Ticket size={20} />
-            <span>Licencias</span>
+          <Link href="/panel/admin/licencias" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Ticket size={18} /> Licencias
           </Link>
 
-          <Link href="/panel/admin/pagos" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
-            <CreditCard size={20} />
-            <span>Pagos</span>
+          <Link href="/panel/admin/pagos" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <CreditCard size={18} /> Pagos
           </Link>
 
-          <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
-            <Package size={20} />
-            <span>Plugins</span>
+          <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Package size={18} /> Plugins
           </Link>
 
-          <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
-            <Scroll size={20} />
-            <span>Logs</span>
+          <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Scroll size={18} /> Logs
           </Link>
 
-          <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white">
-            <Users size={20} />
-            <span>Usuarios</span>
+          <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Users size={18} /> Usuarios
           </Link>
 
-          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 hover:text-white mt-4">
-            <ArrowLeft size={20} />
-            <span>Volver</span>
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
+            <ArrowLeft size={18} /> Volver
           </Link>
         </nav>
       </aside>
 
-      {/* CONTENIDO */}
-      <main className="flex-1 p-10 md:ml-0">{children}</main>
+      {/* ---------- CONTENIDO PRINCIPAL ---------- */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }
@@ -2265,67 +2297,158 @@ export default function AdminLayout({ children }) {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Ticket, Eye } from "lucide-react";
+import { Ticket, Eye, Calendar, KeyRound, Ban, CheckCircle } from "lucide-react";
 
 export default function AdminLicenciasPage() {
-    const [licencias, setLicencias] = useState([]);
+  const [licencias, setLicencias] = useState([]);
 
-    useEffect(() => {
-        async function load() {
-            const r = await fetch("/api/admin/licencias", { credentials: "include" });
-            const d = await r.json();
-            setLicencias(d.licencias ?? []);
-        }
-        load();
-    }, []);
+  useEffect(() => {
+    async function load() {
+      const r = await fetch("/api/admin/licencias", { credentials: "include" });
+      const d = await r.json();
+      setLicencias(d.licencias ?? []);
+    }
+    load();
+  }, []);
 
-    return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Ticket size={28} /> Licencias
-            </h1>
+  return (
+    <div className="space-y-6">
 
-            <div className="overflow-x-auto shadow rounded">
-                <table className="min-w-full border border-gray-300 dark:border-gray-700">
-                    <thead>
-                        <tr className="bg-gray-200 dark:bg-gray-700 text-left">
-                            <th className="p-2">Email</th>
-                            <th className="p-2">Plugin</th>
-                            <th className="p-2">Tipo</th>
-                            <th className="p-2">Estado</th>
-                            <th className="p-2">Activaciones</th>
-                            <th className="p-2">Expira</th>
-                            <th className="p-2"></th>
-                        </tr>
-                    </thead>
+      {/* TITULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Ticket size={28} /> Licencias
+      </h1>
 
-                    <tbody>
-                        {licencias.map((l) => (
-                            <tr key={l.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                                <td className="p-2">{l.email_tekla}</td>
-                                <td className="p-2">{l.plugins?.nombre ?? l.plugin_id}</td>
-                                <td className="p-2">{l.tipo}</td>
-                                <td className="p-2">{l.estado}</td>
-                                <td className="p-2">{l.activaciones_usadas}/{l.max_activaciones}</td>
-                                <td className="p-2">
-                                  {l.fecha_expiracion
-                                    ? new Date(l.fecha_expiracion).toLocaleDateString()
-                                    : "—"}
-                                </td>
-                                <td className="p-2">
-                                    <Link 
-                                      href={`/panel/admin/licencias/${l.id}`}
-                                      className="text-blue-600 flex items-center gap-1">
-                                        <Eye size={16} /> Ver
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+      {/* MOBILE VERSION → CARDS */}
+      <div className="grid gap-4 md:hidden">
+        {licencias.map((l) => (
+          <div
+            key={l.id}
+            className="p-4 rounded-xl shadow border border-gray-200 dark:border-gray-700 
+                       bg-white dark:bg-gray-900 space-y-3"
+          >
+            <div className="flex justify-between items-center">
+              <p className="text-lg font-semibold">{l.email_tekla}</p>
+              <Link
+                href={`/panel/admin/licencias/${l.id}`}
+                className="text-blue-600 flex items-center gap-1"
+              >
+                <Eye size={16} /> Ver
+              </Link>
             </div>
-        </div>
-    );
+
+            <div className="text-sm opacity-70">
+              Plugin: {l.plugins?.nombre ?? l.plugin_id}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              Tipo:
+              <span className="font-semibold capitalize">{l.tipo}</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm">
+              Estado:
+              {l.estado === "activa" && (
+                <span className="text-green-600 flex items-center gap-1 font-semibold">
+                  <CheckCircle size={14} /> Activa
+                </span>
+              )}
+              {l.estado === "bloqueada" && (
+                <span className="text-red-600 flex items-center gap-1 font-semibold">
+                  <Ban size={14} /> Bloqueada
+                </span>
+              )}
+              {l.estado === "trial" && (
+                <span className="text-blue-600 flex items-center gap-1 font-semibold">
+                  <KeyRound size={14} /> Trial
+                </span>
+              )}
+            </div>
+
+            <div className="text-sm">
+              Activaciones:
+              <span className="font-semibold">
+                {" "}
+                {l.activaciones_usadas}/{l.max_activaciones}
+              </span>
+            </div>
+
+            <div className="text-sm flex items-center gap-1">
+              <Calendar size={14} className="opacity-60" />
+              Expira:{" "}
+              {l.fecha_expiracion
+                ? new Date(l.fecha_expiracion).toLocaleDateString()
+                : "—"}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* DESKTOP VERSION → TABLE */}
+      <div className="hidden md:block overflow-x-auto shadow rounded-xl border border-gray-300 dark:border-gray-700">
+        <table className="min-w-full">
+          <thead>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-left text-sm uppercase tracking-wide">
+              <th className="p-3">Email</th>
+              <th className="p-3">Plugin</th>
+              <th className="p-3">Tipo</th>
+              <th className="p-3">Estado</th>
+              <th className="p-3">Activaciones</th>
+              <th className="p-3">Expira</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+
+          <tbody className="text-sm">
+            {licencias.map((l) => (
+              <tr
+                key={l.id}
+                className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <td className="p-3 font-medium">{l.email_tekla}</td>
+
+                <td className="p-3">{l.plugins?.nombre ?? l.plugin_id}</td>
+
+                <td className="p-3 capitalize">{l.tipo}</td>
+
+                <td className="p-3 capitalize">
+                  {l.estado === "activa" && (
+                    <span className="text-green-600 font-semibold">Activa</span>
+                  )}
+                  {l.estado === "bloqueada" && (
+                    <span className="text-red-600 font-semibold">Bloqueada</span>
+                  )}
+                  {l.estado === "trial" && (
+                    <span className="text-blue-600 font-semibold">Trial</span>
+                  )}
+                </td>
+
+                <td className="p-3">
+                  {l.activaciones_usadas}/{l.max_activaciones}
+                </td>
+
+                <td className="p-3">
+                  {l.fecha_expiracion
+                    ? new Date(l.fecha_expiracion).toLocaleDateString()
+                    : "—"}
+                </td>
+
+                <td className="p-3">
+                  <Link
+                    href={`/panel/admin/licencias/${l.id}`}
+                    className="text-blue-600 flex items-center gap-1 font-medium"
+                  >
+                    <Eye size={16} /> Ver
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  );
 }
 
 
@@ -2338,176 +2461,241 @@ export default function AdminLicenciasPage() {
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-    ArrowLeft,
-    KeyRound,
-    CheckCircle,
-    Ban,
-    RefreshCw,
-    Calendar,
-    Star
+  ArrowLeft,
+  KeyRound,
+  CheckCircle,
+  Ban,
+  RefreshCw,
+  Calendar,
+  Star,
 } from "lucide-react";
 
 export default function AdminLicenciaDetallePage({ params }) {
-    // Next.js 16 fix (params es Promise)
-    const { id } = use(params);
+  // Next.js 16 fix (params es una Promise)
+  const { id } = use(params);
 
-    const [licencia, setLicencia] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [licencia, setLicencia] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!id) return;
+  useEffect(() => {
+    if (!id) return;
 
-        async function load() {
-            const r = await fetch(`/api/admin/licencias/${id}`, {
-                credentials: "include",
-            });
-            const d = await r.json();
-            setLicencia(d.licencia ?? null);
-            setLoading(false);
-        }
-        load();
-    }, [id]);
+    async function load() {
+      const r = await fetch(`/api/admin/licencias/${id}`, {
+        credentials: "include",
+      });
 
-    if (!id) return <p>ID inválido</p>;
-    if (loading) return <p>Cargando licencia…</p>;
-    if (!licencia) return <p>Licencia no encontrada</p>;
-
-    async function accion(endpoint) {
-        await fetch(`/api/admin/licencias/${endpoint}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: licencia.id }),
-        });
-        location.reload();
+      const d = await r.json();
+      setLicencia(d.licencia ?? null);
+      setLoading(false);
     }
+    load();
+  }, [id]);
 
-    return (
-        <div className="space-y-6 p-4">
-            <Link
-                href="/panel/admin/licencias"
-                className="text-blue-600 hover:underline flex items-center gap-1"
-            >
-                <ArrowLeft size={20} /> Volver
-            </Link>
+  if (!id) return <p>ID inválido</p>;
+  if (loading) return <p>Cargando licencia…</p>;
+  if (!licencia) return <p>Licencia no encontrada</p>;
 
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-                <KeyRound size={28} /> Licencia #{licencia.id}
-            </h1>
+  async function accion(endpoint) {
+    await fetch(`/api/admin/licencias/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: licencia.id }),
+    });
 
-            {/* DATOS DE LA LICENCIA */}
-            <div className="p-6 rounded-lg bg-gray-200 dark:bg-gray-800 shadow space-y-3">
-                <p>
-                    <strong>Plugin:</strong> {licencia.plugins?.nombre ?? licencia.plugin_id}
-                </p>
+    location.reload();
+  }
 
-                <p>
-                    <strong>Email Tekla:</strong> {licencia.email_tekla}
-                </p>
+  return (
+    <div className="space-y-8 max-w-3xl mx-auto p-4">
 
-                <p>
-                    <strong>Tipo:</strong>{" "}
-                    {licencia.tipo === "anual" && (
-                        <span className="px-2 py-1 bg-yellow-200 text-yellow-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            <Calendar size={14} /> Anual
-                        </span>
-                    )}
-                    {licencia.tipo === "completa" && (
-                        <span className="px-2 py-1 bg-purple-200 text-purple-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            <Star size={14} /> Completa
-                        </span>
-                    )}
-                    {licencia.tipo === "trial" && (
-                        <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            Trial
-                        </span>
-                    )}
-                </p>
+      {/* VOLVER */}
+      <Link
+        href="/panel/admin/licencias"
+        className="text-blue-600 hover:underline flex items-center gap-1"
+      >
+        <ArrowLeft size={20} /> Volver
+      </Link>
 
-                <p>
-                    <strong>Estado:</strong>{" "}
-                    {licencia.estado === "activa" && (
-                        <span className="px-2 py-1 bg-green-200 text-green-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            <CheckCircle size={14} /> Activa
-                        </span>
-                    )}
-                    {licencia.estado === "bloqueada" && (
-                        <span className="px-2 py-1 bg-red-200 text-red-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            <Ban size={14} /> Bloqueada
-                        </span>
-                    )}
-                    {licencia.estado === "trial" && (
-                        <span className="px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            Trial
-                        </span>
-                    )}
-                    {licencia.estado === "expirada" && (
-                        <span className="px-2 py-1 bg-orange-200 text-orange-800 rounded text-xs font-semibold inline-flex items-center gap-1">
-                            Expirada
-                        </span>
-                    )}
-                </p>
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <KeyRound size={30} /> Licencia #{licencia.id}
+      </h1>
 
-                <p>
-                    <strong>Activaciones:</strong>{" "}
-                    {licencia.activaciones_usadas}/{licencia.max_activaciones}
-                </p>
+      {/* CARD PREMIUM DATOS */}
+      <div className="
+        p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
+        bg-white dark:bg-gray-900 space-y-4
+      ">
+        <Row label="Plugin">
+          {licencia.plugins?.nombre ?? licencia.plugin_id}
+        </Row>
 
-                {/* NUEVO: Expiración solo para anual */}
-                <p>
-                    <strong>Expira:</strong>{" "}
-                    {licencia.fecha_expiracion
-                        ? new Date(licencia.fecha_expiracion).toLocaleString()
-                        : "—"}
-                </p>
+        <Row label="Email Tekla">
+          {licencia.email_tekla}
+        </Row>
 
-                <p>
-                    <strong>Creada:</strong>{" "}
-                    {new Date(licencia.fecha_creacion).toLocaleString()}
-                </p>
-            </div>
+        <Row label="Tipo">
+          <TipoBadge tipo={licencia.tipo} />
+        </Row>
 
-            {/* ACCIONES */}
-            <div className="flex flex-col gap-3 max-w-sm">
-                <button
-                    onClick={() => accion("activar")}
-                    className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"
-                >
-                    <CheckCircle size={18} /> Activar
-                </button>
+        <Row label="Estado">
+          <EstadoBadge estado={licencia.estado} />
+        </Row>
 
-                <button
-                    onClick={() => accion("bloquear")}
-                    className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2"
-                >
-                    <Ban size={18} /> Bloquear
-                </button>
+        <Row label="Activaciones">
+          {licencia.activaciones_usadas}/{licencia.max_activaciones}
+        </Row>
 
-                <button
-                    onClick={() => accion("reset-activaciones")}
-                    className="bg-purple-600 text-white px-4 py-2 rounded flex items-center gap-2"
-                >
-                    <RefreshCw size={18} /> Reset activaciones
-                </button>
+        <Row label="Expira">
+          {licencia.fecha_expiracion
+            ? new Date(licencia.fecha_expiracion).toLocaleString()
+            : "—"}
+        </Row>
 
-                {/* NUEVOS BOTONES */}
-                <button
-                    onClick={() => accion("hacer-anual")}
-                    className="bg-yellow-600 text-white px-4 py-2 rounded flex items-center gap-2"
-                >
-                    <Calendar size={18} /> Hacer anual
-                </button>
+        <Row label="Creada">
+          {new Date(licencia.fecha_creacion).toLocaleString()}
+        </Row>
+      </div>
 
-                <button
-                    onClick={() => accion("hacer-completa")}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center gap-2"
-                >
-                    <Star size={18} /> Hacer completa
-                </button>
-            </div>
-        </div>
-    );
+      {/* ACCIONES */}
+      <div className="space-y-3">
+        <ActionButton
+          color="green"
+          icon={<CheckCircle size={18} />}
+          label="Activar"
+          onClick={() => accion("activar")}
+        />
+
+        <ActionButton
+          color="red"
+          icon={<Ban size={18} />}
+          label="Bloquear"
+          onClick={() => accion("bloquear")}
+        />
+
+        <ActionButton
+          color="purple"
+          icon={<RefreshCw size={18} />}
+          label="Reset activaciones"
+          onClick={() => accion("reset-activaciones")}
+        />
+
+        <ActionButton
+          color="yellow"
+          icon={<Calendar size={18} />}
+          label="Hacer anual"
+          onClick={() => accion("hacer-anual")}
+        />
+
+        <ActionButton
+          color="indigo"
+          icon={<Star size={18} />}
+          label="Hacer completa"
+          onClick={() => accion("hacer-completa")}
+        />
+      </div>
+
+    </div>
+  );
 }
 
+/* ================= COMPONENTES PREMIUM ================= */
+
+function Row({ label, children }) {
+  return (
+    <div className="flex justify-between items-start">
+      <p className="font-semibold text-gray-700 dark:text-gray-300">
+        {label}:
+      </p>
+      <p className="text-right">{children}</p>
+    </div>
+  );
+}
+
+function TipoBadge({ tipo }) {
+  const map = {
+    anual: {
+      color: "bg-yellow-200 text-yellow-800",
+      icon: <Calendar size={14} />,
+      label: "Anual",
+    },
+    completa: {
+      color: "bg-purple-200 text-purple-800",
+      icon: <Star size={14} />,
+      label: "Completa",
+    },
+    trial: {
+      color: "bg-blue-200 text-blue-800",
+      icon: <KeyRound size={14} />,
+      label: "Trial",
+    },
+  };
+
+  const t = map[tipo];
+
+  return (
+    <span
+      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}
+    >
+      {t.icon} {t.label}
+    </span>
+  );
+}
+
+function EstadoBadge({ estado }) {
+  const map = {
+    activa: {
+      color: "bg-green-200 text-green-800",
+      icon: <CheckCircle size={14} />,
+      label: "Activa",
+    },
+    bloqueada: {
+      color: "bg-red-200 text-red-800",
+      icon: <Ban size={14} />,
+      label: "Bloqueada",
+    },
+    trial: {
+      color: "bg-blue-200 text-blue-800",
+      icon: <KeyRound size={14} />,
+      label: "Trial",
+    },
+    expirada: {
+      color: "bg-orange-200 text-orange-800",
+      icon: <Calendar size={14} />,
+      label: "Expirada",
+    },
+  };
+
+  const e = map[estado];
+
+  return (
+    <span
+      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}
+    >
+      {e.icon} {e.label}
+    </span>
+  );
+}
+
+function ActionButton({ color, icon, label, onClick }) {
+  const bg = {
+    green: "bg-green-600 hover:bg-green-700",
+    red: "bg-red-600 hover:bg-red-700",
+    purple: "bg-purple-600 hover:bg-purple-700",
+    yellow: "bg-yellow-600 hover:bg-yellow-700",
+    indigo: "bg-indigo-600 hover:bg-indigo-700",
+  }[color];
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition`}
+    >
+      {icon} {label}
+    </button>
+  );
+}
 
 
 ============================================================
@@ -2546,33 +2734,133 @@ export default async function AdminLicenciasTiposPage() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
 ============================================================
 
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from "react";
+import { FileText, Clock } from "lucide-react";
 
-export default async function AdminLogsPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
+export default function AdminLogsPage() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: logs } = await supabaseAdmin
-    .from("admin_logs")
-    .select("*")
-    .order("fecha", { ascending: false });
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch("/api/admin/logs", {
+          credentials: "include",
+        });
+
+        const d = await r.json();
+        setLogs(Array.isArray(d.logs) ? d.logs : []);
+      } catch (err) {
+        console.error("Error cargando logs:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (loading) return <p className="p-4">Cargando logs...</p>;
 
   return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Logs admin</h1>
+    <div className="p-4 max-w-6xl mx-auto space-y-10">
 
-      {!logs?.length && <p>No hay logs.</p>}
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-3">
+        <FileText size={30} /> Registros del sistema
+      </h1>
 
-      {logs.map((l) => (
-        <p key={l.id}>
-          <strong>{l.tipo}</strong> — {l.mensaje}  
-          <br />
-          {new Date(l.fecha).toLocaleString()}
-        </p>
-      ))}
+      {/* DESCRIPCIÓN */}
+      <p className="opacity-75">
+        Aquí se muestran las actividades importantes del sistema: activaciones, pagos, errores, etc.
+      </p>
+
+      {/* ============================
+            MÓVIL → CARDS PREMIUM
+      ============================ */}
+      <div className="grid gap-4 md:hidden">
+        {logs.map((l) => (
+          <div
+            key={l.id}
+            className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
+          >
+            <p className="font-semibold text-lg">{l.accion}</p>
+
+            <p className="text-sm opacity-80">{l.descripcion}</p>
+
+            <p className="flex items-center gap-2 text-sm opacity-70">
+              <Clock size={16} /> {new Date(l.fecha).toLocaleString()}
+            </p>
+
+            {l.extra && (
+              <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto">
+                {JSON.stringify(l.extra, null, 2)}
+              </pre>
+            )}
+          </div>
+        ))}
+
+        {logs.length === 0 && (
+          <p className="text-center opacity-70">No hay registros.</p>
+        )}
+      </div>
+
+      {/* ============================
+            DESKTOP → TABLA PREMIUM
+      ============================ */}
+      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+            <tr>
+              <th className="p-3">ID</th>
+              <th className="p-3">Acción</th>
+              <th className="p-3">Descripción</th>
+              <th className="p-3">Extra</th>
+              <th className="p-3">Fecha</th>
+            </tr>
+          </thead>
+
+          <tbody className="text-sm">
+            {logs.map((l) => (
+              <tr
+                key={l.id}
+                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+              >
+                <td className="p-3">{l.id}</td>
+
+                <td className="p-3 font-semibold">{l.accion}</td>
+
+                <td className="p-3">{l.descripcion}</td>
+
+                <td className="p-3">
+                  {l.extra ? (
+                    <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto max-w-xs">
+                      {JSON.stringify(l.extra, null, 2)}
+                    </pre>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+
+                <td className="p-3">
+                  {new Date(l.fecha).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+
+            {logs.length === 0 && (
+              <tr>
+                <td colSpan="5" className="p-4 text-center opacity-70">
+                  No hay registros disponibles.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
     </div>
   );
 }
@@ -2603,6 +2891,7 @@ export default function AdminHome() {
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CreditCard, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 
 export default function AdminPagosPage() {
   const [pagos, setPagos] = useState([]);
@@ -2611,14 +2900,11 @@ export default function AdminPagosPage() {
   useEffect(() => {
     async function load() {
       try {
-        // ✔ RUTA CORRECTA
         const r = await fetch("/api/admin/pagos/list", {
           credentials: "include",
         });
 
         const d = await r.json();
-
-        // ✔ EL ENDPOINT DEVUELVE UN ARRAY DIRECTO
         setPagos(Array.isArray(d) ? d : []);
       } catch (err) {
         console.log("Error cargando pagos", err);
@@ -2633,12 +2919,88 @@ export default function AdminPagosPage() {
   if (loading) return <p className="p-4">Cargando pagos...</p>;
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Gestión de pagos</h1>
+    <div className="p-4 max-w-6xl mx-auto space-y-8">
 
-      <div className="rounded border overflow-hidden shadow">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+      {/* TITULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <CreditCard size={28} /> Gestión de pagos
+      </h1>
+
+      {/* =======================
+          MÓVIL → CARDS PREMIUM
+      ======================= */}
+      <div className="grid gap-4 md:hidden">
+        {pagos.map((p) => (
+          <div
+            key={p.id}
+            className="p-4 bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-700 space-y-3"
+          >
+            <div className="flex justify-between items-center">
+              <p className="font-semibold text-lg">Pago #{p.id}</p>
+
+              <Link
+                href={`/panel/admin/pagos/${p.id}`}
+                className="text-blue-600 dark:text-blue-400 flex items-center gap-1 font-semibold"
+              >
+                Ver <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <p className="text-sm opacity-70">Usuario: {p.user_email ?? "—"}</p>
+            <p className="text-sm opacity-70">
+              Plugin: {p.plugin_nombre ?? p.plugin_id}
+            </p>
+
+            <div className="flex justify-between text-sm">
+              <span>Licencias:</span>
+              <span className="font-semibold">{p.cantidad_licencias}</span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span>Subtotal:</span>
+              <span>{p.importe_base?.toFixed(2)} €</span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span>IVA:</span>
+              <span>{p.iva?.toFixed(2)} €</span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Total:</span>
+              <span className="font-bold text-green-600 dark:text-green-400">
+                {p.importe?.toFixed(2)} €
+              </span>
+            </div>
+
+            {/* ESTADO */}
+            <div>
+              {p.estado === "pendiente" && (
+                <span className="px-3 py-1 text-xs rounded-lg bg-orange-200 text-orange-800 font-semibold inline-flex items-center gap-1">
+                  <XCircle size={14} /> Pendiente
+                </span>
+              )}
+
+              {p.estado === "aprobado" && (
+                <span className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 font-semibold inline-flex items-center gap-1">
+                  <CheckCircle size={14} /> Aprobado
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {pagos.length === 0 && (
+          <p className="text-center opacity-70">No hay pagos registrados.</p>
+        )}
+      </div>
+
+      {/* ===========================
+          ESCRITORIO → TABLA PREMIUM
+      =========================== */}
+      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
+        <table className="min-w-full text-left">
+          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
             <tr>
               <th className="p-3">ID</th>
               <th className="p-3">Usuario</th>
@@ -2652,45 +3014,43 @@ export default function AdminPagosPage() {
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="text-sm">
             {pagos.map((p) => (
               <tr
                 key={p.id}
-                className="border-t hover:bg-gray-50 dark:hover:bg-gray-900"
+                className="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition"
               >
-                <td className="p-3">{p.id}</td>
-
+                <td className="p-3 font-semibold">{p.id}</td>
                 <td className="p-3">{p.user_email ?? "—"}</td>
-
                 <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
-
                 <td className="p-3">{p.cantidad_licencias}</td>
 
-                <td className="p-3">
-                  {p.importe_base?.toFixed(2)} €
-                </td>
-
+                <td className="p-3">{p.importe_base?.toFixed(2)} €</td>
                 <td className="p-3">{p.iva?.toFixed(2)} €</td>
 
-                <td className="p-3 font-semibold">
+                <td className="p-3 font-bold text-green-600 dark:text-green-400">
                   {p.importe?.toFixed(2)} €
                 </td>
 
                 <td className="p-3">
                   {p.estado === "pendiente" && (
-                    <span className="text-orange-600 font-semibold">
+                    <span className="px-3 py-1 text-xs rounded-lg bg-orange-200 text-orange-800 font-semibold">
                       Pendiente
                     </span>
                   )}
+
                   {p.estado === "aprobado" && (
-                    <span className="text-green-600 font-semibold">
+                    <span className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 font-semibold">
                       Aprobado
                     </span>
                   )}
                 </td>
 
                 <td className="p-3">
-                  <Link href={`/panel/admin/pagos/${p.id}`}>
+                  <Link
+                    href={`/panel/admin/pagos/${p.id}`}
+                    className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                  >
                     Ver →
                   </Link>
                 </td>
@@ -2707,616 +3067,6 @@ export default function AdminPagosPage() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import ConfirmDialog from "@/components/ConfirmDialog";
-
-export default function AdminPagoDetallePage() {
-  const params = useParams();
-  const id = params.id;
-
-  const [pago, setPago] = useState(null);
-  const [emails, setEmails] = useState([]);
-  const [facturacion, setFacturacion] = useState(null);
-  const [numeroFactura, setNumeroFactura] = useState("");
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const [openValidar, setOpenValidar] = useState(false);
-  const [openRechazar, setOpenRechazar] = useState(false);
-  const [openReenviar, setOpenReenviar] = useState(false);
-  const [openBorrar, setOpenBorrar] = useState(false);
-
-  // ============================
-  // CARGA INICIAL
-  // ============================
-  useEffect(() => {
-    async function load() {
-      try {
-        const r = await fetch(`/api/admin/pagos/detalle/${id}`, {
-          credentials: "include",
-        });
-
-        const data = await r.json();
-
-        if (!r.ok) {
-          setError(data.error ?? "Error cargando el pago");
-          setLoading(false);
-          return;
-        }
-
-        setPago(data.pago);
-        setNumeroFactura(data.pago.numero_factura ?? "");
-        setEmails(data.pago.emails ?? []);
-        setFacturacion(data.facturacion ?? null);
-
-      } catch {
-        setError("Error de conexión.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [id]);
-
-  // ============================
-  // ACCIONES
-  // ============================
-
-  async function guardarNumeroFactura() {
-    if (!numeroFactura.trim()) {
-      return alert("Debes introducir un número de factura.");
-    }
-
-    const r = await fetch("/api/admin/pagos/numero-factura", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pago_id: id,
-        numero_factura: numeroFactura.trim(),
-      }),
-    });
-
-    if (!r.ok) return alert("Error guardando número de factura");
-
-    alert("Número guardado correctamente.");
-    window.location.reload();
-  }
-
-  async function confirmarValidacion() {
-    const r = await fetch("/api/admin/pagos/validar", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pago_id: id }),
-    });
-
-    if (!r.ok) return alert("Error validando el pago.");
-    window.location.reload();
-  }
-
-  async function confirmarRechazo() {
-    const r = await fetch("/api/admin/pagos/rechazar", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pago_id: id }),
-    });
-
-    if (!r.ok) return alert("Error rechazando el pago.");
-    window.location.reload();
-  }
-
-  async function confirmarReenvio() {
-    const r = await fetch("/api/email/compra", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pago_id: id }),
-    });
-
-    if (!r.ok) return alert("Error reenviando email.");
-    alert("Email reenviado.");
-  }
-
-  async function confirmarBorrado() {
-    const r = await fetch("/api/admin/pagos/borrar-todos", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-
-    if (!r.ok) return alert("Error borrando el pago.");
-    window.location.href = "/panel/admin/pagos?deleted=1";
-  }
-
-  // ============================
-  // RENDER
-  // ============================
-  if (loading) return <p>Cargando…</p>;
-  if (error) return <p>{error}</p>;
-  if (!pago) return <p>Pago no encontrado.</p>;
-
-  return (
-    <>
-      <Link href="/panel/admin/pagos" className="text-blue-600 hover:underline">
-        ← Volver
-      </Link>
-
-      <h2 className="text-2xl font-bold mt-4">Pago #{pago.id}</h2>
-
-      {/* =======================
-          FACTURA
-      ======================= */}
-      <div className="mt-4 p-4 rounded bg-gray-100 dark:bg-gray-900 border">
-
-        <h3 className="text-lg font-semibold mb-2">Factura</h3>
-
-        {/* BADGES VISUALES */}
-        {pago.numero_factura ? (
-          <span className="inline-block bg-blue-200 text-blue-900 px-3 py-1 rounded text-xs font-semibold">
-            ✔ Factura lista
-          </span>
-        ) : pago.factura_solicitada ? (
-          <span className="inline-block bg-yellow-200 text-yellow-900 px-3 py-1 rounded text-xs font-semibold">
-            📄 Factura solicitada por el usuario
-          </span>
-        ) : (
-          <span className="inline-block bg-gray-300 text-gray-900 px-3 py-1 rounded text-xs font-semibold">
-            — No solicitada —
-          </span>
-        )}
-
-        {/* INPUT NÚMERO */}
-        <div className="mt-4">
-          <label className="font-semibold block mb-1">Número de factura:</label>
-
-          <input
-            type="text"
-            value={numeroFactura}
-            onChange={(e) => setNumeroFactura(e.target.value)}
-            placeholder="Ej: OMBIM-2026-000123"
-            className="w-full border p-2 rounded dark:bg-gray-800"
-          />
-
-          <button
-            onClick={guardarNumeroFactura}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Guardar número de factura
-          </button>
-        </div>
-      </div>
-
-      {/* =======================
-          RESUMEN ECONÓMICO
-      ======================= */}
-      <div className="mt-6 border p-4 rounded bg-gray-100 dark:bg-gray-900">
-        <h3 className="font-semibold text-lg mb-2">Resumen económico</h3>
-
-        <p><strong>Tipo:</strong> {pago.tipo}</p>
-        <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
-        <p><strong>Estado:</strong> {pago.estado}</p>
-
-        <div className="mt-3">
-          <p><strong>Subtotal:</strong> {pago.importe_base.toFixed(2)} €</p>
-          <p><strong>IVA (21%):</strong> {pago.iva.toFixed(2)} €</p>
-          <p className="text-xl font-bold">
-            TOTAL (IVA incluido): {pago.importe.toFixed(2)} €
-          </p>
-        </div>
-      </div>
-
-      {/* =======================
-          EMAILS
-      ======================= */}
-      <h3 className="mt-6 font-semibold text-lg">Emails Tekla</h3>
-
-      <div className="flex flex-col gap-3 mt-3">
-        {emails.map((email, i) => (
-          <input
-            key={i}
-            value={email}
-            onChange={(ev) => {
-              const copia = [...emails];
-              copia[i] = ev.target.value;
-              setEmails(copia);
-            }}
-            className="border p-2 rounded dark:bg-gray-900"
-          />
-        ))}
-
-        <button
-          onClick={() => setEmails([...emails, ""])}
-          className="bg-gray-500 text-white py-1 rounded"
-        >
-          Añadir email
-        </button>
-
-        <button
-          onClick={async () => {
-            const vacios = emails.some(x => !x.trim());
-            if (vacios) return alert("Todos los emails deben estar completos.");
-
-            const r = await fetch("/api/pagos/guardar-emails", {
-              method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                pago_id: id,
-                emails: emails.map(e => ({ email_tekla: e.trim() })),
-              }),
-            });
-
-            if (!r.ok) return alert("Error guardando emails.");
-            window.location.reload();
-          }}
-          className="bg-blue-600 text-white py-2 rounded"
-        >
-          Guardar emails
-        </button>
-      </div>
-
-      {/* =======================
-          FACTURACIÓN USUARIO
-      ======================= */}
-      <h3 className="mt-8 font-semibold text-lg">Datos de facturación</h3>
-
-      {!facturacion && (
-        <p className="text-gray-500">No hay datos de facturación.</p>
-      )}
-
-      {facturacion && (
-        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded mt-2 text-sm flex flex-col gap-1">
-          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
-          <p><strong>NIF:</strong> {facturacion.nif}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
-          <p><strong>CP:</strong> {facturacion.cp}</p>
-          <p><strong>País:</strong> {facturacion.pais}</p>
-          <p><strong>Teléfono:</strong> {facturacion.telefono}</p>
-        </div>
-      )}
-
-      {/* =======================
-          ACCIONES
-      ======================= */}
-      <div className="mt-10 flex flex-col gap-3 max-w-sm">
-        <button
-          onClick={() => setOpenValidar(true)}
-          className="bg-green-600 text-white py-2 rounded"
-        >
-          ✔ Validar pago
-        </button>
-
-        <button
-          onClick={() => setOpenRechazar(true)}
-          className="bg-orange-600 text-white py-2 rounded"
-        >
-          ✖ Rechazar pago
-        </button>
-
-        <button
-          onClick={() => setOpenReenviar(true)}
-          className="bg-blue-600 text-white py-2 rounded"
-        >
-          📧 Reenviar email
-        </button>
-
-        <button
-          onClick={() => setOpenBorrar(true)}
-          className="bg-red-600 text-white py-2 rounded"
-        >
-          🗑 Borrar pago(s)
-        </button>
-      </div>
-
-      {/* =======================
-          DIÁLOGOS
-      ======================= */}
-      <ConfirmDialog
-        open={openValidar}
-        title="Validar pago"
-        description="Se crearán las licencias asociadas."
-        confirmText="Validar"
-        cancelText="Cancelar"
-        onCancel={() => setOpenValidar(false)}
-        onConfirm={confirmarValidacion}
-      />
-
-      <ConfirmDialog
-        open={openRechazar}
-        title="Rechazar pago"
-        description="El usuario no podrá usar este pago."
-        confirmText="Rechazar"
-        cancelText="Cancelar"
-        onCancel={() => setOpenRechazar(false)}
-        onConfirm={confirmarRechazo}
-      />
-
-      <ConfirmDialog
-        open={openReenviar}
-        title="Reenviar email"
-        description="Se enviará de nuevo el email de compra."
-        confirmText="Reenviar"
-        cancelText="Cancelar"
-        onCancel={() => setOpenReenviar(false)}
-        onConfirm={confirmarReenvio}
-      />
-
-      <ConfirmDialog
-        open={openBorrar}
-        title="¿Borrar este pago y duplicados?"
-        description="Esta acción no se puede deshacer."
-        confirmText="Borrar"
-        cancelText="Cancelar"
-        onCancel={() => setOpenBorrar(false)}
-        onConfirm={confirmarBorrado}
-      />
-    </>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\borrar\[id]\page.jsx
-============================================================
-
-
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Trash2 } from "lucide-react";
-
-export default function BorrarPluginPage({ params }) {
-  const { id } = params;
-  const [confirm, setConfirm] = useState(false);
-
-  async function borrar() {
-    await fetch("/api/admin/plugins/borrar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id })
-    });
-    window.location.href = "/panel/admin/plugins";
-  }
-
-  return (
-    <div className="space-y-6 p-4 max-w-xl mx-auto">
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2">
-        <ArrowLeft size={20} /> Volver
-      </Link>
-
-      <h1 className="text-3xl font-bold text-red-600 flex items-center gap-2">
-        <Trash2 size={26} /> Eliminar Plugin
-      </h1>
-
-      <p className="text-gray-700 dark:text-gray-300">
-        ¿Estás seguro de que deseas eliminar este plugin? Esta acción no se puede deshacer.
-      </p>
-
-      {!confirm && (
-        <button
-          onClick={() => setConfirm(true)}
-          className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700"
-        >
-          Sí, eliminar
-        </button>
-      )}
-
-      {confirm && (
-        <button
-          onClick={borrar}
-          className="w-full bg-red-800 text-white py-3 rounded-lg hover:bg-red-900"
-        >
-          Confirmar eliminación
-        </button>
-      )}
-    </div>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\editar\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-
-export default function EditarPluginPage() {
-  const { id } = useParams();
-  const [form, setForm] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  function update(campo, valor) {
-    setForm((prev) => ({ ...prev, [campo]: valor }));
-  }
-
-  useEffect(() => {
-    if (!id) return;
-
-    async function load() {
-      try {
-        const res = await fetch(`/api/plugin/${id}`, {
-          credentials: "include",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || data.error) {
-          console.error("Error cargando plugin:", data);
-          setForm(null);
-          return;
-        }
-
-        setForm({
-          nombre: data.nombre ?? "",
-          descripcion: data.descripcion ?? "",
-          precio: Number(data.precio) ?? 0,
-          precio_anual: Number(data.precio_anual) ?? 0,
-          precio_completa: Number(data.precio_completa) ?? 0,
-          archivo_url: data.archivo_url ?? "",
-          video_url: data.video_url ?? "",
-          imagen_url: data.imagen_url ?? "",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [id]);
-
-  async function guardar() {
-    if (!form) return;
-
-    const res = await fetch("/api/admin/plugins/editar", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...form }),
-    });
-
-    if (res.ok) {
-      window.location.href = "/panel/admin/plugins";
-    }
-  }
-
-  async function subir(file, tipo) {
-    if (!file) return;
-
-    const endpoint = `/api/admin/${tipo === "imagen" ? "upload-image" : "upload-tsep"}?name=${file.name}`;
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      credentials: "include",
-      body: file,
-    });
-
-    const json = await res.json();
-    if (!json.url) return;
-
-    const campo = tipo === "imagen" ? "imagen_url" : "archivo_url";
-    update(campo, json.url);
-  }
-
-  if (loading) return <p className="p-6">Cargando plugin…</p>;
-  if (!form) return <p>No se pudo cargar el plugin</p>;
-
-  return (
-    <div className="space-y-6 p-4 max-w-xl mx-auto">
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2 text-blue-600">
-        <ArrowLeft size={18} />
-        Volver
-      </Link>
-
-      <h1 className="text-3xl font-bold mb-4">Editar plugin</h1>
-
-      <label className="block font-semibold">Nombre</label>
-      <input
-        value={form.nombre}
-        onChange={(e) => update("nombre", e.target.value)}
-        className="w-full p-2 rounded border dark:bg-gray-900"
-      />
-
-      <label className="block font-semibold mt-2">Descripción</label>
-      <textarea
-        value={form.descripcion}
-        rows={3}
-        onChange={(e) => update("descripcion", e.target.value)}
-        className="w-full p-2 rounded border dark:bg-gray-900"
-      />
-
-      <label className="block font-semibold mt-2">Precio estándar (€)</label>
-      <input
-        type="number"
-        value={form.precio}
-        onChange={(e) => update("precio", Number(e.target.value))}
-        className="w-full p-2 rounded border dark:bg-gray-900"
-      />
-
-      <label className="block font-semibold mt-2">Precio anual (€)</label>
-      <input
-        type="number"
-        value={form.precio_anual}
-        onChange={(e) => update("precio_anual", Number(e.target.value))}
-        className="w-full p-2 rounded border dark:bg-gray-900"
-      />
-
-      <label className="block font-semibold mt-2">Precio completa (€)</label>
-      <input
-        type="number"
-        value={form.precio_completa}
-        onChange={(e) => update("precio_completa", Number(e.target.value))}
-        className="w-full p-2 rounded border dark:bg-gray-900"
-      />
-
-      <div className="mt-3">
-        <label>Archivo .tsep</label>
-        <input
-          type="file"
-          accept=".tsep"
-          onChange={(e) => subir(e.target.files[0], "tsep")}
-        />
-        {form.archivo_url && (
-          <p className="text-sm text-green-600">
-            {form.archivo_url.split("/").pop()}
-          </p>
-        )}
-      </div>
-
-      <div className="mt-3">
-        <label>Video (YouTube)</label>
-        <input
-          value={form.video_url}
-          onChange={(e) => update("video_url", e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-900"
-        />
-      </div>
-
-      <div className="mt-3">
-        <label>Imagen del plugin</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => subir(e.target.files[0], "imagen")}
-        />
-        {form.imagen_url && (
-          <p className="text-sm text-green-600">
-            {form.imagen_url.split("/").pop()}
-          </p>
-        )}
-      </div>
-
-      <button
-        onClick={guardar}
-        className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 mt-4"
-      >
-        Guardar cambios
-      </button>
     </div>
   );
 }

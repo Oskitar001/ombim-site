@@ -9,28 +9,30 @@ export async function POST(req) {
   try {
     const supabase = await supabaseServer();
 
-    // ========================================
     // 1. Verificar usuario autenticado
-    // ========================================
     const {
       data: { user },
+      error: userErr,
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "No autorizado" },
-        { status: 401 }
-      );
+    if (userErr || !user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // ========================================
-    // 2. Validar que el usuario tiene facturación
-    // ========================================
-    const { data: fact } = await supabase
+    // 2. Validar facturación existente
+    const { data: fact, error: factErr } = await supabase
       .from("facturacion")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (factErr) {
+      console.error("Error cargando facturación:", factErr);
+      return NextResponse.json(
+        { error: "error_cargando_facturacion" },
+        { status: 500 }
+      );
+    }
 
     if (!fact) {
       return NextResponse.json(
@@ -43,10 +45,9 @@ export async function POST(req) {
       );
     }
 
-    // ========================================
-    // 3. Leer el pago_id enviado por el usuario
-    // ========================================
-    const { pagoId } = await req.json();
+    // 3. Leer pagoId
+    const body = await req.json();
+    const pagoId = body?.pagoId?.toString().trim();
 
     if (!pagoId) {
       return NextResponse.json(
@@ -55,14 +56,20 @@ export async function POST(req) {
       );
     }
 
-    // ========================================
-    // 4. Comprobar que el pago existe y es suyo
-    // ========================================
-    const { data: pago } = await supabase
+    // 4. Comprobar pago
+    const { data: pago, error: pagoErr } = await supabase
       .from("pagos")
       .select("id, user_id, factura_solicitada, numero_factura")
       .eq("id", pagoId)
       .maybeSingle();
+
+    if (pagoErr) {
+      console.error("Error buscando pago:", pagoErr);
+      return NextResponse.json(
+        { error: "error_cargando_pago" },
+        { status: 500 }
+      );
+    }
 
     if (!pago) {
       return NextResponse.json(
@@ -71,7 +78,6 @@ export async function POST(req) {
       );
     }
 
-    // Evitar que un usuario pida factura de otro usuario
     if (pago.user_id !== user.id) {
       return NextResponse.json(
         { error: "acceso_denegado" },
@@ -79,7 +85,6 @@ export async function POST(req) {
       );
     }
 
-    // Si ya tiene número → no solicitar
     if (pago.numero_factura) {
       return NextResponse.json({
         ok: true,
@@ -87,7 +92,6 @@ export async function POST(req) {
       });
     }
 
-    // Si ya estaba solicitada → no duplicar
     if (pago.factura_solicitada) {
       return NextResponse.json({
         ok: true,
@@ -95,17 +99,21 @@ export async function POST(req) {
       });
     }
 
-    // ========================================
-    // 5. Marcar el pago como 'solicita factura'
-    // ========================================
-    await supabase
+    // 5. Marcar como solicitada
+    const { error: updErr } = await supabase
       .from("pagos")
       .update({ factura_solicitada: true })
       .eq("id", pagoId);
 
-    // ========================================
-    // 6. Enviar email al administrador
-    // ========================================
+    if (updErr) {
+      console.error("Error guardando solicitud:", updErr);
+      return NextResponse.json(
+        { error: "error_actualizando" },
+        { status: 500 }
+      );
+    }
+
+    // 6. Enviar email (HTML real)
     const html = `
       <h2>Solicitud de factura</h2>
 
@@ -135,9 +143,7 @@ export async function POST(req) {
       html,
     });
 
-    // ========================================
-    // 7. Respuesta correcta al usuario
-    // ========================================
+    // 7. OK
     return NextResponse.json({
       ok: true,
       mensaje: "Solicitud enviada. El administrador la revisará.",

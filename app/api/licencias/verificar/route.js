@@ -3,8 +3,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
   const url = new URL(req.url);
-  const email_tekla = url.searchParams.get("email");
-  const plugin_id = url.searchParams.get("plugin_id");
+
+  // ✔ Normalizar email
+  const email_raw = url.searchParams.get("email");
+  const email_tekla = email_raw?.trim()?.toLowerCase();
+
+  // ✔ Normalizar plugin_id
+  const plugin_id = url.searchParams.get("plugin_id")?.trim();
 
   // ------------------------------------------------------
   // 1. Validaciones básicas
@@ -29,20 +34,25 @@ export async function GET(req) {
     .limit(1)
     .maybeSingle();
 
+  // ✔ Controlar error real del SELECT
   if (error || !licencia) {
+    console.error("Error consultando licencia:", error);
     return Response.json({ ok: false, motivo: "no_existe" });
   }
 
   // ------------------------------------------------------
-  // 3. Estado bloqueado
+  // 3. Estado bloqueado o pendiente
   // ------------------------------------------------------
   if (licencia.estado === "bloqueada") {
     return Response.json({ ok: false, motivo: "bloqueada" });
   }
 
+  if (licencia.estado === "pendiente") {
+    return Response.json({ ok: false, motivo: "pendiente" });
+  }
+
   // ------------------------------------------------------
-  // 4. Chequear expiración de soporte ANUAL (si aplica)
-  //    → Solo afecta al soporte, no a la licencia.
+  // 4. Chequear expiración del soporte anual
   // ------------------------------------------------------
   let soporte_activo = true;
 
@@ -56,10 +66,12 @@ export async function GET(req) {
   }
 
   // ------------------------------------------------------
-  // 5. Verificar activaciones restantes
+  // 5. Verificar activaciones restantes (parse seguro)
   // ------------------------------------------------------
-  const activaciones_restantes =
-    licencia.max_activaciones - licencia.activaciones_usadas;
+  const usadas = Number(licencia.activaciones_usadas ?? 0);
+  const max = Number(licencia.max_activaciones ?? 0);
+
+  const activaciones_restantes = max - usadas;
 
   if (activaciones_restantes <= 0) {
     return Response.json({ ok: false, motivo: "sin_activaciones" });
@@ -71,9 +83,9 @@ export async function GET(req) {
   return Response.json({
     ok: true,
     plugin_id: licencia.plugin_id,
-    estado: licencia.estado, // "activa"
-    activaciones_usadas: licencia.activaciones_usadas,
-    max_activaciones: licencia.max_activaciones,
+    estado: licencia.estado,
+    activaciones_usadas: usadas,
+    max_activaciones: max,
     soporte_activo,
     activaciones_restantes
   });

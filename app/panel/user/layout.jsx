@@ -19,19 +19,21 @@ export default function UserLayout({ children }) {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800">
 
-      {/* =============================
+      {/* ====================================
           BOTÓN HAMBURGUESA (MÓVIL)
-      ============================= */}
+      ==================================== */}
       <button
-        className="md:hidden absolute top-4 left-4 z-[999] bg-gray-300 dark:bg-gray-700 p-2 rounded shadow-lg"
+        className="md:hidden absolute top-4 left-4 z-[999] 
+                   bg-white dark:bg-gray-700 
+                   p-2 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600"
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
       </button>
 
-      {/* =============================
+      {/* ====================================
           OVERLAY OSCURO (MÓVIL)
-      ============================= */}
+      ==================================== */}
       {open && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] md:hidden"
@@ -39,169 +41,149 @@ export default function UserLayout({ children }) {
         ></div>
       )}
 
-      {/* =============================
-          SIDEBAR MÓVIL (DRAWER)
-      ============================= */}
+      {/* ====================================
+          SIDEBAR MÓVIL (DRAWER PREMIUM)
+      ==================================== */}
       <aside
         className={`
           fixed top-0 left-0 h-full w-64 p-4 z-[999]
-          shadow-xl bg-gray-100 dark:bg-gray-900
+          bg-white dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
+          shadow-xl rounded-r-xl
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:hidden
         `}
       >
-        {/* Cerrar menú */}
+        {/* Botón cerrar */}
         <button
-          className="absolute top-4 right-4 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+          className="absolute top-4 right-4 p-1 rounded 
+                     hover:bg-gray-200 dark:hover:bg-gray-700"
           onClick={() => setOpen(false)}
         >
           <X size={24} />
         </button>
 
-        <h2 className="text-xl font-bold mb-6 mt-1">Panel Usuario</h2>
+        <h2 className="text-2xl font-bold mb-6 mt-2 text-gray-900 dark:text-gray-100">
+          Panel Usuario
+        </h2>
 
         <nav className="space-y-3 text-lg">
-
-          <Link
-            href="/panel/user"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Home size={18} />
+          <PanelLink href="/panel/user" icon={<Home size={18} />} onClick={() => setOpen(false)}>
             Inicio
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/licencias"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <KeyRound size={18} />
+          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />} onClick={() => setOpen(false)}>
             Mis licencias
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/pagos"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <CreditCard size={18} />
+          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />} onClick={() => setOpen(false)}>
             Mis pagos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/mis-datos"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <User size={18} />
+          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />} onClick={() => setOpen(false)}>
             Mis datos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/descargas"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Download size={18} />
+          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />} onClick={() => setOpen(false)}>
             Descargas
-          </Link>
+          </PanelLink>
 
-          <Link
+          <PanelLink
             href="/"
+            icon={<ArrowLeft size={18} />}
+            className="mt-4"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
           >
-            <ArrowLeft size={18} />
             Volver a ombim.site
-          </Link>
-
+          </PanelLink>
         </nav>
       </aside>
 
-      {/* =============================
-          SIDEBAR DESKTOP
-      ============================= */}
+      {/* ====================================
+          SIDEBAR DESKTOP (PREMIUM)
+      ==================================== */}
       <aside
         className="
-          hidden md:block
+          hidden md:flex flex-col
           w-64 
-          bg-gray-100 dark:bg-gray-900 
-          p-4 space-y-4 
+          bg-white dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
+          shadow-xl
+          p-6 space-y-6
+          md:mt-20        /* 👈 MARGEN SUPERIOR AÑADIDO SOLO PARA ESCRITORIO */
         "
       >
-        <h2 className="text-xl font-bold mb-4">Panel Usuario</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Panel Usuario
+        </h2>
 
         <nav className="space-y-2 text-base">
 
-          <Link
-            href="/panel/user"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Home size={18} />
+          <PanelLink href="/panel/user" icon={<Home size={18} />}>
             Inicio
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/licencias"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <KeyRound size={18} />
+          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />}>
             Mis licencias
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/pagos"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <CreditCard size={18} />
+          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />}>
             Mis pagos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/mis-datos"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <User size={18} />
+          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />}>
             Mis datos
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/panel/user/descargas"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >
-            <Download size={18} />
+          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />}>
             Descargas
-          </Link>
+          </PanelLink>
 
-          <Link
-            href="/"
-            className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4"
-          >
-            <ArrowLeft size={18} />
+          <PanelLink href="/" icon={<ArrowLeft size={18} />} className="mt-4">
             Volver a ombim.site
-          </Link>
+          </PanelLink>
 
         </nav>
       </aside>
 
-      {/* =============================
-          CONTENIDO PRINCIPAL
-      ============================= */}
-     
-       <main className="
-  flex-1 
-  p-6 
-  pt-20 md:pt-6
-  overflow-y-auto 
-  bg-gray-50 dark:bg-gray-800
-">
+      {/* ====================================
+          CONTENIDO PRINCIPAL (ESTILO ADMIN)
+      ==================================== */}
+      <main
+        className="
+          flex-1 
+          p-6 
+          pt-24 md:pt-12
+          overflow-y-auto 
+          bg-gray-50 dark:bg-gray-800
+        "
+      >
         {children}
       </main>
 
     </div>
+  );
+}
+
+/* ==========================================================
+   COMPONENTE PREMIUM PARA LINKS DEL SIDEBAR
+========================================================== */
+function PanelLink({ href, icon, children, onClick, className = "" }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`
+        flex items-center gap-3 p-2 rounded-lg
+        text-gray-800 dark:text-gray-200
+        hover:bg-gray-200 dark:hover:bg-gray-700
+        transition
+        ${className}
+      `}
+    >
+      {icon}
+      {children}
+    </Link>
   );
 }

@@ -2,9 +2,13 @@
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  const supabase = supabaseRoute();
+  // ✅ FIX: supabaseRoute es async (Next 16)
+  const supabase = await supabaseRoute();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     return Response.json({ error: "no_autenticado" }, { status: 401 });
   }
@@ -17,22 +21,23 @@ export async function POST(req) {
   }
 
   // Obtener plugin y precios
-  const { data: plugin } = await supabase
+  const { data: plugin, error: pluginError } = await supabase
     .from("plugins")
     .select("precio, precio_anual, precio_completa")
     .eq("id", plugin_id)
     .single();
 
-  if (!plugin) {
+  if (pluginError || !plugin) {
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // Precio base según tipo
-  let precioUnitario = 0;
-  if (tipo === "anual") precioUnitario = plugin.precio_anual;
-  if (tipo === "completa") precioUnitario = plugin.precio_completa;
+  // ✅ FIX: evitar undefined o NaN
+  const precioUnitario = Number(
+    tipo === "anual"
+      ? plugin.precio_anual
+      : plugin.precio_completa
+  ) || 0;
 
-  // Cálculo → opción A (sin IVA → IVA → total)
   const subtotal = precioUnitario * emails_tekla.length;
   const iva = subtotal * 0.21;
   const importe_total = subtotal + iva;
@@ -49,7 +54,7 @@ export async function POST(req) {
       fecha: new Date(),
       importe: importe_total,
       importe_base: subtotal,
-      iva
+      iva,
     })
     .select()
     .single();
@@ -65,13 +70,20 @@ export async function POST(req) {
     email_tekla: e.trim(),
   }));
 
-  await supabase.from("pagos_emails").insert(emailsInsert);
+  const { error: emailErr } = await supabase
+    .from("pagos_emails")
+    .insert(emailsInsert);
+
+  // ⚠️ Aviso seguro: pago creado pero falló emails
+  if (emailErr) {
+    console.error("Error guardando emails:", emailErr);
+  }
 
   return Response.json({
     ok: true,
     pago_id: pago.id,
     subtotal,
     iva,
-    total: importe_total
+    total: importe_total,
   });
 }

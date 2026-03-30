@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 
-export default function Navbar() {
+export default function Navbar({ className = "" }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -27,7 +27,7 @@ export default function Navbar() {
       .catch(() => setReady(true));
   }, []);
 
-  // Cargar tema desde localStorage
+  // Cargar tema
   useEffect(() => {
     const saved = localStorage.getItem("theme") || "light";
     setTheme(saved);
@@ -41,7 +41,7 @@ export default function Navbar() {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  // Cerrar menú usuario al hacer clic fuera
+  // Cerrar menú usuario si se hace clic fuera
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -58,16 +58,15 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [pathname]);
 
-  // Evitar scroll cuando menú móvil está abierto
+  // Evitar scroll cuando drawer está abierto
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", open);
   }, [open]);
 
-  // Logout (FIX crítico: credentials)
   const logout = async () => {
-    await fetch("/api/auth/logout", { 
+    await fetch("/api/auth/logout", {
       method: "POST",
-      credentials: "include"
+      credentials: "include",
     });
     setUser(null);
     router.push("/");
@@ -84,22 +83,30 @@ export default function Navbar() {
     user?.email?.charAt(0)?.toUpperCase();
 
   return (
-    <nav className="w-full py-4 bg-[#f3f4f6] dark:bg-[#242424] border-b border-gray-300 dark:border-gray-700 fixed top-0 left-0 z-50 shadow-sm">
-      <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
+    <nav
+      className={`
+        w-full py-3 
+        bg-[#f3f4f6] dark:bg-[#242424]
+        border-b border-gray-300 dark:border-gray-700
+        fixed top-0 left-0 z-50 shadow-sm
+        ${className}
+      `}
+    >
+      <div className="max-w-6xl mx-auto flex justify-between items-center px-4">
 
         {/* LOGO */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <img
             src="/logo-ombim.png"
             alt="OMBIM Logo"
-            className="h-10 w-auto md:h-14 block dark:hidden"
+            className="h-8 w-auto block dark:hidden"
           />
           <img
             src="/logo-ombim-dark.png"
             alt="OMBIM Logo Dark"
-            className="h-10 w-auto md:h-14 hidden dark:block"
+            className="h-8 w-auto hidden dark:block"
           />
-          <span className="text-xl md:text-3xl font-bold text-[#1f2937] dark:text-[#e6e6e6]">
+          <span className="text-lg md:text-2xl font-bold text-[#1f2937] dark:text-[#e6e6e6]">
             OMBIM
           </span>
         </Link>
@@ -111,17 +118,17 @@ export default function Navbar() {
           aria-label="Abrir menú"
         >
           <span
-            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
+            className={`absolute h-0.5 bg-black dark:bg-white rounded transition-all ${
               open ? "w-6 rotate-45" : "w-7 -translate-y-2"
             }`}
           />
           <span
-            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
+            className={`absolute h-0.5 bg-black dark:bg-white rounded transition-all ${
               open ? "opacity-0" : "opacity-100 w-7"
             }`}
           />
           <span
-            className={`absolute h-0.5 bg-black dark:bg-white rounded-full transition-all ${
+            className={`absolute h-0.5 bg-black dark:bg-white rounded transition-all ${
               open ? "w-6 -rotate-45" : "w-7 translate-y-2"
             }`}
           />
@@ -145,8 +152,8 @@ export default function Navbar() {
             {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
           </button>
 
-          {/* MENÚ USUARIO DESKTOP */}
-          {user ? (
+          {/* MENÚ USUARIO DESKTOP PREMIUM */}
+          {user && (
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -159,29 +166,52 @@ export default function Navbar() {
               </button>
 
               <div
-                className={`absolute right-0 mt-2 bg-white dark:bg-[#2e2e2e] border border-gray-200 dark:border-gray-600 rounded-lg p-3 w-40 shadow-lg transition-all origin-top-right ${
+                className={`absolute right-0 mt-1 w-56 bg-white dark:bg-[#2e2e2e] 
+                border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl 
+                p-3 transition-all origin-top-right z-[100] 
+                ${
                   menuOpen
                     ? "opacity-100 scale-100"
                     : "opacity-0 scale-95 pointer-events-none"
                 }`}
               >
-                <Link
-                  href={panelUrl}
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
-                >
-                  Panel
-                </Link>
+                {/* HEADER DEL MENU */}
+                <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                    {avatar}
+                  </div>
+                  <div className="flex flex-col text-sm">
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {nombre}
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
 
-                <button
-                  onClick={logout}
-                  className="block w-full text-left px-3 py-2 hover:bg-gray-200 dark:hover:bg-[#3a3a3a] rounded"
-                >
-                  Cerrar sesión
-                </button>
+                {/* OPCIONES */}
+                <div className="mt-3 flex flex-col gap-1">
+                  <Link
+                    href={panelUrl}
+                    onClick={() => setMenuOpen(false)}
+                    className="px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
+                  >
+                    Panel de usuario
+                  </Link>
+
+                  <button
+                    onClick={logout}
+                    className="px-3 py-2 rounded-lg text-left text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
               </div>
             </div>
-          ) : (
+          )}
+
+          {!user && (
             <Link
               href="/login"
               className="border px-4 py-2 rounded-lg bg-white dark:bg-[#2e2e2e] hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
@@ -192,31 +222,40 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* MENÚ MÓVIL */}
+      {/* OVERLAY OSCURO */}
       {open && (
-        <div className="md:hidden bg-[#f3f4f6] dark:bg-[#2e2e2e] border-t px-6 py-4 flex flex-col gap-4 text-lg text-[#1f2937] dark:text-[#e6e6e6]">
-
-          <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
-          <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
-          <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
-          <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
-          <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
-          <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
-
-          <button onClick={() => { toggleTheme(); setOpen(false); }}>
-            {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
-          </button>
-
-          {user ? (
-            <>
-              <Link href={panelUrl} onClick={() => setOpen(false)}>Panel</Link>
-              <button onClick={logout}>Cerrar sesión</button>
-            </>
-          ) : (
-            <Link href="/login" onClick={() => setOpen(false)}>Iniciar sesión</Link>
-          )}
-        </div>
+        <div
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-40 transition-opacity"
+        />
       )}
+
+      {/* DRAWER MÓVIL */}
+      <div
+        className={`fixed md:hidden top-0 right-0 h-full w-64 bg-[#f3f4f6] dark:bg-[#2e2e2e] text-[#1f2937] dark:text-[#e6e6e6] z-50 shadow-xl pt-20 px-6 pb-8 flex flex-col gap-6 transform transition-transform ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
+        <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
+        <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
+        <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
+        <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
+        <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
+
+        <button onClick={() => { toggleTheme(); setOpen(false); }}>
+          {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
+        </button>
+
+        {user ? (
+          <>
+            <Link href={panelUrl} onClick={() => setOpen(false)}>Panel</Link>
+            <button onClick={logout}>Cerrar sesión</button>
+          </>
+        ) : (
+          <Link href="/login" onClick={() => setOpen(false)}>Iniciar sesión</Link>
+        )}
+      </div>
     </nav>
   );
 }

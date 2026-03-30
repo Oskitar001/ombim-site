@@ -5,11 +5,13 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const supabase = supabaseRoute();
+  // ✔ FIX: supabaseRoute es async
+  const supabase = await supabaseRoute();
 
   const { data: auth, error: authErr } = await supabase.auth.getUser();
 
   if (authErr || !auth?.user) {
+    console.error("Error autenticando usuario:", authErr);
     return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
   }
 
@@ -22,13 +24,13 @@ export async function GET() {
     .maybeSingle();
 
   if (error) {
+    console.error("Error cargando facturación:", error);
     return NextResponse.json(
       { error: "error_cargando_facturacion" },
       { status: 500 }
     );
   }
 
-  // 🔥 DEVOLVEMOS null si no hay registro
+  // ✔ Siempre devolver JSON válido
   return NextResponse.json(fact ?? null);
 }
-``

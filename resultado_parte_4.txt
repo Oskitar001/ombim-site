@@ -1,5 +1,1607 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Clock, Star, Calendar, Ban, CheckCircle } from "lucide-react";
+
+/* Tooltip PREMIUM */
+function Tooltip({ label, children }) {
+  return (
+    <span className="relative group">
+      {children}
+      <span
+        className="
+          absolute hidden group-hover:block 
+          bg-black text-white text-xs px-2 py-1 rounded 
+          -top-6 left-1/2 -translate-x-1/2 
+          whitespace-nowrap
+        "
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
+
+export default function UserLicenciaDetallePage({ params }) {
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    async function resolver() {
+      const resolved = await params;
+      setId(resolved.id);
+    }
+    resolver();
+  }, [params]);
+
+  const [licencia, setLicencia] = useState(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function load() {
+      const r = await fetch(`/api/user/licencia?id=${id}`);
+      const d = await r.json();
+      setLicencia(d.licencia ?? null);
+    }
+
+    load();
+  }, [id]);
+
+  if (!licencia)
+    return <p className="p-4 text-gray-600 dark:text-gray-300">Cargando licencia...</p>;
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8">
+
+      {/* Volver */}
+      <Link
+        href="/panel/user/licencias"
+        className="flex items-center gap-2 text-blue-600 hover:underline"
+      >
+        <ArrowLeft size={18} /> Volver
+      </Link>
+
+      {/* Título */}
+      <h2 className="text-3xl font-bold">Licencia #{licencia.id}</h2>
+
+      {/* Caja premium */}
+      <UserSection>
+
+        <Field label="Plugin">
+          {licencia.plugin_nombre}
+        </Field>
+
+        <Field label="Email Tekla">
+          {licencia.email_tekla}
+        </Field>
+
+        <Field label="Estado">
+          <EstadoBadge estado={licencia.estado} />
+        </Field>
+
+        <Field label="Activaciones">
+          {licencia.activaciones_usadas} / {licencia.max_activaciones}
+        </Field>
+
+        <Field label="Creada">
+          {new Date(licencia.fecha_creacion).toLocaleString()}
+        </Field>
+
+      </UserSection>
+    </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM
+----------------------------------------------------- */
+
+function UserSection({ children }) {
+  return (
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700 
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      <p className="font-semibold text-gray-800 dark:text-gray-200">{label}</p>
+      <div className="text-gray-700 dark:text-gray-300">{children}</div>
+    </div>
+  );
+}
+
+/* Badge Premium según estado */
+function EstadoBadge({ estado }) {
+  const styles = {
+    activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    trial: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    bloqueada: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
+    expirada: "bg-orange-200 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  };
+
+  const icons = {
+    activa: <CheckCircle size={14} />,
+    pendiente: <Clock size={14} />,
+    trial: <Star size={14} />,
+    bloqueada: <Ban size={14} />,
+    expirada: <Calendar size={14} />,
+  };
+
+  return (
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold
+        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-800"}
+      `}
+    >
+      {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
+    </span>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\MisDatosClient.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+/* ======================================================
+   MIS DATOS — ESTILO PREMIUM (igual que panel admin)
+====================================================== */
+
+export default function MisDatosClient() {
+  const [loading, setLoading] = useState(true);
+
+  // USER (AUTH)
+  const [usuario, setUsuario] = useState(null);
+  const [userForm, setUserForm] = useState({
+    nombre: "",
+    empresa: "",
+    telefono: "",
+    pais: "",
+  });
+  const [editUser, setEditUser] = useState(false);
+
+  // FACTURACION
+  const [factForm, setFactForm] = useState({
+    nombre: "",
+    nif: "",
+    direccion: "",
+    ciudad: "",
+    cp: "",
+    pais: "",
+    telefono: "",
+  });
+  const [editFact, setEditFact] = useState(false);
+
+  const [usarMismosDatos, setUsarMismosDatos] = useState(false);
+
+  // ===============================================
+  // CARGA INICIAL (AUTH + FACT)
+  // ===============================================
+  useEffect(() => {
+    async function load() {
+      try {
+        // Usuario
+        const r1 = await fetch("/api/auth/me", { cache: "no-store" });
+        const d1 = await r1.json();
+
+        if (!d1.user) {
+          setLoading(false);
+          return;
+        }
+
+        setUsuario(d1.user);
+
+        setUserForm({
+          nombre: d1.user.user_metadata?.nombre ?? "",
+          empresa: d1.user.user_metadata?.empresa ?? "",
+          telefono: d1.user.user_metadata?.telefono ?? "",
+          pais: d1.user.user_metadata?.pais ?? "",
+        });
+
+        // FACTURACIÓN
+        const r2 = await fetch("/api/user/facturacion", { cache: "no-store" });
+        const d2 = await r2.json();
+
+        setFactForm({
+          nombre: d2?.nombre ?? "",
+          nif: d2?.nif ?? "",
+          direccion: d2?.direccion ?? "",
+          ciudad: d2?.ciudad ?? "",
+          cp: d2?.cp ?? "",
+          pais: d2?.pais ?? "",
+          telefono: d2?.telefono ?? "",
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  // ===============================================
+  // HANDLERS CORRECTOS
+  // ===============================================
+  const updateUserField = (key, value) =>
+    setUserForm((prev) => ({ ...prev, [key]: value }));
+
+  const updateFactField = (key, value) =>
+    setFactForm((prev) => ({ ...prev, [key]: value }));
+
+  // ===============================================
+  // GUARDAR DATOS USUARIO
+  // ===============================================
+  async function guardarUsuario() {
+    const res = await fetch("/api/user/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userForm),
+    });
+
+    if (res.ok) {
+      setEditUser(false);
+      location.reload();
+    }
+  }
+
+  // ===============================================
+  // GUARDAR FACTURACION
+  // ===============================================
+  async function guardarFacturacion() {
+    const payload = { ...factForm, usarDatosUsuario: usarMismosDatos };
+
+    const res = await fetch("/api/facturacion/guardar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      setEditFact(false);
+      location.reload();
+    }
+  }
+
+  if (loading)
+    return <p className="p-4 text-gray-600 dark:text-gray-300">Cargando…</p>;
+
+  return (
+    <div className="p-4 space-y-10 max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Mis datos</h1>
+
+      {/* -------------------- DATOS DE USUARIO -------------------- */}
+      <UserSection title="Datos de usuario">
+        {/* EMAIL */}
+        <Field label="Email">
+          <input
+            disabled
+            className="input-premium-disabled"
+            value={usuario.email}
+          />
+        </Field>
+
+        <EditableField
+          label="Nombre"
+          value={userForm.nombre}
+          onChange={(v) => updateUserField("nombre", v)}
+          editable={editUser}
+        />
+
+        <EditableField
+          label="Empresa"
+          value={userForm.empresa}
+          onChange={(v) => updateUserField("empresa", v)}
+          editable={editUser}
+        />
+
+        <EditableField
+          label="Teléfono"
+          value={userForm.telefono}
+          onChange={(v) => updateUserField("telefono", v)}
+          editable={editUser}
+        />
+
+        <EditableField
+          label="País"
+          value={userForm.pais}
+          onChange={(v) => updateUserField("pais", v)}
+          editable={editUser}
+        />
+
+        <BotonesEditarGuardar
+          editMode={editUser}
+          onEdit={() => setEditUser(true)}
+          onCancel={() => setEditUser(false)}
+          onSave={guardarUsuario}
+        />
+      </UserSection>
+
+      {/* -------------------- FACTURACIÓN -------------------- */}
+      <UserSection title="Datos de facturación">
+        <EditableField
+          label="Nombre / Razón social"
+          value={factForm.nombre}
+          onChange={(v) => updateFactField("nombre", v)}
+          editable={editFact}
+        />
+
+        <EditableField
+          label="NIF / CIF"
+          value={factForm.nif}
+          onChange={(v) => updateFactField("nif", v)}
+          editable={editFact}
+        />
+
+        <EditableField
+          label="Dirección"
+          value={factForm.direccion}
+          onChange={(v) => updateFactField("direccion", v)}
+          editable={editFact}
+        />
+
+        <EditableField
+          label="Ciudad"
+          value={factForm.ciudad}
+          onChange={(v) => updateFactField("ciudad", v)}
+          editable={editFact}
+        />
+
+        <EditableField
+          label="Código Postal"
+          value={factForm.cp}
+          onChange={(v) => updateFactField("cp", v)}
+          editable={editFact}
+        />
+
+        <EditableField
+          label="País"
+          value={factForm.pais}
+          onChange={(v) => updateFactField("pais", v)}
+          editable={editFact}
+        />
+
+        <EditableField
+          label="Teléfono"
+          value={factForm.telefono}
+          onChange={(v) => updateFactField("telefono", v)}
+          editable={editFact}
+        />
+
+        {/* Checkbox */}
+        <div className="flex items-center mt-2">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              disabled={!editFact}
+              checked={usarMismosDatos}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setUsarMismosDatos(checked);
+
+                if (checked) {
+                  setFactForm((prev) => ({
+                    ...prev,
+                    nombre: userForm.nombre || prev.nombre,
+                    pais: userForm.pais || prev.pais,
+                    telefono: userForm.telefono || prev.telefono,
+                  }));
+                }
+              }}
+              className="w-4 h-4 rounded border-gray-400 accent-blue-600"
+            />
+            Usar también los datos del usuario
+          </label>
+        </div>
+
+        <BotonesEditarGuardar
+          editMode={editFact}
+          onEdit={() => setEditFact(true)}
+          onCancel={() => setEditFact(false)}
+          onSave={guardarFacturacion}
+        />
+      </UserSection>
+    </div>
+  );
+}
+
+/* ======================================================
+   COMPONENTES PREMIUM
+====================================================== */
+
+function UserSection({ title, children }) {
+  return (
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      <label className="font-semibold">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function EditableField({ label, value, onChange, editable }) {
+  return (
+    <Field label={label}>
+      <input
+        disabled={!editable}
+        className={`input-premium ${!editable ? "opacity-60" : ""}`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Field>
+  );
+}
+
+function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
+  if (!editMode)
+    return (
+      <button
+        onClick={onEdit}
+        className="btn-premium bg-blue-600 hover:bg-blue-700"
+      >
+        Editar
+      </button>
+    );
+
+  return (
+    <div className="flex gap-3">
+      <button
+        onClick={onCancel}
+        className="btn-premium bg-gray-500 hover:bg-gray-600"
+      >
+        Cancelar
+      </button>
+
+      <button
+        onClick={onSave}
+        className="btn-premium bg-green-600 hover:bg-green-700"
+      >
+        Guardar
+      </button>
+    </div>
+  );
+}
+
+/* ======================================================
+   ESTILOS PREMIUM REUTILIZABLES
+====================================================== */
+
+/* input normal */
+const inputPremium = `
+  w-full px-3 py-2 rounded-lg
+  bg-gray-100 dark:bg-gray-800
+  border border-gray-300 dark:border-gray-700
+  focus:ring-2 focus:ring-blue-600
+  transition
+`;
+
+/* input disabled */
+const inputDisabled = `
+  w-full px-3 py-2 rounded-lg
+  bg-gray-200 dark:bg-gray-700
+  text-gray-600 dark:text-gray-400
+  border border-gray-300 dark:border-gray-600
+`;
+
+/* botones */
+const btnPremium = `
+  px-4 py-2 rounded-lg text-white font-semibold shadow
+  transition
+`;
+
+/* Para poder usar las clases */
+globalThis["input-premium"] = inputPremium;
+globalThis["input-premium-disabled"] = inputDisabled;
+globalThis["btn-premium"] = btnPremium;
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\page.jsx
+============================================================
+
+// /app/panel/mis-datos/page.jsx
+import MisDatosClient from "./MisDatosClient";
+
+export default function Page() {
+  return <MisDatosClient />;
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  KeyRound,
+  CreditCard,
+  Download,
+  User,
+  CheckCircle,
+  Clock,
+  Ban,
+} from "lucide-react";
+
+/* -----------------------------------------------------
+   DASHBOARD USER — ESTÉTICA PREMIUM (igual que admin)
+----------------------------------------------------- */
+
+export default function UserDashboardPage() {
+  const [licencias, setLicencias] = useState([]);
+  const [pagos, setPagos] = useState([]);
+  const [plugins, setPlugins] = useState([]);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      const r1 = await fetch("/api/user/licencias", { credentials: "include" });
+      setLicencias((await r1.json()).licencias || []);
+
+      const r2 = await fetch("/api/user/pagos", { credentials: "include" });
+      setPagos((await r2.json()).pagos || []);
+
+      const r3 = await fetch("/api/user/plugins", { credentials: "include" });
+      setPlugins((await r3.json()).plugins || []);
+
+      const me = await fetch("/api/auth/me", { credentials: "include" });
+      const user = await me.json();
+      setUserEmail(user?.user?.email || "");
+    }
+    load();
+  }, []);
+
+  const activas = licencias.filter((l) => l.estado === "activa").length;
+  const trials = licencias.filter((l) => l.estado === "trial").length;
+  const bloqueadas = licencias.filter((l) => l.estado === "bloqueada").length;
+  const totalCompras = pagos.length;
+
+  return (
+    <div className="space-y-10">
+
+      {/* ============= HEADER ============= */}
+      <div>
+        <h1 className="text-3xl font-bold flex items-center gap-3">
+          <User size={32} />
+          Bienvenido, {userEmail}
+        </h1>
+      </div>
+
+      {/* ============= TARJETAS PREMIUM ============= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <UserCard
+          title="Licencias activas"
+          value={activas}
+          icon={<CheckCircle className="text-green-600" />}
+        />
+
+        <UserCard
+          title="Trials"
+          value={trials}
+          icon={<Clock className="text-yellow-600" />}
+        />
+
+        <UserCard
+          title="Bloqueadas"
+          value={bloqueadas}
+          icon={<Ban className="text-red-600" />}
+        />
+
+        <UserCard
+          title="Total compras"
+          value={totalCompras}
+          icon={<CreditCard className="text-blue-600" />}
+        />
+
+      </div>
+
+      {/* ============= ÚLTIMAS LICENCIAS ============= */}
+      <UserSection title="Últimas licencias">
+        {licencias.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">No tienes licencias todavía.</p>
+        )}
+
+        {licencias.slice(0, 5).map((l) => (
+          <UserRow key={l.id}>
+            <div>
+              <p className="font-semibold">{l.plugin_id}</p>
+              <p className="text-sm opacity-70">Email Tekla: {l.email_tekla}</p>
+            </div>
+
+            <Link
+              href={`/panel/user/licencias/${l.id}`}
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Ver
+            </Link>
+          </UserRow>
+        ))}
+      </UserSection>
+
+      {/* ============= ÚLTIMOS PAGOS ============= */}
+      <UserSection title="Últimos pagos">
+        {pagos.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">Aún no hay pagos.</p>
+        )}
+
+        {pagos.slice(0, 5).map((p) => (
+          <UserRow key={p.id}>
+            <div>
+              <p className="font-semibold">Pago #{p.id}</p>
+              <p className="text-sm opacity-70">Estado: {p.estado}</p>
+            </div>
+
+            <Link
+              href={`/panel/user/pagos/${p.id}`}
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Ver
+            </Link>
+          </UserRow>
+        ))}
+      </UserSection>
+
+    </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM (Iguales al panel admin)
+----------------------------------------------------- */
+
+function UserCard({ title, value, icon }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 
+        flex flex-col gap-3
+      "
+    >
+      <div className="flex items-center gap-3">
+        {icon}
+        <h2 className="font-bold text-lg">{title}</h2>
+      </div>
+
+      <p className="text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function UserSection({ title, children }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+        {title}
+      </h2>
+
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function UserRow({ children }) {
+  return (
+    <div
+      className="
+        p-4 
+        bg-gray-100 dark:bg-gray-800 
+        border border-gray-300 dark:border-gray-700 
+        rounded-lg shadow 
+        flex justify-between items-center
+      "
+    >
+      {children}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { CreditCard, Eye } from "lucide-react";
+
+/* ------------------------------
+   Tooltip PRO (no se toca)
+------------------------------ */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+      <div
+        className="
+          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+          opacity-0 group-hover:opacity-100 transition
+          bg-black text-white text-xs py-1 px-2 rounded shadow
+          pointer-events-none whitespace-nowrap
+        "
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+export default function UserPagosPage() {
+  const [pagos, setPagos] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/user/pagos", { credentials: "include" });
+        const data = await res.json();
+        setPagos(data.pagos || []);
+      } catch (err) {
+        console.error("Error cargando pagos:", err);
+        setPagos([]);
+      }
+    }
+    load();
+  }, []);
+
+  if (pagos === null) return <p>Cargando pagos...</p>;
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <CreditCard size={30} /> Mis Pagos
+      </h1>
+
+      {/* Contenedor premium */}
+      <UserSection>
+        {/* Sin pagos */}
+        {pagos.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">
+            Todavía no tienes pagos registrados.
+          </p>
+        )}
+
+        {pagos.length > 0 && (
+          <div className="overflow-x-auto rounded-xl shadow border border-gray-300 dark:border-gray-700">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+                <tr>
+                  <th className="p-3">ID</th>
+                  <th className="p-3">Plugin</th>
+                  <th className="p-3">Lic.</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Factura</th>
+                  <th className="p-3">Fecha</th>
+                  <th className="p-3 text-right"></th>
+                </tr>
+              </thead>
+
+              <tbody className="text-sm">
+                {pagos.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  >
+                    <td className="p-3 font-semibold">{p.id}</td>
+                    <td className="p-3">{p.plugin_id}</td>
+                    <td className="p-3">{p.cantidad_licencias}</td>
+
+                    {/* Estado pago */}
+                    <td className="p-3">
+                      {p.estado === "pendiente" && (
+                        <Badge color="yellow">Pendiente</Badge>
+                      )}
+                      {p.estado === "aprobado" && (
+                        <Badge color="green">Aprobado</Badge>
+                      )}
+                    </td>
+
+                    {/* Estado Factura */}
+                    <td className="p-3">
+                      {p.numero_factura ? (
+                        <Badge color="blue">Lista</Badge>
+                      ) : p.factura_solicitada ? (
+                        <Badge color="yellow">Solicitada</Badge>
+                      ) : (
+                        <Badge color="gray">No solicitada</Badge>
+                      )}
+                    </td>
+
+                    {/* Fecha */}
+                    <td className="p-3">
+                      {new Date(p.fecha).toLocaleString()}
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="p-3 text-right">
+                      <Tooltip label="Ver detalles del pago">
+                        <Link
+                          href={`/panel/user/pagos/${p.id}`}
+                          className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          <Eye size={16} /> Ver
+                        </Link>
+                      </Tooltip>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+
+            </table>
+          </div>
+        )}
+      </UserSection>
+    </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM REUTILIZABLES
+----------------------------------------------------- */
+
+function UserSection({ children }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-xl shadow 
+        border border-gray-300 dark:border-gray-700
+        p-6 space-y-4
+      "
+    >
+      {children}
+    </div>
+  );
+}
+
+function Badge({ children, color }) {
+  const colors = {
+    yellow:
+      "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    green:
+      "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    blue: "bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200",
+    gray: "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  };
+
+  return (
+    <span
+      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${colors[color]}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  FileDown,
+  CheckCircle,
+  Clock,
+  Ban,
+  Calendar,
+} from "lucide-react";
+
+/* Badge PREMIUM por estado */
+function BadgeEstado({ estado }) {
+  const styles = {
+    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    aprobado: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
+    bloqueado: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
+  };
+
+  const icons = {
+    pendiente: <Clock size={14} />,
+    aprobado: <CheckCircle size={14} />,
+    bloqueado: <Ban size={14} />,
+  };
+
+  return (
+    <span
+      className={`
+        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
+        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
+      `}
+    >
+      {icons[estado]} {estado}
+    </span>
+  );
+}
+
+/* Contenedor premium */
+function UserSection({ title, children }) {
+  return (
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      {title && (
+        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h3>
+      )}
+      {children}
+    </section>
+  );
+}
+
+/* Campo premium */
+function Field({ label, children }) {
+  return (
+    <p>
+      <strong>{label}: </strong>
+      <span className="text-gray-700 dark:text-gray-300">{children}</span>
+    </p>
+  );
+}
+
+export default function UserPagoDetallePage() {
+  const params = useParams();
+  const id = params.id;
+
+  const [pago, setPago] = useState(null);
+  const [plugin, setPlugin] = useState(null);
+  const [licencias, setLicencias] = useState([]);
+  const [facturacion, setFacturacion] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  /* =======================================
+     CARGA
+  ======================================= */
+  useEffect(() => {
+    async function load() {
+      try {
+        // 1) PAGO
+        const rPago = await fetch(`/api/pagos/detalle/${id}`, {
+          credentials: "include",
+        });
+        const dPago = await rPago.json();
+
+        if (!rPago.ok) {
+          setError(dPago.error ?? "Error cargando pago");
+          setLoading(false);
+          return;
+        }
+
+        setPago(dPago);
+
+        // 2) Plugin
+        const rPlugin = await fetch(`/api/plugin/${dPago.plugin_id}`);
+        setPlugin(await rPlugin.json());
+
+        // 3) Licencias vinculadas
+        const rLic = await fetch(`/api/user/licencias?pago_id=${id}`);
+        const dLic = await rLic.json();
+        setLicencias(dLic.licencias ?? []);
+
+        // 4) Facturación
+        const rFact = await fetch(`/api/user/facturacion`);
+        const dFact = await rFact.json();
+        setFacturacion(dFact ?? null);
+      } catch (err) {
+        setError("Error de conexión");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (id) load();
+  }, [id]);
+
+  if (loading) return <p className="p-4">Cargando pago…</p>;
+  if (error) return <p className="p-4 text-red-600">{error}</p>;
+  if (!pago) return <p className="p-4">Pago no encontrado.</p>;
+
+  /* Valores seguros */
+  const subtotal = pago.importe_base ?? 0;
+  const iva = pago.iva ?? 0;
+  const total = pago.importe ?? subtotal + iva;
+
+  /* Descargar factura PDF */
+  async function descargarFactura() {
+    const res = await fetch("/api/facturacion/pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pagoId: pago.id }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.mensaje ?? "Error generando factura");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `factura-${pago.id}.pdf`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  /* Solicitar factura */
+  async function solicitarFactura() {
+    const r = await fetch("/api/facturacion/solicitar", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pagoId: pago.id }),
+    });
+
+    if (!r.ok) {
+      alert("Error solicitando la factura.");
+      return;
+    }
+
+    alert("Solicitud enviada. El administrador debe asignar un número de factura.");
+  }
+
+  return (
+    <div className="p-4 max-w-3xl mx-auto space-y-10">
+
+      {/* Volver */}
+      <Link
+        href="/panel/user/pagos"
+        className="flex items-center gap-2 text-blue-600 hover:underline"
+      >
+        <ArrowLeft size={18} />
+        Volver
+      </Link>
+
+      {/* Título */}
+      <h2 className="text-3xl font-bold">Pago #{pago.id}</h2>
+
+      {/* ==================================
+          RESUMEN PREMIUM
+      ================================== */}
+      <UserSection title="Resumen del pago">
+        <Field label="Plugin">{plugin?.nombre}</Field>
+
+        <Field label="Estado">
+          <BadgeEstado estado={pago.estado} />
+        </Field>
+
+        <Field label="Tipo licencia">{pago.tipo}</Field>
+
+        <Field label="Cantidad">{pago.cantidad_licencias}</Field>
+
+        <Field label="Fecha">
+          {pago.fecha ? new Date(pago.fecha).toLocaleString() : "—"}
+        </Field>
+
+        <div className="pt-4 space-y-1">
+          <Field label="Subtotal">{subtotal.toFixed(2)} €</Field>
+          <Field label="IVA 21%">{iva.toFixed(2)} €</Field>
+          <p className="text-xl font-bold">Total: {total.toFixed(2)} €</p>
+        </div>
+
+        {/* Factura: solicitar / descargar */}
+        {pago.estado === "aprobado" && (
+          <>
+            {pago.numero_factura ? (
+              <button
+                onClick={descargarFactura}
+                className="
+                  mt-4 flex items-center gap-2 
+                  bg-blue-600 hover:bg-blue-700
+                  text-white px-4 py-2 rounded-lg shadow
+                "
+              >
+                <FileDown size={18} />
+                Descargar factura en PDF
+              </button>
+            ) : (
+              <button
+                onClick={solicitarFactura}
+                className="
+                  mt-4 flex items-center gap-2 
+                  bg-yellow-600 hover:bg-yellow-700
+                  text-white px-4 py-2 rounded-lg shadow
+                "
+              >
+                Solicitar factura
+              </button>
+            )}
+          </>
+        )}
+      </UserSection>
+
+      {/* ==================================
+          LICENCIAS VINCULADAS
+      ================================== */}
+      <UserSection title="Licencias vinculadas">
+        {!licencias.length ? (
+          <p>No hay licencias asociadas.</p>
+        ) : (
+          <ul className="space-y-2">
+            {licencias.map((l) => (
+              <li
+                key={l.id}
+                className="
+                  p-3 rounded-lg 
+                  bg-gray-100 dark:bg-gray-800 
+                  border border-gray-300 dark:border-gray-700
+                "
+              >
+                <strong>Email Tekla: </strong>
+                {l.email_tekla ?? "—"} —{" "}
+                <strong>Estado: </strong>
+                {l.estado}
+              </li>
+            ))}
+          </ul>
+        )}
+      </UserSection>
+
+      {/* ==================================
+          FACTURACIÓN
+      ================================== */}
+      <UserSection title="Datos de facturación">
+        {!facturacion ? (
+          <p>No hay datos guardados.</p>
+        ) : (
+          <div className="space-y-1">
+            <Field label="Nombre">{facturacion.nombre}</Field>
+            <Field label="NIF">{facturacion.nif ?? "—"}</Field>
+            <Field label="Dirección">{facturacion.direccion}</Field>
+            <Field label="Ciudad">{facturacion.ciudad}</Field>
+            <Field label="País">{facturacion.pais}</Field>
+          </div>
+        )}
+      </UserSection>
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\plugins\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Box, Download, KeyRound } from "lucide-react";
+
+/* Tooltip PRO */
+function Tooltip({ label, children }) {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+      <div
+        className="
+          absolute left-1/2 -translate-x-1/2 bottom-full mb-2
+          opacity-0 group-hover:opacity-100 transition
+          bg-black text-white text-xs py-1 px-2 rounded shadow
+          pointer-events-none whitespace-nowrap
+        "
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+/* Contenedor premium */
+function UserSection({ children }) {
+  return (
+    <section
+      className="
+        bg-white dark:bg-gray-900 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow p-6 space-y-4
+      "
+    >
+      {children}
+    </section>
+  );
+}
+
+/* Tarjeta premium plugin */
+function PluginCard({ plugin, licCount }) {
+  return (
+    <div
+      className="
+        p-6 
+        bg-gray-100 dark:bg-gray-800 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow 
+        flex justify-between items-center
+      "
+    >
+      {/* Info del plugin */}
+      <div className="flex flex-col gap-1">
+        <p className="font-semibold text-lg">{plugin.nombre}</p>
+
+        <p className="text-sm text-gray-700 dark:text-gray-400">
+          Versión: {plugin.version ?? "—"}
+        </p>
+
+        <p className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-400">
+          <KeyRound size={14} /> {licCount} licencias asociadas
+        </p>
+      </div>
+
+      {/* Botón descargar */}
+      <Tooltip label="Descargar plugin">
+        <a
+          href={plugin.url_descarga}
+          className="
+            flex items-center gap-2 
+            bg-blue-600 hover:bg-blue-700 
+            text-white px-4 py-2 rounded-lg shadow
+          "
+        >
+          <Download size={18} />
+          Descargar
+        </a>
+      </Tooltip>
+    </div>
+  );
+}
+
+export default function UserPluginsPage() {
+  const [plugins, setPlugins] = useState(null);
+  const [licencias, setLicencias] = useState([]);
+
+  useEffect(() => {
+    async function load() {
+      // Obtener plugins disponibles
+      const rP = await fetch("/api/user/plugins", { credentials: "include" });
+      const dP = await rP.json();
+      setPlugins(dP.plugins || []);
+
+      // Obtener licencias del usuario
+      const rL = await fetch("/api/user/licencias");
+      const dL = await rL.json();
+      setLicencias(dL.licencias || []);
+    }
+
+    load();
+  }, []);
+
+  if (plugins === null)
+    return <p className="p-4">Cargando plugins...</p>;
+
+  // Licencias por plugin_id
+  const licPorPlugin = licencias.reduce((acc, l) => {
+    acc[l.plugin_id] = (acc[l.plugin_id] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Box size={30} /> Mis Plugins
+      </h1>
+
+      <UserSection>
+        {/* Si no hay plugins */}
+        {plugins.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">
+            Aún no tienes plugins asociados.
+          </p>
+        )}
+
+        {/* Tarjetas premium */}
+        <div className="flex flex-col gap-4">
+          {plugins.map((p) => (
+            <PluginCard
+              key={p.id}
+              plugin={p}
+              licCount={licPorPlugin[p.id] || 0}
+            />
+          ))}
+        </div>
+      </UserSection>
+
+    </div>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
+============================================================
+
+"use client";
+
+export default function AboutSection() {
+  return (
+    <section className="py-20 max-w-5xl mx-auto px-6 reveal">
+      <h2 className="text-3xl font-bold mb-8 text-center">Sobre mí</h2>
+
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+        Soy Óscar Martínez, especialista en Tekla Structures con más de 23 años de experiencia
+        en modelado avanzado, fabricación, prefabricado y montaje. Durante más de dos décadas
+        trabajé en proyectos reales que me permitieron conocer cada fase del proceso constructivo:
+        desde la ingeniería, al taller y la obra.
+      </p>
+
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+        Actualmente ayudo a empresas a mejorar su productividad mediante automatizaciones,
+        plugins personalizados y flujos BIM optimizados. Mi objetivo es claro: que tus modelos
+        sean más rápidos de producir, más precisos y totalmente adaptados a tus necesidades reales.
+      </p>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
+  const [tipo, setTipo] = useState(tipoActual);
+  const [loading, setLoading] = useState(false);
+
+  async function guardar() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/tipo", {
+      method: "POST",
+      credentials: "include",               // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ necesario para el backend
+      body: JSON.stringify({ id, tipo_id: tipo }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-bold mb-2">Tipo de licencia</h3>
+
+      <select
+        className="border p-2 w-full"
+        value={tipo}
+        onChange={(e) => setTipo(e.target.value)}
+      >
+        {tipos.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.nombre}
+          </option>
+        ))}
+      </select>
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+        onClick={guardar}
+        disabled={loading}
+      >
+        Guardar tipo
+      </button>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CrearLicenciaModal.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function CrearLicenciaModal({ onClose, onCreated }) {
+  const [email, setEmail] = useState("");
+  const [plugin, setPlugin] = useState("");
+  const [notas, setNotas] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function crear() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/crear", {
+      method: "POST",
+      credentials: "include",                // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ Necesario
+      body: JSON.stringify({
+        email_tekla: email,
+        plugin_id: plugin,
+        notas,
+      }),
+    });
+
+    const data = await res.json();
+
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onCreated();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+      <div className="bg-[#f3f4f6] p-6 rounded shadow w-96">
+        <h2 className="text-xl font-bold mb-4">Crear licencia</h2>
+
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="Email Tekla"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="Plugin ID"
+          value={plugin}
+          onChange={(e) => setPlugin(e.target.value)}
+        />
+
+        <textarea
+          className="border p-2 w-full mb-2"
+          placeholder="Notas"
+          value={notas}
+          onChange={(e) => setNotas(e.target.value)}
+        />
+
+        <div className="flex justify-end gap-2">
+          <button className="px-4 py-2" onClick={onClose}>
+            Cancelar
+          </button>
+
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={crear}
+            disabled={loading}
+          >
+            {loading ? "Creando..." : "Crear"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\EditarNotas.jsx
+============================================================
+
+"use client";
+
+import { useState } from "react";
+
+export default function EditarNotas({ id, notasIniciales, onUpdated }) {
+  const [notas, setNotas] = useState(notasIniciales);
+  const [loading, setLoading] = useState(false);
+
+  async function guardar() {
+    setLoading(true);
+
+    const res = await fetch("/api/admin/licencias/notas", {
+      method: "POST",
+      credentials: "include",                         // ✔ FIX CRÍTICO
+      headers: { "Content-Type": "application/json" }, // ✔ Necesario
+      body: JSON.stringify({ id, notas }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    onUpdated();
+  }
+
+  return (
+    <div className="mt-6">
+      <h3 className="font-bold mb-2">Notas</h3>
+
+      <textarea
+        className="border p-2 w-full h-32"
+        value={notas}
+        onChange={(e) => setNotas(e.target.value)}
+      />
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+        onClick={guardar}
+        disabled={loading}
+      >
+        Guardar notas
+      </button>
+    </div>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaAcciones.jsx
 ============================================================
 
@@ -677,6 +2279,87 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\panel\UserCard.jsx
+============================================================
+
+export default function UserCard({ title, value, icon }) {
+  return (
+    <div className="
+      bg-gray-100 dark:bg-gray-800 
+      border border-gray-300 dark:border-gray-700
+      rounded-xl shadow p-5
+      flex flex-col gap-2
+    ">
+      <div className="flex items-center gap-3">
+        {icon}
+        <h3 className="font-bold text-lg">{title}</h3>
+      </div>
+      <p className="text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\panel\UserSection.jsx
+============================================================
+
+export default function UserSection({ title, children }) {
+  return (
+    <div className="
+      bg-white dark:bg-gray-900 
+      border border-gray-300 dark:border-gray-700
+      rounded-xl shadow p-6 space-y-4
+    ">
+      {title && (
+        <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h2>
+      )}
+      {children}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\PanelWrapper.jsx
+============================================================
+
+"use client";
+
+import { usePathname } from "next/navigation";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+
+export default function PanelWrapper({ children }) {
+  const pathname = usePathname();
+  const isPanel = pathname?.startsWith("/panel");
+
+  return (
+    <>
+      {/* Navbar:
+          - Fuera del panel → visible siempre
+          - Dentro del panel → visible solo en escritorio
+      */}
+      {!isPanel ? (
+        <Navbar />
+      ) : (
+        <div className="hidden md:block">
+          <Navbar />
+        </div>
+      )}
+
+      <main className={isPanel ? "" : "pt-20"}>{children}</main>
+
+      {/* Footer solo fuera del panel */}
+      {!isPanel && <Footer />}
+    </>
   );
 }
 

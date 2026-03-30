@@ -17,15 +17,19 @@ export default function UserLayout({ children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px]">
 
       {/* ====================================
           BOTÓN HAMBURGUESA (MÓVIL)
       ==================================== */}
       <button
-        className="md:hidden absolute top-4 left-4 z-[999] 
-                   bg-white dark:bg-gray-700 
-                   p-2 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600"
+        className="
+          md:hidden 
+          fixed top-[80px] left-4 z-[60]
+          bg-white dark:bg-gray-700 
+          p-2 rounded-lg shadow-lg 
+          border border-gray-300 dark:border-gray-600
+        "
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
@@ -36,20 +40,22 @@ export default function UserLayout({ children }) {
       ==================================== */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998] md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[50] md:hidden"
           onClick={() => setOpen(false)}
-        ></div>
+        />
       )}
 
       {/* ====================================
-          SIDEBAR MÓVIL (DRAWER PREMIUM)
+          SIDEBAR MÓVIL (DRAWER)
       ==================================== */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-4 z-[999]
+          fixed top-[72px] left-0 
+          h-[calc(100vh-72px)] w-64 
+          p-4 z-[60]
           bg-white dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
-          shadow-xl rounded-r-xl
+          shadow-xl
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:hidden
@@ -57,8 +63,7 @@ export default function UserLayout({ children }) {
       >
         {/* Botón cerrar */}
         <button
-          className="absolute top-4 right-4 p-1 rounded 
-                     hover:bg-gray-200 dark:hover:bg-gray-700"
+          className="absolute top-4 right-4 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           onClick={() => setOpen(false)}
         >
           <X size={24} />
@@ -101,7 +106,7 @@ export default function UserLayout({ children }) {
       </aside>
 
       {/* ====================================
-          SIDEBAR DESKTOP (PREMIUM)
+          SIDEBAR DESKTOP
       ==================================== */}
       <aside
         className="
@@ -111,7 +116,8 @@ export default function UserLayout({ children }) {
           border-r border-gray-300 dark:border-gray-700
           shadow-xl
           p-6 space-y-6
-          md:mt-20        /* 👈 MARGEN SUPERIOR AÑADIDO SOLO PARA ESCRITORIO */
+          fixed top-[72px] left-0 bottom-0
+          z-20
         "
       >
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -119,7 +125,6 @@ export default function UserLayout({ children }) {
         </h2>
 
         <nav className="space-y-2 text-base">
-
           <PanelLink href="/panel/user" icon={<Home size={18} />}>
             Inicio
           </PanelLink>
@@ -143,19 +148,18 @@ export default function UserLayout({ children }) {
           <PanelLink href="/" icon={<ArrowLeft size={18} />} className="mt-4">
             Volver a ombim.site
           </PanelLink>
-
         </nav>
       </aside>
 
       {/* ====================================
-          CONTENIDO PRINCIPAL (ESTILO ADMIN)
+          CONTENIDO PRINCIPAL
       ==================================== */}
       <main
         className="
           flex-1 
-          p-6 
-          pt-24 md:pt-12
           overflow-y-auto 
+          p-6
+          md:ml-64
           bg-gray-50 dark:bg-gray-800
         "
       >

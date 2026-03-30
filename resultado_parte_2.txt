@@ -1,5 +1,71 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
+============================================================
+
+import { PLANTILLA_ACTIVADAS } from "@/app/api/email/plantillas/activadas";
+import { sendEmail } from "@/lib/email";
+
+export async function POST(req) {
+  const { email, emails_tekla } = await req.json();
+
+  const lista = emails_tekla.map((e) => `<li>${e}</li>`).join("");
+
+  const html = PLANTILLA_ACTIVADAS.replace("{{lista_emails}}", lista);
+
+  await sendEmail({
+    to: email,
+    subject: "Tus licencias OMBIM han sido activadas",
+    html,
+  });
+
+  return Response.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\activadas.js
+============================================================
+
+// /app/api/email/plantillas/activadas.js
+
+export const PLANTILLA_ACTIVADAS = `
+<!DOCTYPE html>
+<html lang="es" style="font-family:Arial;">
+<body style="background:#f3f4f6;padding:0;margin:0;">
+
+<div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;
+     box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+
+  <h2 style="text-align:center;color:#111827;margin-bottom:20px;">
+    Tus licencias OMBIM han sido activadas
+  </h2>
+
+  <p style="font-size:16px;color:#374151;">
+    Ya puedes usar tu plugin de OMBIM. Se han activado las licencias para los siguientes emails Tekla:
+  </p>
+
+  <ul style="color:#374151;font-size:15px;">
+    {{lista_emails}}
+  </ul>
+
+  <p style="font-size:16px;color:#4b5563;margin-top:20px;">
+    Si ya tienes el plugin instalado en Tekla, simplemente ábrelo y se activará automáticamente.
+  </p>
+
+  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+
+  <p style="text-align:center;color:#9ca3af;font-size:12px;">
+    © OMBIM – Herramientas BIM profesionales
+  </p>
+
+</div>
+</body>
+</html>
+`;
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\compra.js
 ============================================================
 
@@ -91,15 +157,37 @@ export async function POST(req) {
   const supabase = await supabaseServer();
   const body = await req.json();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userErr
+  } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
   }
 
   const { usarDatosUsuario, ...factForm } = body;
 
-  let {
+  // ✔ Sanitizado y normalización
+  let nombre = factForm?.nombre?.trim() ?? "";
+  let nif = factForm?.nif?.trim() ?? "";
+  let direccion = factForm?.direccion?.trim() ?? "";
+  let ciudad = factForm?.ciudad?.trim() ?? "";
+  let cp = factForm?.cp?.trim() ?? "";
+  let pais = factForm?.pais?.trim() ?? "";
+  let telefono = factForm?.telefono?.trim() ?? "";
+
+  const um = user.user_metadata ?? {};
+
+  // ✔ Copiar datos del usuario solo si se marca la casilla
+  if (usarDatosUsuario) {
+    nombre = um.nombre || um.empresa || nombre;
+    pais = um.pais || pais;
+    telefono = um.telefono || telefono;
+  }
+
+  const payload = {
+    user_id: user.id,
     nombre,
     nif,
     direccion,
@@ -107,35 +195,16 @@ export async function POST(req) {
     cp,
     pais,
     telefono,
-  } = factForm;
+    updated_at: new Date().toISOString()
+  };
 
-  const um = user.user_metadata ?? {};
-
-  // AUTOCOPIAR SOLO SI MARCA LA CASILLA
-  if (usarDatosUsuario) {
-    nombre = um.nombre || um.empresa || nombre;
-    pais = um.pais || pais;
-    telefono = um.telefono || telefono;
-  }
-
-  // Guardar facturación
-  const { error } = await supabase.from("facturacion").upsert(
-    {
-      user_id: user.id,
-      nombre,
-      nif,
-      direccion,
-      ciudad,
-      cp,
-      pais,
-      telefono,
-      updated_at: new Date(),
-    },
-    { onConflict: "user_id" }
-  );
+  // ✔ upsert seguro
+  const { error } = await supabase
+    .from("facturacion")
+    .upsert(payload, { onConflict: "user_id" });
 
   if (error) {
-    console.error(error);
+    console.error("Error guardando facturación:", error);
     return NextResponse.json(
       { error: "error_guardando_facturacion" },
       { status: 500 }
@@ -146,11 +215,12 @@ export async function POST(req) {
 }
 
 
+
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
 ============================================================
 
-// app/api/facturacion/guardar-numero/route.js
+// /app/api/facturacion/guardar-numero/route.js
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -161,18 +231,35 @@ export async function POST(req) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const { pago_id, numero_factura } = await req.json();
+  const body = await req.json();
+
+  const pago_id = body?.pago_id?.toString().trim();
+  const numero_factura = body?.numero_factura?.toString().trim();
 
   if (!pago_id || !numero_factura) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
   }
 
+  // ✔ Comprobar que el pago existe
+  const { data: pago, error: pagoErr } = await supabaseAdmin
+    .from("pagos")
+    .select("id")
+    .eq("id", pago_id)
+    .single();
+
+  if (pagoErr || !pago) {
+    console.error("Pago no encontrado:", pagoErr);
+    return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
+  }
+
+  // ✔ Actualizar número de factura
   const { error } = await supabaseAdmin
     .from("pagos")
     .update({ numero_factura })
     .eq("id", pago_id);
 
   if (error) {
+    console.error("Error asignando número de factura:", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
@@ -193,7 +280,8 @@ export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
-    const { pagoId } = await req.json();
+    const body = await req.json();
+    const pagoId = body?.pagoId?.toString().trim();
 
     if (!pagoId) {
       return NextResponse.json(
@@ -212,43 +300,67 @@ export async function POST(req) {
       .single();
 
     if (pagoErr || !pago) {
+      console.error("Error cargando pago:", pagoErr);
       return NextResponse.json(
         { ok: false, error: "pago_no_encontrado" },
         { status: 404 }
       );
     }
 
-    // 2. Usuario
-    const { data: userData } = await supabase.auth.admin.getUserById(pago.user_id);
-    const user = userData?.user;
+    // 2. Usuario propietario
+    const { data: userData, error: userErr } =
+      await supabase.auth.admin.getUserById(pago.user_id);
+
+    if (userErr) {
+      console.error("Error cargando usuario:", userErr);
+    }
+
+    const user = userData?.user ?? {};
 
     // 3. Facturación
-    const { data: fact } = await supabase
+    const { data: fact, error: factErr } = await supabase
       .from("facturacion")
       .select("*")
       .eq("user_id", pago.user_id)
       .maybeSingle();
 
-    // 4. Licencias
-    const { data: licData } = await supabase
+    if (factErr) {
+      console.error("Error obteniendo facturación:", factErr);
+    }
+
+    // 4. Licencias asociadas al pago
+    const { data: licData, error: licErr } = await supabase
       .from("licencias")
       .select("email_tekla, tipo")
       .eq("pago_id", pagoId);
 
+    if (licErr) {
+      console.error("Error obteniendo licencias:", licErr);
+    }
+
     const licencias = (licData ?? []).map((l) => ({
-      email: l.email_tekla,
+      email: l.email_tekla?.trim() ?? "",
       tipo: l.tipo,
-      precioUnitario: pago.importe / pago.cantidad_licencias,
+      precioUnitario:
+        pago.cantidad_licencias > 0
+          ? (pago.importe / pago.cantidad_licencias)
+          : 0,
     }));
 
-    // 5. Datos PDF
+    // 5. Preparar datos para PDF
+    const fecha = new Date(pago.fecha);
+    const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(
+      fecha.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}/${fecha.getFullYear()}`;
+
     const datosPdf = {
       pagoId,
       numeroFactura:
         pago.numero_factura ??
         `OMBIM-${new Date().getFullYear()}-${String(pago.id).padStart(6, "0")}`,
-      fecha: new Date(pago.fecha).toLocaleDateString(),
-
+      fecha: fechaFormateada,
       razonSocial:
         fact?.nombre ??
         user?.user_metadata?.empresa ??
@@ -261,14 +373,13 @@ export async function POST(req) {
       pais: fact?.pais ?? "",
       telefono: fact?.telefono ?? "",
       email: user?.email ?? "",
-
       licencias,
     };
 
-    // 6. Generar PDF (YA DEVUELVE BUFFER)
+    // 6. Generar PDF (devuelve Buffer)
     const pdfBuffer = await generateInvoicePdf(datosPdf);
 
-    // 7. Devolver PDF
+    // 7. Respuesta final
     return new Response(pdfBuffer, {
       status: 200,
       headers: {
@@ -301,28 +412,30 @@ export async function POST(req) {
   try {
     const supabase = await supabaseServer();
 
-    // ========================================
     // 1. Verificar usuario autenticado
-    // ========================================
     const {
       data: { user },
+      error: userErr,
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "No autorizado" },
-        { status: 401 }
-      );
+    if (userErr || !user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // ========================================
-    // 2. Validar que el usuario tiene facturación
-    // ========================================
-    const { data: fact } = await supabase
+    // 2. Validar facturación existente
+    const { data: fact, error: factErr } = await supabase
       .from("facturacion")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (factErr) {
+      console.error("Error cargando facturación:", factErr);
+      return NextResponse.json(
+        { error: "error_cargando_facturacion" },
+        { status: 500 }
+      );
+    }
 
     if (!fact) {
       return NextResponse.json(
@@ -335,10 +448,9 @@ export async function POST(req) {
       );
     }
 
-    // ========================================
-    // 3. Leer el pago_id enviado por el usuario
-    // ========================================
-    const { pagoId } = await req.json();
+    // 3. Leer pagoId
+    const body = await req.json();
+    const pagoId = body?.pagoId?.toString().trim();
 
     if (!pagoId) {
       return NextResponse.json(
@@ -347,14 +459,20 @@ export async function POST(req) {
       );
     }
 
-    // ========================================
-    // 4. Comprobar que el pago existe y es suyo
-    // ========================================
-    const { data: pago } = await supabase
+    // 4. Comprobar pago
+    const { data: pago, error: pagoErr } = await supabase
       .from("pagos")
       .select("id, user_id, factura_solicitada, numero_factura")
       .eq("id", pagoId)
       .maybeSingle();
+
+    if (pagoErr) {
+      console.error("Error buscando pago:", pagoErr);
+      return NextResponse.json(
+        { error: "error_cargando_pago" },
+        { status: 500 }
+      );
+    }
 
     if (!pago) {
       return NextResponse.json(
@@ -363,7 +481,6 @@ export async function POST(req) {
       );
     }
 
-    // Evitar que un usuario pida factura de otro usuario
     if (pago.user_id !== user.id) {
       return NextResponse.json(
         { error: "acceso_denegado" },
@@ -371,7 +488,6 @@ export async function POST(req) {
       );
     }
 
-    // Si ya tiene número → no solicitar
     if (pago.numero_factura) {
       return NextResponse.json({
         ok: true,
@@ -379,7 +495,6 @@ export async function POST(req) {
       });
     }
 
-    // Si ya estaba solicitada → no duplicar
     if (pago.factura_solicitada) {
       return NextResponse.json({
         ok: true,
@@ -387,17 +502,21 @@ export async function POST(req) {
       });
     }
 
-    // ========================================
-    // 5. Marcar el pago como 'solicita factura'
-    // ========================================
-    await supabase
+    // 5. Marcar como solicitada
+    const { error: updErr } = await supabase
       .from("pagos")
       .update({ factura_solicitada: true })
       .eq("id", pagoId);
 
-    // ========================================
-    // 6. Enviar email al administrador
-    // ========================================
+    if (updErr) {
+      console.error("Error guardando solicitud:", updErr);
+      return NextResponse.json(
+        { error: "error_actualizando" },
+        { status: 500 }
+      );
+    }
+
+    // 6. Enviar email (HTML real)
     const html = `
       <h2>Solicitud de factura</h2>
 
@@ -427,9 +546,7 @@ export async function POST(req) {
       html,
     });
 
-    // ========================================
-    // 7. Respuesta correcta al usuario
-    // ========================================
+    // 7. OK
     return NextResponse.json({
       ok: true,
       mensaje: "Solicitud enviada. El administrador la revisará.",
@@ -543,22 +660,35 @@ import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { licencia_id } = await req.json();
-  if (!licencia_id)
+  if (!licencia_id) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
+  }
 
-  const { data: lic } = await supabaseAdmin
+  const { data: lic, error: licError } = await supabaseAdmin
     .from("licencias")
     .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic)
+  if (licError || !lic) {
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+  }
 
-  await supabaseAdmin.from("licencias").update({ estado: "activa" }).eq("id", licencia_id);
+  // ✔ FIX: controlar error al actualizar
+  const { error: updateErr } = await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "activa" })
+    .eq("id", licencia_id);
+
+  if (updateErr) {
+    console.error("Error activando licencia:", updateErr);
+    return NextResponse.json({ error: "error_actualizando" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -574,22 +704,39 @@ import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { licencia_id } = await req.json();
-  if (!licencia_id)
+  if (!licencia_id) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
+  }
 
-  const { data: lic } = await supabaseAdmin
+  // ✔ Añadir control de error
+  const { data: lic, error: licError } = await supabaseAdmin
     .from("licencias")
     .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic)
+  if (licError || !lic) {
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+  }
 
-  await supabaseAdmin.from("licencias").update({ estado: "bloqueada" }).eq("id", licencia_id);
+  // ✔ Controlar error de update
+  const { error: updateErr } = await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "bloqueada" })
+    .eq("id", licencia_id);
+
+  if (updateErr) {
+    console.error("Error bloqueando licencia:", updateErr);
+    return NextResponse.json(
+      { error: "error_actualizando" },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -660,17 +807,19 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
   }
 
-  // comprobar existencia
-  const { data: lic } = await supabaseAdmin
+  // ✔ Añadir control de error real del SELECT
+  const { data: lic, error: licError } = await supabaseAdmin
     .from("licencias")
     .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic) {
+  if (licError || !lic) {
+    console.error("Error buscando licencia:", licError);
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
+  // ✔ UPDATE con control de error (esto ya existía)
   const { error } = await supabaseAdmin
     .from("licencias")
     .update({ activaciones_usadas: 0 })
@@ -699,12 +848,14 @@ export async function GET(req) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const id = new URL(req.url).searchParams.get("id");
+  // ✔ FIX: normalizar id
+  const id = new URL(req.url).searchParams.get("id")?.trim();
 
   if (!id) {
     return NextResponse.json({ error: "Falta id" }, { status: 400 });
   }
 
+  // ✔ FIX: capturar error del SELECT
   const { data, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
@@ -712,6 +863,7 @@ export async function GET(req) {
     .single();
 
   if (error || !data) {
+    console.error("Error cargando licencia:", error);
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
   }
 
@@ -729,26 +881,40 @@ import { requireAdmin } from "@/lib/checkAdmin";
 
 export async function POST(req) {
   const admin = await requireAdmin();
-  if (!admin.ok) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
 
   const { licencia_id } = await req.json();
-  if (!licencia_id)
+  if (!licencia_id) {
     return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
+  }
 
-  const { data: lic } = await supabaseAdmin
+  // ✔ Manejo de error en SELECT
+  const { data: lic, error: licError } = await supabaseAdmin
     .from("licencias")
     .select("id")
     .eq("id", licencia_id)
     .single();
 
-  if (!lic)
+  if (licError || !lic) {
+    console.error("Error buscando licencia:", licError);
     return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+  }
 
-  await supabaseAdmin.from("licencias").update({ estado: "trial" }).eq("id", licencia_id);
+  // ✔ Manejo de error en UPDATE
+  const { error: updateErr } = await supabaseAdmin
+    .from("licencias")
+    .update({ estado: "trial" })
+    .eq("id", licencia_id);
+
+  if (updateErr) {
+    console.error("Error actualizando licencia:", updateErr);
+    return NextResponse.json({ error: "Error actualizando" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
-
 
 
 ============================================================
@@ -760,68 +926,83 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
-    let payload;
-    try {
-        payload = await req.json();
-    } catch {
-        return NextResponse.json({ ok: false, error: "json_invalido" });
+  let payload;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "json_invalido" });
+  }
+
+  const email_tekla = payload?.email_tekla?.trim()?.toLowerCase();
+  const { plugin_id } = payload;
+
+  if (!email_tekla || !plugin_id) {
+    return NextResponse.json({ ok: false, error: "faltan_datos" });
+  }
+
+  // 1. Buscar licencia existente
+  const { data: lic, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("email_tekla", email_tekla)
+    .eq("plugin_id", plugin_id)
+    .single();
+
+  if (error || !lic) {
+    return NextResponse.json({ ok: false, error: "no_existe" });
+  }
+
+  // 2. Bloqueada
+  if (lic.estado === "bloqueada") {
+    return NextResponse.json({ ok: false, error: "bloqueada" });
+  }
+
+  // 2.2 No permitir validar licencias "pendiente"
+  if (lic.estado === "pendiente") {
+    return NextResponse.json({ ok: false, error: "pendiente" });
+  }
+
+  // 3. Licencia anual expirada
+  if (lic.tipo === "anual") {
+    if (!lic.fecha_expiracion) {
+      return NextResponse.json({ ok: false, error: "expirada" });
     }
 
-    const { email_tekla, plugin_id } = payload;
+    const ahora = new Date();
+    const expira = new Date(lic.fecha_expiracion);
 
-    if (!email_tekla || !plugin_id) {
-        return NextResponse.json({ ok: false, error: "faltan_datos" });
+    if (expira < ahora) {
+      return NextResponse.json({ ok: false, error: "expirada" });
     }
+  }
 
-    // 1. Buscar licencia existente
-    const { data: lic, error } = await supabaseAdmin
-        .from("licencias")
-        .select("*")
-        .eq("email_tekla", email_tekla)
-        .eq("plugin_id", plugin_id)
-        .single();
+  // 4. Activaciones disponibles
+  if (lic.activaciones_usadas >= lic.max_activaciones) {
+    return NextResponse.json({ ok: false, error: "sin_activaciones" });
+  }
 
-    if (error || !lic) {
-        return NextResponse.json({ ok: false, error: "no_existe" });
+  // 5. Incrementar activaciones
+  const nuevas = lic.activaciones_usadas + 1;
+
+  const { error: updateErr } = await supabaseAdmin
+    .from("licencias")
+    .update({
+      activaciones_usadas: nuevas
+    })
+    .eq("id", lic.id);
+
+  if (updateErr) {
+    return NextResponse.json({ ok: false, error: "error_actualizando" });
+  }
+
+  // 6. Respuesta
+  return NextResponse.json({
+    ok: true,
+    licencia: {
+      estado: lic.estado,
+      fecha_expiracion: lic.fecha_expiracion
     }
-
-    // 2. Bloqueada
-    if (lic.estado === "bloqueada") {
-        return NextResponse.json({ ok: false, error: "bloqueada" });
-    }
-
-    // 3. Licencia anual expirada
-    if (lic.tipo === "anual" && lic.fecha_expiracion) {
-        const ahora = new Date();
-        const expira = new Date(lic.fecha_expiracion);
-        if (expira < ahora) {
-            return NextResponse.json({ ok: false, error: "expirada" });
-        }
-    }
-
-    // 4. Activaciones disponibles
-    if (lic.activaciones_usadas >= lic.max_activaciones) {
-        return NextResponse.json({ ok: false, error: "sin_activaciones" });
-    }
-
-    // 5. Incrementar activaciones
-    const nuevas = lic.activaciones_usadas + 1;
-
-    await supabaseAdmin
-        .from("licencias")
-        .update({
-            activaciones_usadas: nuevas
-        })
-        .eq("id", lic.id);
-
-    // 6. Respuesta para el plugin
-    return NextResponse.json({
-        ok: true,
-        licencia: {
-            estado: lic.estado,
-            fecha_expiracion: lic.fecha_expiracion // null o fecha en anual
-        }
-    });
+  });
 }
 
 
@@ -834,8 +1015,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
   const url = new URL(req.url);
-  const email_tekla = url.searchParams.get("email");
-  const plugin_id = url.searchParams.get("plugin_id");
+
+  // ✔ Normalizar email
+  const email_raw = url.searchParams.get("email");
+  const email_tekla = email_raw?.trim()?.toLowerCase();
+
+  // ✔ Normalizar plugin_id
+  const plugin_id = url.searchParams.get("plugin_id")?.trim();
 
   // ------------------------------------------------------
   // 1. Validaciones básicas
@@ -860,20 +1046,25 @@ export async function GET(req) {
     .limit(1)
     .maybeSingle();
 
+  // ✔ Controlar error real del SELECT
   if (error || !licencia) {
+    console.error("Error consultando licencia:", error);
     return Response.json({ ok: false, motivo: "no_existe" });
   }
 
   // ------------------------------------------------------
-  // 3. Estado bloqueado
+  // 3. Estado bloqueado o pendiente
   // ------------------------------------------------------
   if (licencia.estado === "bloqueada") {
     return Response.json({ ok: false, motivo: "bloqueada" });
   }
 
+  if (licencia.estado === "pendiente") {
+    return Response.json({ ok: false, motivo: "pendiente" });
+  }
+
   // ------------------------------------------------------
-  // 4. Chequear expiración de soporte ANUAL (si aplica)
-  //    → Solo afecta al soporte, no a la licencia.
+  // 4. Chequear expiración del soporte anual
   // ------------------------------------------------------
   let soporte_activo = true;
 
@@ -887,10 +1078,12 @@ export async function GET(req) {
   }
 
   // ------------------------------------------------------
-  // 5. Verificar activaciones restantes
+  // 5. Verificar activaciones restantes (parse seguro)
   // ------------------------------------------------------
-  const activaciones_restantes =
-    licencia.max_activaciones - licencia.activaciones_usadas;
+  const usadas = Number(licencia.activaciones_usadas ?? 0);
+  const max = Number(licencia.max_activaciones ?? 0);
+
+  const activaciones_restantes = max - usadas;
 
   if (activaciones_restantes <= 0) {
     return Response.json({ ok: false, motivo: "sin_activaciones" });
@@ -902,9 +1095,9 @@ export async function GET(req) {
   return Response.json({
     ok: true,
     plugin_id: licencia.plugin_id,
-    estado: licencia.estado, // "activa"
-    activaciones_usadas: licencia.activaciones_usadas,
-    max_activaciones: licencia.max_activaciones,
+    estado: licencia.estado,
+    activaciones_usadas: usadas,
+    max_activaciones: max,
     soporte_activo,
     activaciones_restantes
   });
@@ -919,9 +1112,13 @@ export async function GET(req) {
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  const supabase = supabaseRoute();
+  // ✅ FIX: supabaseRoute es async (Next 16)
+  const supabase = await supabaseRoute();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     return Response.json({ error: "no_autenticado" }, { status: 401 });
   }
@@ -934,22 +1131,23 @@ export async function POST(req) {
   }
 
   // Obtener plugin y precios
-  const { data: plugin } = await supabase
+  const { data: plugin, error: pluginError } = await supabase
     .from("plugins")
     .select("precio, precio_anual, precio_completa")
     .eq("id", plugin_id)
     .single();
 
-  if (!plugin) {
+  if (pluginError || !plugin) {
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // Precio base según tipo
-  let precioUnitario = 0;
-  if (tipo === "anual") precioUnitario = plugin.precio_anual;
-  if (tipo === "completa") precioUnitario = plugin.precio_completa;
+  // ✅ FIX: evitar undefined o NaN
+  const precioUnitario = Number(
+    tipo === "anual"
+      ? plugin.precio_anual
+      : plugin.precio_completa
+  ) || 0;
 
-  // Cálculo → opción A (sin IVA → IVA → total)
   const subtotal = precioUnitario * emails_tekla.length;
   const iva = subtotal * 0.21;
   const importe_total = subtotal + iva;
@@ -966,7 +1164,7 @@ export async function POST(req) {
       fecha: new Date(),
       importe: importe_total,
       importe_base: subtotal,
-      iva
+      iva,
     })
     .select()
     .single();
@@ -982,17 +1180,23 @@ export async function POST(req) {
     email_tekla: e.trim(),
   }));
 
-  await supabase.from("pagos_emails").insert(emailsInsert);
+  const { error: emailErr } = await supabase
+    .from("pagos_emails")
+    .insert(emailsInsert);
+
+  // ⚠️ Aviso seguro: pago creado pero falló emails
+  if (emailErr) {
+    console.error("Error guardando emails:", emailErr);
+  }
 
   return Response.json({
     ok: true,
     pago_id: pago.id,
     subtotal,
     iva,
-    total: importe_total
+    total: importe_total,
   });
 }
-
 
 
 ============================================================
@@ -1006,8 +1210,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET(req, context) {
-  const { pago_id } = await context.params;
-  const supabase = supabaseRoute();
+  // ❌ context.params no es promesa — quitar await
+  const { pago_id } = context.params;
+
+  // ❗ FIX crítico: supabaseRoute es async en Next 16
+  const supabase = await supabaseRoute();
 
   // 1) Obtener datos del pago
   const { data: pago, error } = await supabase
@@ -1037,16 +1244,21 @@ export async function GET(req, context) {
   }
 
   // 2) Emails asociados
-  const { data: emails } = await supabase
+  const { data: emails, error: emailsError } = await supabase
     .from("pagos_emails")
     .select("email_tekla")
     .eq("pago_id", pago_id);
+
+  // Evitar errores si hubo fallo en consulta
+  const listaEmails = Array.isArray(emails)
+    ? emails.map((e) => e.email_tekla)
+    : [];
 
   // 3) Respuesta final
   return NextResponse.json({
     ...pago,
 
-    emails: emails?.map((e) => e.email_tekla) ?? [],
+    emails: listaEmails,
 
     importe_base: pago.importe_base ?? 0,
     iva: pago.iva ?? 0,
@@ -1071,7 +1283,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function POST(req) {
   const { pago_id, emails } = await req.json();
 
-  if (!pago_id || !emails?.length) {
+  // ✅ FIX: asegurar que emails es array antes de usarlo
+  if (!pago_id || !Array.isArray(emails) || emails.length === 0) {
     return NextResponse.json(
       { error: "Datos incompletos" },
       { status: 400 }
@@ -1080,7 +1293,8 @@ export async function POST(req) {
 
   // Validación de emails
   for (const entry of emails) {
-    if (!entry.email_tekla || entry.email_tekla.trim() === "") {
+    const email = entry?.email_tekla?.trim();
+    if (!email) {
       return NextResponse.json(
         { error: "Todos los emails deben estar completos" },
         { status: 400 }
@@ -1102,7 +1316,7 @@ export async function POST(req) {
     );
   }
 
-  // 2️⃣ Insertar los nuevos emails (ON CONFLICT ahora funciona gracias al UNIQUE)
+  // 2️⃣ Insertar los nuevos emails
   const inserts = emails.map((e) => ({
     pago_id,
     email_tekla: e.email_tekla.trim(),
@@ -1111,7 +1325,7 @@ export async function POST(req) {
   const { error: insertErr } = await supabaseAdmin
     .from("pagos_emails")
     .upsert(inserts, {
-      onConflict: "pago_id,email_tekla"
+      onConflict: "pago_id,email_tekla",
     });
 
   if (insertErr) {
@@ -1135,27 +1349,35 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendEmail } from "@/lib/email";
+import { cookies } from "next/headers";
 
 export async function POST(req) {
   const { pago_id } = await req.json();
-  if (!pago_id) return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
+  if (!pago_id)
+    return NextResponse.json({ error: "Falta pago_id" }, { status: 400 });
 
-  // Cliente Supabase correcto para Next.js 16
+  // ✔ FIX: usar cookies() de Next.js 16 (req.cookies no es válido)
+  const cookieStore = await cookies();
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name) {
-          return req.cookies.get(name)?.value;
+          return cookieStore.get(name)?.value;
         },
       },
     }
   );
 
   // Usuario logueado
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user)
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   // Recuperar email de empresa
   const { data: empresa } = await supabaseAdmin
@@ -1166,6 +1388,7 @@ export async function POST(req) {
 
   const destino = empresa?.email ?? "o.martinez@ombim.com";
 
+  // ✔ FIX: HTML limpio (sin entidades)
   const html = `
     <h2>Notificación de transferencia recibida</h2>
     <p>El usuario <strong>${user.email}</strong> ha indicado que ya ha realizado la transferencia bancaria.</p>
@@ -1173,11 +1396,19 @@ export async function POST(req) {
     <p>Revisa la banca online y activa las licencias cuando lo confirmes.</p>
   `;
 
-  await sendEmail({
+  const emailRes = await sendEmail({
     to: destino,
     subject: `Transferencia recibida – Pago ${pago_id}`,
     html,
   });
+
+  // ✔ FIX: manejo de error de Resend
+  if (emailRes?.error) {
+    return NextResponse.json(
+      { error: "error_enviando_email" },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -1193,7 +1424,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function POST(req) {
   const { pago_id, emails_tekla } = await req.json();
 
-  if (!pago_id || !emails_tekla?.length) {
+  // ⚠ FIX: asegurar que es array antes de usar .map
+  if (!pago_id || !Array.isArray(emails_tekla) || emails_tekla.length === 0) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
@@ -1208,12 +1440,12 @@ export async function POST(req) {
     return Response.json({ error: "pago_no_encontrado" }, { status: 404 });
   }
 
-  // ⭐ Asegurar que el tipo es válido (anual / completa)
+  // ⭐ Asegurar tipo válido
   if (!["anual", "completa"].includes(pago.tipo)) {
     return Response.json({ error: "tipo_invalido" }, { status: 400 });
   }
 
-  // 2. Configuración según tipo
+  // 2. Configuración
   const maxActivaciones = pago.tipo === "completa" ? 5 : 1;
 
   let fechaExp = null;
@@ -1230,7 +1462,10 @@ export async function POST(req) {
     pago_id,
     plugin_id: pago.plugin_id,
     user_id: pago.user_id,
-    email_tekla: email,
+
+    // ⚠ FIX: normalización del email
+    email_tekla: email.trim(),
+
     tipo: pago.tipo,
     estado: "activa",
     max_activaciones: maxActivaciones,
@@ -1251,7 +1486,7 @@ export async function POST(req) {
     );
   }
 
-  // 4. Marcar pago como aprobado + guardar fecha_validacion
+  // 4. Marcar pago como aprobado
   await supabaseAdmin
     .from("pagos")
     .update({ estado: "aprobado", fecha_validacion: ahora })
@@ -1271,83 +1506,96 @@ import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
-    const supabase = await supabaseServer();
+  const supabase = await supabaseServer();
 
-    // Usuario logueado
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) {
-        return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
+  // Usuario logueado
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
+  }
+
+  const user_id = userData.user.id;
+
+  // plugin_id seguro
+  const plugin_id = new URL(req.url).searchParams.get("plugin_id")?.trim();
+  if (!plugin_id) {
+    return NextResponse.json({ error: "falta_plugin_id" }, { status: 400 });
+  }
+
+  // Obtener plugin con control de errores
+  const { data: plugin, error: pluginError } = await supabaseAdmin
+    .from("plugins")
+    .select("archivo_url, precio")
+    .eq("id", plugin_id)
+    .single();
+
+  if (pluginError || !plugin) {
+    console.error("Error cargando plugin:", pluginError);
+    return NextResponse.json({ error: "plugin_no_encontrado" }, { status: 404 });
+  }
+
+  // Licencia FULL (si existe)
+  const { data: lic, error: licError } = await supabaseAdmin
+    .from("licencias")
+    .select("*")
+    .eq("user_id", user_id)
+    .eq("plugin_id", plugin_id)
+    .eq("estado", "activa")
+    .maybeSingle();
+
+  if (licError) {
+    console.error("Error buscando licencia:", licError);
+  }
+
+  let trial = true;
+
+  if (lic) {
+    if (lic.tipo === "completa") trial = false;
+
+    if (lic.tipo === "anual" && lic.fecha_expiracion) {
+      if (new Date(lic.fecha_expiracion) > new Date()) trial = false;
     }
+  }
 
-    const user_id = userData.user.id;
+  // Rutas en bucket
+  const filePath = trial
+    ? `trial/${plugin_id}.tsep`
+    : plugin.archivo_url;
 
-    // plugin_id
-    const plugin_id = new URL(req.url).searchParams.get("plugin_id");
-    if (!plugin_id) {
-        return NextResponse.json({ error: "falta_plugin_id" }, { status: 400 });
-    }
+  // Firmar URL con control de error
+  const { data: signed, error: signedError } = await supabaseAdmin.storage
+    .from("plugins")
+    .createSignedUrl(filePath, 60);
 
-    // Plugin
-    const { data: plugin } = await supabaseAdmin
-        .from("plugins")
-        .select("archivo_url, precio")
-        .eq("id", plugin_id)
-        .single();
+  if (signedError || !signed?.signedUrl) {
+    console.error("Error creando URL firmada:", signedError);
+    return NextResponse.json({ error: "no_se_puede_firmar" }, { status: 500 });
+  }
 
-    if (!plugin) {
-        return NextResponse.json({ error: "plugin_no_encontrado" }, { status: 404 });
-    }
-
-    // Licencia FULL
-    const { data: lic } = await supabaseAdmin
-        .from("licencias")
-        .select("*")
-        .eq("user_id", user_id)
-        .eq("plugin_id", plugin_id)
-        .eq("estado", "activa")
-        .maybeSingle();
-
-    let trial = true;
-
-    if (lic) {
-        if (lic.tipo === "completa") trial = false;
-        if (lic.tipo === "anual" && lic.fecha_expiracion) {
-            if (new Date(lic.fecha_expiracion) > new Date()) trial = false;
-        }
-    }
-
-    // Rutas en bucket
-    const filePath = trial
-        ? `trial/${plugin_id}.tsep`
-        : plugin.archivo_url;
-
-    // Firmar URL
-    const { data: signed } = await supabaseAdmin.storage
-        .from("plugins")
-        .createSignedUrl(filePath, 60);
-
-    if (!signed?.signedUrl) {
-        return NextResponse.json({ error: "no_se_puede_firmar" }, { status: 500 });
-    }
-
-    // Registrar descarga
-    await supabase.from("descargas").insert({
-        user_id,
-        plugin_id,
-        fecha: new Date().toISOString()
+  // Registrar descarga (no crítico)
+  const { error: dlError } = await supabase
+    .from("descargas")
+    .insert({
+      user_id,
+      plugin_id,
+      fecha: new Date().toISOString()
     });
 
-    // JSON o redirección
-    const wantsJSON = req.headers.get("accept")?.includes("application/json");
-    if (wantsJSON) {
-        return NextResponse.json({
-            ok: true,
-            trial,
-            url: signed.signedUrl
-        });
-    }
+  if (dlError) {
+    console.error("Error registrando descarga:", dlError);
+  }
 
-    return NextResponse.redirect(signed.signedUrl);
+  // JSON o redirect
+  const wantsJSON = req.headers.get("accept")?.includes("application/json");
+  if (wantsJSON) {
+    return NextResponse.json({
+      ok: true,
+      trial,
+      url: signed.signedUrl
+    });
+  }
+
+  return NextResponse.redirect(signed.signedUrl);
 }
 
 
@@ -1355,7 +1603,7 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
 ============================================================
 
-// app/api/plugin/validate-license/route.js
+// /app/api/plugin/validate-license/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -1368,7 +1616,10 @@ export async function POST(req) {
     return NextResponse.json({ estado: "error", mensaje: "json_invalido" });
   }
 
-  const { email_tekla, plugin_id, maquina_id } = payload;
+  // Normalización segura
+  const email_tekla = payload?.email_tekla?.trim()?.toLowerCase();
+  const plugin_id = payload?.plugin_id;
+  const maquina_id = payload?.maquina_id;
 
   if (!email_tekla || !plugin_id) {
     return NextResponse.json({
@@ -1385,9 +1636,10 @@ export async function POST(req) {
     .eq("plugin_id", plugin_id)
     .order("fecha_creacion", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error || !lic) {
+    console.error("Error obteniendo licencia:", error);
     return NextResponse.json({ estado: "sin_licencia" });
   }
 
@@ -1396,31 +1648,46 @@ export async function POST(req) {
     return NextResponse.json({ estado: "bloqueada" });
   }
 
-  // trial expirado
+  // pendiente (EVITA activar licencias antes de validarlas)
+  if (lic.estado === "pendiente") {
+    return NextResponse.json({ estado: "pendiente" });
+  }
+
+  // trial or anual expirado
   if (lic.fecha_expiracion) {
-    if (new Date(lic.fecha_expiracion) < new Date()) {
+    const exp = new Date(lic.fecha_expiracion);
+    if (exp < new Date()) {
       return NextResponse.json({ estado: "expirada" });
     }
   }
 
-  // sin activaciones disponibles
-  if (lic.activaciones_usadas >= lic.max_activaciones) {
+  // sin activaciones
+  const usadas = Number(lic.activaciones_usadas ?? 0);
+  const max = Number(lic.max_activaciones ?? 0);
+
+  if (usadas >= max) {
     return NextResponse.json({ estado: "sin_activaciones" });
   }
 
   // registrar activación
-  await supabaseAdmin
+  const nuevas = usadas + 1;
+
+  const { error: updateErr } = await supabaseAdmin
     .from("licencias")
     .update({
-      activaciones_usadas: lic.activaciones_usadas + 1,
+      activaciones_usadas: nuevas,
       maquina_id: maquina_id ?? lic.maquina_id
     })
     .eq("id", lic.id);
 
+  if (updateErr) {
+    console.error("Error actualizando licencia:", updateErr);
+    return NextResponse.json({ estado: "error_actualizando" });
+  }
+
   return NextResponse.json({
     estado: lic.estado,
-    activaciones_restantes:
-      lic.max_activaciones - (lic.activaciones_usadas + 1),
+    activaciones_restantes: max - nuevas,
     fecha_expiracion: lic.fecha_expiracion ?? null
   });
 }
@@ -1514,9 +1781,11 @@ export async function GET() {
 
   if (error) {
     console.error("Error cargando plugins:", error);
-    return NextResponse.json([], { status: 500 });
+    // ✔ Devolver formato consistente
+    return NextResponse.json({ plugins: [] }, { status: 500 });
   }
 
+  // ✔ Asegurar siempre JSON válido
   return NextResponse.json(data ?? []);
 }
 
@@ -1532,11 +1801,13 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const supabase = supabaseRoute();
+  // ✔ FIX: supabaseRoute es async
+  const supabase = await supabaseRoute();
 
   const { data: auth, error: authErr } = await supabase.auth.getUser();
 
   if (authErr || !auth?.user) {
+    console.error("Error autenticando usuario:", authErr);
     return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
   }
 
@@ -1549,49 +1820,57 @@ export async function GET() {
     .maybeSingle();
 
   if (error) {
+    console.error("Error cargando facturación:", error);
     return NextResponse.json(
       { error: "error_cargando_facturacion" },
       { status: 500 }
     );
   }
 
-  // 🔥 DEVOLVEMOS null si no hay registro
+  // ✔ Siempre devolver JSON válido
   return NextResponse.json(fact ?? null);
 }
-``
 
 
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencia\route.js
 ============================================================
 
-// app/api/user/licencia/route.js
+// /app/api/user/licencia/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
+import { NextResponse } from "next/server";
 
 export async function GET(req) {
-  const supabase = supabaseRoute();
-  const id = req.nextUrl.searchParams.get("id");
+  // ✔ FIX: supabaseRoute es async
+  const supabase = await supabaseRoute();
+
+  // Normalizar id
+  const id = req.nextUrl.searchParams.get("id")?.trim();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ error: "no_auth" }, { status: 401 });
+    return NextResponse.json({ error: "no_auth" }, { status: 401 });
   }
 
   const { data, error } = await supabase
     .from("licencias")
-    .select("id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)")
+    .select(
+      "id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)"
+    )
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
+  // ✔ FIX: controlar error real
   if (error || !data) {
-    return Response.json({ error: "not_found" }, { status: 404 });
+    console.error("Error obteniendo licencia:", error);
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return Response.json({ licencia: data });
+  return NextResponse.json({ licencia: data });
 }
 
 
@@ -1601,40 +1880,46 @@ export async function GET(req) {
 
 // /app/api/user/licencias/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-    const supabase = supabaseRoute();
+  // ✔ FIX: supabaseRoute es async
+  const supabase = await supabaseRoute();
 
-    const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-        return Response.json({ licencias: [] }, { status: 401 });
-    }
+  if (!user) {
+    return NextResponse.json({ licencias: [] }, { status: 401 });
+  }
 
-    const { data, error } = await supabase
-        .from("licencias")
-        .select("*, plugins(nombre)")
-        .eq("user_id", user.id)
-        .order("fecha_creacion", { ascending: false });
+  const { data, error } = await supabase
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .eq("user_id", user.id)
+    .order("fecha_creacion", { ascending: false });
 
-    if (error || !data) {
-        return Response.json({ licencias: [] });
-    }
+  // ✔ Manejo de error correcto
+  if (error || !data) {
+    console.error("Error obteniendo licencias:", error);
+    return NextResponse.json({ licencias: [] });
+  }
 
-    const licencias = data.map(l => ({
-        id: l.id,
-        email_tekla: l.email_tekla,
-        plugin_id: l.plugin_id,
-        plugin_nombre: l.plugins?.nombre ?? "",
-        estado: l.estado,
-        tipo: l.tipo,
-        activaciones_usadas: l.activaciones_usadas,
-        max_activaciones: l.max_activaciones,
-        fecha_creacion: l.fecha_creacion,
-        fecha_expiracion: l.fecha_expiracion
-    }));
+  const licencias = data.map((l) => ({
+    id: l.id,
+    email_tekla: l.email_tekla,
+    plugin_id: l.plugin_id,
+    plugin_nombre: l.plugins?.nombre ?? "",
+    estado: l.estado,
+    tipo: l.tipo,
+    activaciones_usadas: l.activaciones_usadas,
+    max_activaciones: l.max_activaciones,
+    fecha_creacion: l.fecha_creacion,
+    fecha_expiracion: l.fecha_expiracion,
+  }));
 
-    return Response.json({ licencias });
+  return NextResponse.json({ licencias });
 }
 
 
@@ -1642,25 +1927,33 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\pagos\route.js
 ============================================================
 
-// app/api/user/pagos/route.js
+// /app/api/user/pagos/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  const supabase = supabaseRoute();
+  // ✔ FIX: supabaseRoute es async
+  const supabase = await supabaseRoute();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ pagos: [] }, { status: 401 });
+    return NextResponse.json({ pagos: [] }, { status: 401 });
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("pagos")
     .select("id, plugin_id, cantidad_licencias, estado, fecha, plugins(nombre)")
     .eq("user_id", user.id)
     .order("fecha", { ascending: false });
+
+  // ✔ FIX: controlar error real
+  if (error) {
+    console.error("Error obteniendo pagos:", error);
+    return NextResponse.json({ pagos: [] });
+  }
 
   const pagos = (data ?? []).map((p) => ({
     id: p.id,
@@ -1671,7 +1964,7 @@ export async function GET() {
     fecha: p.fecha,
   }));
 
-  return Response.json({ pagos });
+  return NextResponse.json({ pagos });
 }
 
 
@@ -1742,35 +2035,45 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\plugins\route.js
 ============================================================
 
-// app/api/user/plugins/route.js
+// /app/api/user/plugins/route.js
 import { supabaseRoute } from "@/lib/supabaseRoute";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  const supabase = supabaseRoute();
+  // ✔ FIX: supabaseRoute es async en Next 16
+  const supabase = await supabaseRoute();
 
   // Usuario logueado
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return Response.json({ plugins: [] }, { status: 401 });
+    return NextResponse.json({ plugins: [] }, { status: 401 });
   }
 
-  // Plugins comprados (pagos validados)
-  const { data: pagos } = await supabase
+  // ✔ FIX: "validado" no existe en tu BBDD → debe ser "aprobado"
+  const { data: pagos, error: pagosError } = await supabase
     .from("pagos")
     .select("plugin_id")
     .eq("user_id", user.id)
-    .eq("estado", "validado");
+    .eq("estado", "aprobado");
+
+  if (pagosError) {
+    console.error("Error cargando pagos:", pagosError);
+  }
 
   const pluginsComprados = pagos?.map((p) => p.plugin_id) ?? [];
 
   // Plugins gratis
-  const { data: gratuitos } = await supabase
+  const { data: gratuitos, error: gratisError } = await supabase
     .from("plugins")
     .select("id")
     .eq("precio", 0);
+
+  if (gratisError) {
+    console.error("Error cargando plugins gratis:", gratisError);
+  }
 
   const pluginsGratis = gratuitos?.map((p) => p.id) ?? [];
 
@@ -1778,22 +2081,27 @@ export async function GET() {
   const permitidos = [...new Set([...pluginsComprados, ...pluginsGratis])];
 
   if (permitidos.length === 0) {
-    return Response.json({ plugins: [] });
+    return NextResponse.json({ plugins: [] });
   }
 
-  // Recuperar datos
-  const { data: plugins } = await supabase
+  // Recuperar datos de plugins permitidos
+  const { data: plugins, error: pluginsError } = await supabase
     .from("plugins")
     .select("id, nombre, version")
     .in("id", permitidos);
 
-  return Response.json({
+  if (pluginsError) {
+    console.error("Error cargando plugins:", pluginsError);
+    return NextResponse.json({ plugins: [] });
+  }
+
+  return NextResponse.json({
     plugins: (plugins ?? []).map((p) => ({
       id: p.id,
       nombre: p.nombre,
       version: p.version,
-      descargar_url: `/api/plugin/download?plugin_id=${p.id}`
-    }))
+      descargar_url: `/api/plugin/download?plugin_id=${p.id}`,
+    })),
   });
 }
 
@@ -1812,21 +2120,34 @@ export async function POST(req) {
   const supabase = await supabaseServer();
   const body = await req.json();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: "no_autenticado" }, { status: 401 });
   }
 
-  const { nombre, empresa, telefono, pais } = body;
+  // Sanitizar/normalizar datos
+  const nombre = body?.nombre?.trim() ?? "";
+  const empresa = body?.empresa?.trim() ?? "";
+  const telefono = body?.telefono?.trim() ?? "";
+  const pais = body?.pais?.trim() ?? "";
 
-  // SOLO actualizar user_metadata
-  await supabase.auth.updateUser({
+  // Actualizar metadata
+  const { error: updateErr } = await supabase.auth.updateUser({
     data: { nombre, empresa, telefono, pais },
   });
 
+  if (updateErr) {
+    console.error("Error actualizando user_metadata:", updateErr);
+    return NextResponse.json({ error: "error_actualizando" }, { status: 500 });
+  }
+
   return NextResponse.json({ ok: true });
 }
+``
 
 
 ============================================================
@@ -2881,194 +3202,4 @@ export default function AdminHome() {
     </div>
   );
 }
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
-============================================================
-
-"use client";
-
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { CreditCard, ArrowRight, CheckCircle, XCircle } from "lucide-react";
-
-export default function AdminPagosPage() {
-  const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const r = await fetch("/api/admin/pagos/list", {
-          credentials: "include",
-        });
-
-        const d = await r.json();
-        setPagos(Array.isArray(d) ? d : []);
-      } catch (err) {
-        console.log("Error cargando pagos", err);
-        setPagos([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  if (loading) return <p className="p-4">Cargando pagos...</p>;
-
-  return (
-    <div className="p-4 max-w-6xl mx-auto space-y-8">
-
-      {/* TITULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <CreditCard size={28} /> Gestión de pagos
-      </h1>
-
-      {/* =======================
-          MÓVIL → CARDS PREMIUM
-      ======================= */}
-      <div className="grid gap-4 md:hidden">
-        {pagos.map((p) => (
-          <div
-            key={p.id}
-            className="p-4 bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-700 space-y-3"
-          >
-            <div className="flex justify-between items-center">
-              <p className="font-semibold text-lg">Pago #{p.id}</p>
-
-              <Link
-                href={`/panel/admin/pagos/${p.id}`}
-                className="text-blue-600 dark:text-blue-400 flex items-center gap-1 font-semibold"
-              >
-                Ver <ArrowRight size={16} />
-              </Link>
-            </div>
-
-            <p className="text-sm opacity-70">Usuario: {p.user_email ?? "—"}</p>
-            <p className="text-sm opacity-70">
-              Plugin: {p.plugin_nombre ?? p.plugin_id}
-            </p>
-
-            <div className="flex justify-between text-sm">
-              <span>Licencias:</span>
-              <span className="font-semibold">{p.cantidad_licencias}</span>
-            </div>
-
-            <div className="flex justify-between text-sm">
-              <span>Subtotal:</span>
-              <span>{p.importe_base?.toFixed(2)} €</span>
-            </div>
-
-            <div className="flex justify-between text-sm">
-              <span>IVA:</span>
-              <span>{p.iva?.toFixed(2)} €</span>
-            </div>
-
-            <div className="flex justify-between text-sm">
-              <span className="font-medium">Total:</span>
-              <span className="font-bold text-green-600 dark:text-green-400">
-                {p.importe?.toFixed(2)} €
-              </span>
-            </div>
-
-            {/* ESTADO */}
-            <div>
-              {p.estado === "pendiente" && (
-                <span className="px-3 py-1 text-xs rounded-lg bg-orange-200 text-orange-800 font-semibold inline-flex items-center gap-1">
-                  <XCircle size={14} /> Pendiente
-                </span>
-              )}
-
-              {p.estado === "aprobado" && (
-                <span className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 font-semibold inline-flex items-center gap-1">
-                  <CheckCircle size={14} /> Aprobado
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {pagos.length === 0 && (
-          <p className="text-center opacity-70">No hay pagos registrados.</p>
-        )}
-      </div>
-
-      {/* ===========================
-          ESCRITORIO → TABLA PREMIUM
-      =========================== */}
-      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
-        <table className="min-w-full text-left">
-          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
-            <tr>
-              <th className="p-3">ID</th>
-              <th className="p-3">Usuario</th>
-              <th className="p-3">Plugin</th>
-              <th className="p-3">Licencias</th>
-              <th className="p-3">Subtotal</th>
-              <th className="p-3">IVA</th>
-              <th className="p-3">Total</th>
-              <th className="p-3">Estado</th>
-              <th className="p-3"></th>
-            </tr>
-          </thead>
-
-          <tbody className="text-sm">
-            {pagos.map((p) => (
-              <tr
-                key={p.id}
-                className="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition"
-              >
-                <td className="p-3 font-semibold">{p.id}</td>
-                <td className="p-3">{p.user_email ?? "—"}</td>
-                <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
-                <td className="p-3">{p.cantidad_licencias}</td>
-
-                <td className="p-3">{p.importe_base?.toFixed(2)} €</td>
-                <td className="p-3">{p.iva?.toFixed(2)} €</td>
-
-                <td className="p-3 font-bold text-green-600 dark:text-green-400">
-                  {p.importe?.toFixed(2)} €
-                </td>
-
-                <td className="p-3">
-                  {p.estado === "pendiente" && (
-                    <span className="px-3 py-1 text-xs rounded-lg bg-orange-200 text-orange-800 font-semibold">
-                      Pendiente
-                    </span>
-                  )}
-
-                  {p.estado === "aprobado" && (
-                    <span className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 font-semibold">
-                      Aprobado
-                    </span>
-                  )}
-                </td>
-
-                <td className="p-3">
-                  <Link
-                    href={`/panel/admin/pagos/${p.id}`}
-                    className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
-                  >
-                    Ver →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-
-            {pagos.length === 0 && (
-              <tr>
-                <td colSpan="9" className="p-4 text-center opacity-70">
-                  No hay pagos registrados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 

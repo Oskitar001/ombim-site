@@ -27,12 +27,8 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     async function load() {
-      /* =====================================
-         1. STATS DASHBOARD
-      ===================================== */
-      const r1 = await fetch("/api/admin/dashboard", {
-        credentials: "include",
-      });
+      // STATS
+      const r1 = await fetch("/api/admin/dashboard", { credentials: "include" });
       const d1 = await r1.json();
 
       setStats({
@@ -45,27 +41,19 @@ export default function AdminDashboardPage() {
         ingresosTotales: d1.ingresosTotales ?? 0,
       });
 
-      /* =====================================
-         2. ULTIMOS PAGOS
-      ===================================== */
-      const r2 = await fetch("/api/admin/pagos/list", {
-        credentials: "include",
-      });
+      // ÚLTIMOS PAGOS
+      const r2 = await fetch("/api/admin/pagos/list", { credentials: "include" });
       const d2 = await r2.json();
       setUltimosPagos(Array.isArray(d2) ? d2.slice(0, 5) : []);
 
-      /* =====================================
-         3. ULTIMAS LICENCIAS
-      ===================================== */
+      // ÚLTIMAS LICENCIAS
       const r3 = await fetch("/api/admin/licencias");
       const d3 = await r3.json();
       setUltimasLicencias(
         Array.isArray(d3.licencias) ? d3.licencias.slice(0, 5) : []
       );
 
-      /* =====================================
-         4. ULTIMOS USUARIOS
-      ===================================== */
+      // ÚLTIMOS USUARIOS
       const r4 = await fetch("/api/admin/usuarios");
       const d4 = await r4.json();
       setUltimosUsuarios(
@@ -77,10 +65,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto min-h-[80vh]">
+    <div className="space-y-10 max-w-6xl mx-auto">
 
-      {/* TITULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-3">
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-3 mt-4">
         <Activity size={32} /> Panel de Administración
       </h1>
 
@@ -178,7 +166,7 @@ export default function AdminDashboardPage() {
 
 function Card({ title, value, icon }) {
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 hover:shadow-xl transition">
+    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-col gap-3 hover:shadow-lg transition">
       <div className="flex items-center gap-3">
         {icon}
         <h2 className="text-lg font-bold">{title}</h2>

@@ -1,5 +1,195 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
+============================================================
+
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { CreditCard, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+
+export default function AdminPagosPage() {
+  const [pagos, setPagos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch("/api/admin/pagos/list", {
+          credentials: "include",
+        });
+
+        const d = await r.json();
+        setPagos(Array.isArray(d) ? d : []);
+      } catch (err) {
+        console.log("Error cargando pagos", err);
+        setPagos([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) return <p className="p-4">Cargando pagos...</p>;
+
+  return (
+    <div className="p-4 max-w-6xl mx-auto space-y-8">
+
+      {/* TITULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <CreditCard size={28} /> Gestión de pagos
+      </h1>
+
+      {/* =======================
+          MÓVIL → CARDS PREMIUM
+      ======================= */}
+      <div className="grid gap-4 md:hidden">
+        {pagos.map((p) => (
+          <div
+            key={p.id}
+            className="p-4 bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-700 space-y-3"
+          >
+            <div className="flex justify-between items-center">
+              <p className="font-semibold text-lg">Pago #{p.id}</p>
+
+              <Link
+                href={`/panel/admin/pagos/${p.id}`}
+                className="text-blue-600 dark:text-blue-400 flex items-center gap-1 font-semibold"
+              >
+                Ver <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            <p className="text-sm opacity-70">Usuario: {p.user_email ?? "—"}</p>
+            <p className="text-sm opacity-70">
+              Plugin: {p.plugin_nombre ?? p.plugin_id}
+            </p>
+
+            <div className="flex justify-between text-sm">
+              <span>Licencias:</span>
+              <span className="font-semibold">{p.cantidad_licencias}</span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span>Subtotal:</span>
+              <span>{p.importe_base?.toFixed(2)} €</span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span>IVA:</span>
+              <span>{p.iva?.toFixed(2)} €</span>
+            </div>
+
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Total:</span>
+              <span className="font-bold text-green-600 dark:text-green-400">
+                {p.importe?.toFixed(2)} €
+              </span>
+            </div>
+
+            {/* ESTADO */}
+            <div>
+              {p.estado === "pendiente" && (
+                <span className="px-3 py-1 text-xs rounded-lg bg-orange-200 text-orange-800 font-semibold inline-flex items-center gap-1">
+                  <XCircle size={14} /> Pendiente
+                </span>
+              )}
+
+              {p.estado === "aprobado" && (
+                <span className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 font-semibold inline-flex items-center gap-1">
+                  <CheckCircle size={14} /> Aprobado
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {pagos.length === 0 && (
+          <p className="text-center opacity-70">No hay pagos registrados.</p>
+        )}
+      </div>
+
+      {/* ===========================
+          ESCRITORIO → TABLA PREMIUM
+      =========================== */}
+      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
+        <table className="min-w-full text-left">
+          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+            <tr>
+              <th className="p-3">ID</th>
+              <th className="p-3">Usuario</th>
+              <th className="p-3">Plugin</th>
+              <th className="p-3">Licencias</th>
+              <th className="p-3">Subtotal</th>
+              <th className="p-3">IVA</th>
+              <th className="p-3">Total</th>
+              <th className="p-3">Estado</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+
+          <tbody className="text-sm">
+            {pagos.map((p) => (
+              <tr
+                key={p.id}
+                className="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition"
+              >
+                <td className="p-3 font-semibold">{p.id}</td>
+                <td className="p-3">{p.user_email ?? "—"}</td>
+                <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
+                <td className="p-3">{p.cantidad_licencias}</td>
+
+                <td className="p-3">{p.importe_base?.toFixed(2)} €</td>
+                <td className="p-3">{p.iva?.toFixed(2)} €</td>
+
+                <td className="p-3 font-bold text-green-600 dark:text-green-400">
+                  {p.importe?.toFixed(2)} €
+                </td>
+
+                <td className="p-3">
+                  {p.estado === "pendiente" && (
+                    <span className="px-3 py-1 text-xs rounded-lg bg-orange-200 text-orange-800 font-semibold">
+                      Pendiente
+                    </span>
+                  )}
+
+                  {p.estado === "aprobado" && (
+                    <span className="px-3 py-1 text-xs rounded-lg bg-green-200 text-green-800 font-semibold">
+                      Aprobado
+                    </span>
+                  )}
+                </td>
+
+                <td className="p-3">
+                  <Link
+                    href={`/panel/admin/pagos/${p.id}`}
+                    className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                  >
+                    Ver →
+                  </Link>
+                </td>
+              </tr>
+            ))}
+
+            {pagos.length === 0 && (
+              <tr>
+                <td colSpan="9" className="p-4 text-center opacity-70">
+                  No hay pagos registrados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
 ============================================================
 
@@ -3147,210 +3337,6 @@ function PanelLink({ href, icon, children, onClick, className = "" }) {
       {icon}
       {children}
     </Link>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { KeyRound, Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
-
-/* -----------------------------------------------------
-   LICENCIAS USER — ESTÉTICA PREMIUM TOTAL
------------------------------------------------------ */
-
-export default function UserLicenciasPage() {
-  const [licencias, setLicencias] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      const res = await fetch("/api/user/licencias", {
-        credentials: "include",
-      });
-      const data = await res.json();
-      setLicencias(data.licencias ?? []);
-    }
-    load();
-  }, []);
-
-  if (licencias === null) {
-    return <p className="p-4">Cargando licencias...</p>;
-  }
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-
-      <h2 className="text-3xl font-bold">Mis licencias</h2>
-
-      <UserSection title="Listado de licencias">
-        {licencias.length === 0 && (
-          <p className="text-gray-600 dark:text-gray-400">Todavía no tienes licencias.</p>
-        )}
-
-        {licencias.length > 0 && (
-          <div className="overflow-x-auto rounded-xl shadow border border-gray-300 dark:border-gray-700">
-            <table className="min-w-full text-left">
-              <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
-                <tr>
-                  <th className="p-3">Plugin</th>
-                  <th className="p-3">Email Tekla</th>
-                  <th className="p-3">Tipo</th>
-                  <th className="p-3">Estado</th>
-                  <th className="p-3">Activaciones</th>
-                  <th className="p-3">Expira</th>
-                  <th className="p-3 text-right"></th>
-                </tr>
-              </thead>
-
-              <tbody className="text-sm">
-                {licencias.map((l) => (
-                  <tr
-                    key={l.id}
-                    className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
-                  >
-                    {/* Plugin */}
-                    <td className="p-3 font-semibold">
-                      {l.plugin_nombre ?? l.plugin_id}
-                    </td>
-
-                    {/* Email */}
-                    <td className="p-3">{l.email_tekla}</td>
-
-                    {/* Tipo */}
-                    <td className="p-3">
-                      {l.tipo === "trial" && (
-                        <Badge color="blue" icon={<Clock size={14} />}>
-                          Trial
-                        </Badge>
-                      )}
-
-                      {l.tipo === "anual" && (
-                        <Badge color="yellow" icon={<Calendar size={14} />}>
-                          Anual
-                        </Badge>
-                      )}
-
-                      {l.tipo === "completa" && (
-                        <Badge color="purple" icon={<Star size={14} />}>
-                          Completa
-                        </Badge>
-                      )}
-                    </td>
-
-                    {/* Estado */}
-                    <td className="p-3">
-                      <EstadoBadge estado={l.estado} />
-                    </td>
-
-                    {/* Activaciones */}
-                    <td className="p-3">
-                      {l.activaciones_usadas}/{l.max_activaciones}
-                    </td>
-
-                    {/* Fecha expiración */}
-                    <td className="p-3">
-                      {l.tipo === "anual" && l.fecha_expiracion
-                        ? new Date(l.fecha_expiracion).toLocaleDateString()
-                        : "—"}
-                    </td>
-
-                    {/* Acción */}
-                    <td className="p-3 text-right">
-                      <Link
-                        href={`/panel/user/licencias/${l.id}`}
-                        className="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
-                      >
-                        <Eye size={16} /> Ver
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </UserSection>
-    </div>
-  );
-}
-
-/* -----------------------------------------------------
-   COMPONENTES PREMIUM (reutilizables)
------------------------------------------------------ */
-
-function UserSection({ title, children }) {
-  return (
-    <div
-      className="
-        bg-white dark:bg-gray-900 
-        rounded-xl shadow 
-        border border-gray-300 dark:border-gray-700
-        p-6 space-y-4
-      "
-    >
-      {title && (
-        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
-          {title}
-        </h3>
-      )}
-
-      {children}
-    </div>
-  );
-}
-
-function Badge({ color, icon, children }) {
-  const colors = {
-    blue: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    yellow: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    purple: "bg-purple-200 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  };
-
-  return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded 
-        ${colors[color]}
-      `}
-    >
-      {icon} {children}
-    </span>
-  );
-}
-
-/* Estado (versión premium unificada con detalle de licencia) */
-function EstadoBadge({ estado }) {
-  const styles = {
-    activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
-    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    trial: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    bloqueada: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
-    expirada: "bg-orange-200 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  };
-
-  const icons = {
-    activa: <CheckCircle size={14} />,
-    pendiente: <Clock size={14} />,
-    trial: <Star size={14} />,
-    bloqueada: <Ban size={14} />,
-    expirada: <Calendar size={14} />,
-  };
-
-  return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
-        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
-      `}
-    >
-      {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
-    </span>
   );
 }
 

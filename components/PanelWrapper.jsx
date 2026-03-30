@@ -11,19 +11,25 @@ export default function PanelWrapper({ children }) {
 
   return (
     <>
-      {/* Mostrar el navbar SIEMPRE, 
-          pero si es panel → sin sombra ni borde */}
+      {/* NAVBAR: siempre visible */}
       {isPanel ? (
         <Navbar className="shadow-none border-b-0" />
       ) : (
         <Navbar />
       )}
 
-      {/* Espacio arriba para que el contenido no quede TAPADO por el navbar */}
-      <div className={isPanel ? "pt-20 md:pt-24 bg-[#f3f4f6] dark:bg-[#242424]" : ""}>
+      {/* CONTENIDO Ajustado al tamaño REAL del navbar fijo */}
+      <div
+        className={
+          isPanel
+            ? "pt-20 md:pt-[72px] bg-[#f3f4f6] dark:bg-[#242424] min-h-screen"
+            : "pt-20 md:pt-[72px] min-h-screen"
+        }
+      >
         {children}
       </div>
 
+      {/* Footer solo en páginas públicas */}
       {!isPanel && <Footer />}
     </>
   );

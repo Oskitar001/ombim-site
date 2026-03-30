@@ -2850,53 +2850,69 @@ export async function requireAdmin() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
 ============================================================
 
+// /app/api/auth/login/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function POST(req) {
   const { email, password } = await req.json();
+
+  const normalizedEmail = email?.trim()?.toLowerCase();
   const cookieHeader = req.headers.get("cookie") ?? "";
+
+  // Siempre usamos ESTA respuesta para permitir que Supabase modifique cookies
   const response = NextResponse.json({ ok: true });
 
+  // Supabase client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
+        // ✔ FIX: permitir "=" en valores de cookie
         get(name) {
-          const match = cookieHeader
+          const raw = cookieHeader
             .split("; ")
             .find((c) => c.startsWith(name + "="));
-          return match ? match.split("=")[1] : undefined;
+
+          if (!raw) return undefined;
+
+          return raw.slice(name.length + 1);
         },
+
         set(name, value, options) {
           const cookie = `${name}=${value}; Path=/; SameSite=Lax${
             options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
           }`;
+
           response.headers.append("Set-Cookie", cookie);
         },
+
         remove(name) {
           response.headers.append(
             "Set-Cookie",
             `${name}=; Path=/; Max-Age=0; SameSite=Lax`
           );
-        },
-      },
+        }
+      }
     }
   );
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+    email: normalizedEmail,
+    password
   });
 
+  // ❗ FIX: devolver SIEMPRE usando el mismo response
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    response.body = JSON.stringify({ error: error.message });
+    response.status = 400;
+    return response;
   }
 
   const role = data.user.user_metadata?.role ?? "user";
 
-  // Cookie para middleware
+  // Cookie adicional para middleware
   response.headers.append(
     "Set-Cookie",
     `sb-user-role=${role}; Path=/; SameSite=Lax`
@@ -2913,9 +2929,11 @@ export async function POST(req) {
 import { NextResponse } from "next/server";
 
 export async function POST() {
+  // Respuesta JSON inicial
   const res = NextResponse.json({ ok: true });
 
-  const cookieOptions = {
+  // Opciones unificadas para eliminar cookies de sesión
+  const baseOptions = {
     maxAge: 0,
     path: "/",
     httpOnly: true,
@@ -2923,11 +2941,18 @@ export async function POST() {
     sameSite: "lax",
   };
 
-  res.cookies.set("sb-access-token", "", cookieOptions);
-  res.cookies.set("sb-refresh-token", "", cookieOptions);
-  res.cookies.set("supabase-auth-token", "", cookieOptions);
+  // ✔ Borrar cookies oficiales de Supabase
+  res.cookies.set("sb-access-token", "", baseOptions);
+  res.cookies.set("sb-refresh-token", "", baseOptions);
 
-  res.cookies.set("sb-user-role", "", { maxAge: 0, path: "/" });
+  // ❌ ESTA cookie no existe oficialmente → eliminada
+  // res.cookies.set("supabase-auth-token", "", baseOptions);
+
+  // ✔ Borrar cookie de rol con mismas opciones
+  res.cookies.set("sb-user-role", "", {
+    ...baseOptions,
+    httpOnly: false, // tu cookie de rol NO es httpOnly en login → lo mantengo.
+  });
 
   return res;
 }
@@ -2942,46 +2967,58 @@ import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function GET(req) {
   const cookieHeader = req.headers.get("cookie") ?? "";
-  const response = NextResponse.json({});
+  
+  // Creamos un array temporal para acumular cookies
+  const cookieStore = [];
 
-  // Cliente Supabase compatible con Node 16 / Vercel
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name) {
-          const match = cookieHeader
+          const raw = cookieHeader
             .split("; ")
             .find((c) => c.startsWith(name + "="));
-          return match ? match.split("=")[1] : undefined;
+          return raw ? raw.slice(name.length + 1) : undefined;
         },
+
+        // Guardamos cookies, NO las enviamos aún
         set(name, value, options) {
-          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
-            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
-          }`;
-          response.headers.append("Set-Cookie", cookie);
+          let cookie = `${name}=${value}; Path=/; SameSite=Lax`;
+          if (options?.maxAge) cookie += `; Max-Age=${options.maxAge}`;
+          cookieStore.push(cookie);
         },
+
         remove(name) {
-          response.headers.append(
-            "Set-Cookie",
+          cookieStore.push(
             `${name}=; Path=/; Max-Age=0; SameSite=Lax`
           );
-        },
+        }
       },
     }
   );
 
   const { data, error } = await supabase.auth.getUser();
 
+  // Creamos la respuesta FINAL desde cero
+  let res;
+
   if (error || !data?.user) {
-    return NextResponse.json({ user: null });
+    res = NextResponse.json({ user: null });
+  } else {
+    res = NextResponse.json({
+      user: data.user,
+      role: data.user.user_metadata?.role ?? "user",
+    });
   }
 
-  return NextResponse.json({
-    user: data.user,
-    role: data.user.user_metadata?.role ?? "user",
+  // Ahora sí: agregamos todas las cookies *acumuladas*
+  cookieStore.forEach((c) => {
+    res.headers.append("Set-Cookie", c);
   });
+
+  return res;
 }
 
 
@@ -2989,38 +3026,55 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\register\route.js
 ============================================================
 
+// /app/api/auth/signup/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendEmail } from "@/lib/email";
 
 export async function POST(req) {
-  const { nombre, email, password, empresa, telefono, pais, idioma } = await req.json();
+  const body = await req.json();
+
+  // Normalización segura
+  const nombre = body?.nombre?.trim();
+  const email = body?.email?.trim()?.toLowerCase();
+  const password = body?.password;
+  const empresa = body?.empresa ?? null;
+  const telefono = body?.telefono ?? null;
+  const pais = body?.pais ?? null;
+  const idioma = body?.idioma ?? "es";
 
   if (!nombre || !email || !password) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
   }
 
   // 1. Crear usuario sin confirmar
-  const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: false,
-    user_metadata: { nombre, empresa, telefono, pais, idioma, role: "user" }
-  });
+  const { data: newUser, error: createErr } =
+    await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false, // obsoleto pero mantenido por compatibilidad
+      user_metadata: { nombre, empresa, telefono, pais, idioma, role: "user" }
+    });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  if (createErr) {
+    return NextResponse.json({ error: createErr.message }, { status: 400 });
   }
 
   // 2. Generar link de confirmación
-  const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
-    type: "signup",
-    email
-  });
+  const { data: linkData, error: linkErr } =
+    await supabaseAdmin.auth.admin.generateLink({
+      type: "signup",
+      email
+    });
 
-  const confirmUrl = linkData?.properties?.action_link;
+  if (linkErr || !linkData?.properties?.action_link) {
+    console.error("Error generando link de confirmación:", linkErr);
+    return NextResponse.json({ error: "error_generando_link" }, { status: 500 });
+  }
 
-  // 3. Enviar email con el enlace correcto
+  const confirmUrl = linkData.properties.action_link;
+
+  // 3. Enviar email con HTML REAL
   await sendEmail({
     to: email,
     subject: "Confirma tu cuenta – OMBIM",
@@ -3029,7 +3083,7 @@ export async function POST(req) {
       <p>Gracias por registrarte en OMBIM.</p>
       <p>Para activar tu cuenta, haz clic en este enlace:</p>
       <p><a href="${confirmUrl}" style="color:#1a73e8; font-weight:bold;">Confirmar cuenta</a></p>
-      <p>Si no has creado esta cuenta, ignora el mensaje.</p>
+      <p>Si no has creado esta cuenta, ignora este mensaje.</p>
     `
   });
 
@@ -3038,6 +3092,7 @@ export async function POST(req) {
     message: "Registro completado. Revisa tu email para confirmar tu cuenta."
   });
 }
+``
 
 
 ============================================================
@@ -3049,22 +3104,27 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET(req) {
-  const token = req.nextUrl.searchParams.get("token");
-  const email = req.nextUrl.searchParams.get("email");
+  const token = req.nextUrl.searchParams.get("token")?.trim();
+  const emailRaw = req.nextUrl.searchParams.get("email");
+
+  const email = emailRaw?.trim()?.toLowerCase();
 
   if (!token || !email) {
     return NextResponse.redirect("/login?error=missing_token");
   }
 
-  const supabase = supabaseServer();
+  // ✔ FIX: supabaseServer() es async
+  const supabase = await supabaseServer();
 
+  // ✔ FIX: tipo correcto en verifyOtp
   const { error } = await supabase.auth.verifyOtp({
     token,
     email,
-    type: "email",
+    type: "recovery", // ← el valor correcto para reset de contraseña
   });
 
   if (error) {
+    console.error("Error verifyOtp:", error);
     return NextResponse.redirect("/login?error=verify_failed");
   }
 
@@ -3076,18 +3136,27 @@ export async function GET(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-password\route.js
 ============================================================
 
+// /app/api/auth/reset/route.js
 import { NextResponse } from "next/server";
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  const { email } = await req.json();
-  const supabase = supabaseRoute();
+  const body = await req.json();
+  const email = body?.email?.trim()?.toLowerCase();
+
+  if (!email) {
+    return NextResponse.json({ error: "email_requerido" }, { status: 400 });
+  }
+
+  // ✔ FIX: supabaseRoute es async en Next.js 16
+  const supabase = await supabaseRoute();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: process.env.NEXT_PUBLIC_SITE_URL + "/reset-password",
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
   });
 
   if (error) {
+    console.error("Error enviando reset password:", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
@@ -3104,17 +3173,20 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req) {
-  const { email } = await req.json();
+  const body = await req.json();
+  const email = body?.email?.trim()?.toLowerCase();
 
   if (!email) {
     return NextResponse.json({ error: "Falta email" }, { status: 400 });
   }
 
-  const supabase = supabaseServer();
+  // ✔ FIX: supabaseServer es async
+  const supabase = await supabaseServer();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email);
 
   if (error) {
+    console.error("Error enviando reset password:", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
@@ -3254,70 +3326,4 @@ export async function POST(req) {
 
   return NextResponse.json({ ok: true });
 }
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
-============================================================
-
-import { PLANTILLA_ACTIVADAS } from "@/app/api/email/plantillas/activadas";
-import { sendEmail } from "@/lib/email";
-
-export async function POST(req) {
-  const { email, emails_tekla } = await req.json();
-
-  const lista = emails_tekla.map((e) => `<li>${e}</li>`).join("");
-
-  const html = PLANTILLA_ACTIVADAS.replace("{{lista_emails}}", lista);
-
-  await sendEmail({
-    to: email,
-    subject: "Tus licencias OMBIM han sido activadas",
-    html,
-  });
-
-  return Response.json({ ok: true });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\activadas.js
-============================================================
-
-// /app/api/email/plantillas/activadas.js
-
-export const PLANTILLA_ACTIVADAS = `
-<!DOCTYPE html>
-<html lang="es" style="font-family:Arial;">
-<body style="background:#f3f4f6;padding:0;margin:0;">
-
-<div style="max-width:580px;margin:40px auto;background:white;padding:32px;border-radius:12px;
-     box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-
-  <h2 style="text-align:center;color:#111827;margin-bottom:20px;">
-    Tus licencias OMBIM han sido activadas
-  </h2>
-
-  <p style="font-size:16px;color:#374151;">
-    Ya puedes usar tu plugin de OMBIM. Se han activado las licencias para los siguientes emails Tekla:
-  </p>
-
-  <ul style="color:#374151;font-size:15px;">
-    {{lista_emails}}
-  </ul>
-
-  <p style="font-size:16px;color:#4b5563;margin-top:20px;">
-    Si ya tienes el plugin instalado en Tekla, simplemente ábrelo y se activará automáticamente.
-  </p>
-
-  <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
-
-  <p style="text-align:center;color:#9ca3af;font-size:12px;">
-    © OMBIM – Herramientas BIM profesionales
-  </p>
-
-</div>
-</body>
-</html>
-`;
 

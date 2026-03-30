@@ -20,9 +20,9 @@ export default function AdminLayout({ children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px] md:pt-[72px]">
 
-      {/* ---------- SIDEBAR ESCRITORIO PRIMERO EN EL DOM ---------- */}
+      {/* ---------- SIDEBAR ESCRITORIO ---------- */}
       <aside
         className="
           hidden md:flex
@@ -31,6 +31,7 @@ export default function AdminLayout({ children }) {
           bg-gray-100 dark:bg-gray-900
           p-4 space-y-4
           border-r border-gray-300 dark:border-gray-700
+          fixed top-[72px] left-0 bottom-0
           z-20
         "
       >
@@ -67,9 +68,9 @@ export default function AdminLayout({ children }) {
         </nav>
       </aside>
 
-      {/* ---------- BOTON HAMBURGUESA (MÓVIL) ---------- */}
+      {/* ---------- BOTÓN HAMBURGUESA (MÓVIL) ---------- */}
       <button
-        className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 p-2 rounded"
+        className="md:hidden fixed top-[80px] left-4 z-40 bg-gray-300 dark:bg-gray-700 p-2 rounded"
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
@@ -78,15 +79,15 @@ export default function AdminLayout({ children }) {
       {/* ---------- OVERLAY (MÓVIL) ---------- */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setOpen(false)}
-        ></div>
+        />
       )}
 
       {/* ---------- SIDEBAR MÓVIL ---------- */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-4 z-30 shadow-xl
+          fixed top-[72px] left-0 h-full w-64 p-4 z-40 shadow-xl
           bg-gray-100 dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
           transform transition-transform duration-300
@@ -132,7 +133,14 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* ---------- CONTENIDO PRINCIPAL ---------- */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main
+        className="
+          flex-1 overflow-y-auto
+          md:ml-64
+          p-6
+          pt-4
+        "
+      >
         {children}
       </main>
     </div>

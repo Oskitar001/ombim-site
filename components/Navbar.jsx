@@ -19,8 +19,8 @@ export default function Navbar({ className = "" }) {
   // Obtener usuario
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         setUser(data.user ?? null);
         setReady(true);
       })
@@ -41,7 +41,7 @@ export default function Navbar({ className = "" }) {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  // Cerrar menú usuario si se hace clic fuera
+  // Cerrar menú usuario al clicar fuera
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -58,7 +58,7 @@ export default function Navbar({ className = "" }) {
     setMenuOpen(false);
   }, [pathname]);
 
-  // Evitar scroll cuando drawer está abierto
+  // Evitar scroll al abrir drawer
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", open);
   }, [open]);
@@ -78,17 +78,16 @@ export default function Navbar({ className = "" }) {
   const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
 
   const nombre = user?.user_metadata?.nombre;
-  const avatar =
-    nombre?.charAt(0)?.toUpperCase() ||
-    user?.email?.charAt(0)?.toUpperCase();
+  const avatar = nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase();
 
   return (
     <nav
       className={`
-        w-full py-3 
+        fixed top-0 left-0 right-0 z-50
+        w-full py-3
         bg-[#f3f4f6] dark:bg-[#242424]
         border-b border-gray-300 dark:border-gray-700
-        fixed top-0 left-0 z-50 shadow-sm
+        shadow-sm
         ${className}
       `}
     >
@@ -111,9 +110,9 @@ export default function Navbar({ className = "" }) {
           </span>
         </Link>
 
-        {/* BOTÓN HAMBURGUESA */}
+        {/* HAMBURGUESA (visible SIEMPRE en móvil) */}
         <button
-          className="md:hidden relative w-8 h-8 flex items-center justify-center"
+          className="md:hidden relative w-9 h-9 flex items-center justify-center z-[60]"
           onClick={() => setOpen(!open)}
           aria-label="Abrir menú"
         >
@@ -152,7 +151,7 @@ export default function Navbar({ className = "" }) {
             {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
           </button>
 
-          {/* MENÚ USUARIO DESKTOP PREMIUM */}
+          {/* MENÚ USUARIO DESKTOP */}
           {user && (
             <div className="relative" ref={menuRef}>
               <button
@@ -165,17 +164,18 @@ export default function Navbar({ className = "" }) {
                 <span>{nombre}</span>
               </button>
 
+              {/* Dropdown */}
               <div
-                className={`absolute right-0 mt-1 w-56 bg-white dark:bg-[#2e2e2e] 
-                border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl 
-                p-3 transition-all origin-top-right z-[100] 
-                ${
-                  menuOpen
-                    ? "opacity-100 scale-100"
-                    : "opacity-0 scale-95 pointer-events-none"
-                }`}
+                className={`absolute right-0 mt-2 w-56 bg-white dark:bg-[#2e2e2e]
+                  border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl
+                  p-3 transition-all origin-top-right z-[100]
+                  ${
+                    menuOpen
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-95 pointer-events-none"
+                  }`}
               >
-                {/* HEADER DEL MENU */}
+                {/* HEADER */}
                 <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                     {avatar}
@@ -222,7 +222,7 @@ export default function Navbar({ className = "" }) {
         </div>
       </div>
 
-      {/* OVERLAY OSCURO */}
+      {/* OVERLAY OSCURO MÓVIL */}
       {open && (
         <div
           onClick={() => setOpen(false)}
@@ -232,9 +232,13 @@ export default function Navbar({ className = "" }) {
 
       {/* DRAWER MÓVIL */}
       <div
-        className={`fixed md:hidden top-0 right-0 h-full w-64 bg-[#f3f4f6] dark:bg-[#2e2e2e] text-[#1f2937] dark:text-[#e6e6e6] z-50 shadow-xl pt-20 px-6 pb-8 flex flex-col gap-6 transform transition-transform ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed md:hidden top-0 right-0 h-full w-64
+          bg-[#f3f4f6] dark:bg-[#2e2e2e]
+          text-[#1f2937] dark:text-[#e6e6e6]
+          z-[60] shadow-xl pt-20 px-6 pb-8 flex flex-col gap-6
+          transform transition-transform
+          ${open ? "translate-x-0" : "translate-x-full"}
+        `}
       >
         <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
         <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>

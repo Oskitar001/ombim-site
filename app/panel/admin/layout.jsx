@@ -70,7 +70,13 @@ export default function AdminLayout({ children }) {
 
       {/* ---------- BOTÓN HAMBURGUESA (MÓVIL) ---------- */}
       <button
-        className="md:hidden fixed top-[80px] left-4 z-40 bg-gray-300 dark:bg-gray-700 p-2 rounded"
+        className="
+          md:hidden
+          fixed top-4 left-4
+          z-[60]
+          bg-gray-300 dark:bg-gray-700
+          p-2 rounded-lg shadow-lg border border-gray-600
+        "
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
@@ -79,7 +85,7 @@ export default function AdminLayout({ children }) {
       {/* ---------- OVERLAY (MÓVIL) ---------- */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -87,7 +93,7 @@ export default function AdminLayout({ children }) {
       {/* ---------- SIDEBAR MÓVIL ---------- */}
       <aside
         className={`
-          fixed top-[72px] left-0 h-full w-64 p-4 z-40 shadow-xl
+          fixed top-[72px] left-0 h-full w-64 p-4 z-50 shadow-xl
           bg-gray-100 dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
           transform transition-transform duration-300
@@ -137,8 +143,7 @@ export default function AdminLayout({ children }) {
         className="
           flex-1 overflow-y-auto
           md:ml-64
-          p-6
-          pt-4
+          p-6 pt-4
         "
       >
         {children}

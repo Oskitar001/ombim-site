@@ -17,15 +17,18 @@ export default function UserLayout({ children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px]">
+    <div className="
+      flex h-screen overflow-hidden 
+      bg-gray-50 dark:bg-gray-800 
+      pt-[72px] md:pt-[72px]
+    ">
 
-      {/* ====================================
-          BOTÓN HAMBURGUESA (MÓVIL)
-      ==================================== */}
+      {/* ========== BOTÓN HAMBURGUESA (MÓVIL) ========== */}
       <button
         className="
-          md:hidden 
-          fixed top-[80px] left-4 z-[60]
+          md:hidden
+          fixed top-4 left-4 
+          z-[60]
           bg-white dark:bg-gray-700 
           p-2 rounded-lg shadow-lg 
           border border-gray-300 dark:border-gray-600
@@ -35,9 +38,7 @@ export default function UserLayout({ children }) {
         <Menu size={24} />
       </button>
 
-      {/* ====================================
-          OVERLAY OSCURO (MÓVIL)
-      ==================================== */}
+      {/* ========== OVERLAY MÓVIL ========== */}
       {open && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[50] md:hidden"
@@ -45,9 +46,7 @@ export default function UserLayout({ children }) {
         />
       )}
 
-      {/* ====================================
-          SIDEBAR MÓVIL (DRAWER)
-      ==================================== */}
+      {/* ========== SIDEBAR MÓVIL ========== */}
       <aside
         className={`
           fixed top-[72px] left-0 
@@ -61,7 +60,6 @@ export default function UserLayout({ children }) {
           md:hidden
         `}
       >
-        {/* Botón cerrar */}
         <button
           className="absolute top-4 right-4 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           onClick={() => setOpen(false)}
@@ -105,9 +103,7 @@ export default function UserLayout({ children }) {
         </nav>
       </aside>
 
-      {/* ====================================
-          SIDEBAR DESKTOP
-      ==================================== */}
+      {/* ========== SIDEBAR ESCRITORIO ========== */}
       <aside
         className="
           hidden md:flex flex-col
@@ -151,9 +147,7 @@ export default function UserLayout({ children }) {
         </nav>
       </aside>
 
-      {/* ====================================
-          CONTENIDO PRINCIPAL
-      ==================================== */}
+      {/* ========== CONTENIDO PRINCIPAL ========== */}
       <main
         className="
           flex-1 

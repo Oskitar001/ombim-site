@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 
 export default function DetallePluginPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id;
 
   const [plugin, setPlugin] = useState(null);
   const [descargas, setDescargas] = useState(0);
@@ -22,8 +23,11 @@ export default function DetallePluginPage() {
       CARGAR DATOS DEL PLUGIN
   ============================ */
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       try {
+        // 🔥 CORRECTO: ruta admin creada y validada
         const r1 = await fetch(`/api/admin/plugins/${id}`, {
           credentials: "include",
         });
@@ -34,8 +38,10 @@ export default function DetallePluginPage() {
           return;
         }
 
-        setPlugin(d1);
+        // 🔥 FIX: el backend devuelve { plugin: {...} }
+        setPlugin(d1.plugin);
 
+        // Obtener descargas
         const r2 = await fetch("/api/admin/dashboard", {
           credentials: "include",
         });
@@ -66,7 +72,7 @@ export default function DetallePluginPage() {
         <ArrowLeft size={20} /> Volver
       </Link>
 
-      {/* TÍTULO PRINCIPAL */}
+      {/* TÍTULO */}
       <h1 className="text-3xl font-bold flex items-center gap-3">
         {plugin.nombre}
       </h1>
@@ -103,24 +109,9 @@ export default function DetallePluginPage() {
 
         {/* PRECIOS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-          <CardPrice
-            label="Estándar"
-            value={plugin.precio}
-            color="blue"
-          />
-
-          <CardPrice
-            label="Anual"
-            value={plugin.precio_anual}
-            color="green"
-          />
-
-          <CardPrice
-            label="Completa"
-            value={plugin.precio_completa}
-            color="purple"
-          />
+          <CardPrice label="Estándar" value={plugin.precio} color="blue" />
+          <CardPrice label="Anual" value={plugin.precio_anual} color="green" />
+          <CardPrice label="Completa" value={plugin.precio_completa} color="purple" />
         </div>
 
         {/* ARCHIVO Y VIDEO */}

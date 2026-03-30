@@ -3,22 +3,31 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, { params }) {
-    const admin = await requireAdmin();
-    if (!admin.ok)
-        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+export async function GET(req, ctx) {
+  // 🔥 FIX: params es una PROMESA → hay que hacer await
+  const { id } = await ctx.params;
 
-    const id = params.id;
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+  }
 
-    const { data: licencia, error } = await supabaseAdmin
-        .from("licencias")
-        .select("*, plugins(nombre)")
-        .eq("id", id)
-        .single();
+  if (!id) {
+    return NextResponse.json({ error: "id_invalido" }, { status: 400 });
+  }
 
-    if (error || !licencia) {
-        return NextResponse.json({ error: "licencia_no_encontrada" }, { status: 404 });
-    }
+  const { data: licencia, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .eq("id", id)
+    .single();
 
-    return NextResponse.json({ licencia });
+  if (error || !licencia) {
+    return NextResponse.json(
+      { error: "licencia_no_encontrada" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ licencia });
 }

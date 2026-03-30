@@ -41,15 +41,18 @@ export default function EditarPluginPage() {
         return;
       }
 
+      // 🔥 FIX: usar d.plugin en vez de d
+      const p = d.plugin;
+
       setForm({
-        nombre: d.nombre ?? "",
-        descripcion: d.descripcion ?? "",
-        precio: d.precio ?? 0,
-        precio_anual: d.precio_anual ?? 0,
-        precio_completa: d.precio_completa ?? 0,
-        archivo_url: d.archivo_url ?? "",
-        video_url: d.video_url ?? "",
-        imagen_url: d.imagen_url ?? "",
+        nombre: p.nombre ?? "",
+        descripcion: p.descripcion ?? "",
+        precio: p.precio ?? 0,
+        precio_anual: p.precio_anual ?? 0,
+        precio_completa: p.precio_completa ?? 0,
+        archivo_url: p.archivo_url ?? "",
+        video_url: p.video_url ?? "",
+        imagen_url: p.imagen_url ?? "",
       });
 
       setLoading(false);
@@ -143,13 +146,9 @@ export default function EditarPluginPage() {
 
   if (loading) return <p className="p-4">Cargando plugin…</p>;
 
-  /* ===========================
-     UI PREMIUM
-  ============================ */
   return (
     <div className="space-y-8 p-4 max-w-2xl mx-auto">
 
-      {/* Volver */}
       <Link
         href="/panel/admin/plugins"
         className="flex items-center gap-2 text-blue-600 hover:underline"

@@ -1,9 +1,20 @@
+// /app/api/admin/plugins/nuevo/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
 
-export const runtime = "nodejs"; // ✔️ Requerido en Next 16
+export const runtime = "nodejs"; // Next 16
 
 export async function POST(req) {
+  // ✔️ Verificar que el usuario es ADMIN
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(
+      { error: "no_autorizado" },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
 
   const {
@@ -21,7 +32,7 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
   }
 
-  // ✔️ Normalización completa
+  // ✔️ Normalización segura
   const payload = {
     nombre: nombre ?? "",
     descripcion: descripcion ?? "",
@@ -33,6 +44,7 @@ export async function POST(req) {
     imagen_url: imagen_url ?? "",
   };
 
+  // ✔️ Insertar plugin
   const { error } = await supabaseAdmin
     .from("plugins")
     .insert(payload);

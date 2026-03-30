@@ -13,13 +13,21 @@ export default function AdminUsuariosPage() {
       try {
         const r = await fetch("/api/admin/usuarios", {
           credentials: "include",
+          cache: "no-store",   // 🔥 FIX FUNDAMENTAL
         });
+
+        if (!r.ok) {
+          console.error("Error HTTP:", r.status);
+          return setUsuarios([]);
+        }
 
         const d = await r.json();
 
+        // 🔥 FIX CORRECTO: d.users es el array real
         setUsuarios(Array.isArray(d.users) ? d.users : []);
       } catch (e) {
         console.error("Error cargando usuarios", e);
+        setUsuarios([]);
       } finally {
         setLoading(false);
       }
@@ -33,14 +41,11 @@ export default function AdminUsuariosPage() {
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-8">
 
-      {/* TÍTULO */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <Users size={28} /> Usuarios
       </h1>
 
-      {/* =======================
-          MÓVIL → VERSION CARDS
-      ======================= */}
+      {/* MÓVIL */}
       <div className="grid gap-4 md:hidden">
         {usuarios.map((u) => (
           <div
@@ -72,9 +77,7 @@ export default function AdminUsuariosPage() {
         )}
       </div>
 
-      {/* =======================
-          DESKTOP → TABLA PREMIUM
-      ======================= */}
+      {/* DESKTOP */}
       <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 overflow-hidden shadow">
         <table className="w-full text-left">
           <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">

@@ -264,7 +264,7 @@ export default function MisDatosClient() {
 }
 
 /* ======================================================
-   COMPONENTES PREMIUM
+   COMPONENTES PREMIUM — INTEGRACIÓN CORRECTA
 ====================================================== */
 
 function UserSection({ title, children }) {
@@ -273,10 +273,11 @@ function UserSection({ title, children }) {
       className="
         bg-white dark:bg-gray-900 
         border border-gray-300 dark:border-gray-700
-        rounded-xl shadow p-6 space-y-4
+        rounded-2xl shadow-lg p-6 space-y-6
+        transition-all
       "
     >
-      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 pb-3 border-b border-gray-200 dark:border-gray-700">
         {title}
       </h2>
       {children}
@@ -286,8 +287,10 @@ function UserSection({ title, children }) {
 
 function Field({ label, children }) {
   return (
-    <div className="space-y-1">
-      <label className="font-semibold">{label}</label>
+    <div className="space-y-2">
+      <label className="font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -298,7 +301,16 @@ function EditableField({ label, value, onChange, editable }) {
     <Field label={label}>
       <input
         disabled={!editable}
-        className={`input-premium ${!editable ? "opacity-60" : ""}`}
+        className={`
+          w-full px-4 py-2 rounded-xl
+          bg-gray-100 dark:bg-gray-800
+          border border-gray-300 dark:border-gray-700 
+          shadow-sm
+          focus:ring-2 focus:ring-blue-600
+          transition
+          text-gray-900 dark:text-gray-200
+          ${!editable ? "opacity-60 cursor-not-allowed" : ""}
+        `}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -311,30 +323,76 @@ function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
     return (
       <button
         onClick={onEdit}
-        className="btn-premium bg-blue-600 hover:bg-blue-700"
+        className="
+          px-5 py-2.5 rounded-xl font-semibold
+          bg-blue-600 text-white 
+          hover:bg-blue-700 active:scale-95
+          shadow-md hover:shadow-lg
+          transition-all duration-150
+        "
       >
         Editar
       </button>
     );
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-4 pt-2">
       <button
         onClick={onCancel}
-        className="btn-premium bg-gray-500 hover:bg-gray-600"
+        className="
+          px-5 py-2.5 rounded-xl font-semibold
+          bg-gray-500 text-white 
+          hover:bg-gray-600 active:scale-95
+          shadow-md hover:shadow-lg
+          transition-all duration-150
+        "
       >
         Cancelar
       </button>
 
       <button
         onClick={onSave}
-        className="btn-premium bg-green-600 hover:bg-green-700"
+        className="
+          px-5 py-2.5 rounded-xl font-semibold
+          bg-green-600 text-white 
+          hover:bg-green-700 active:scale-95
+          shadow-md hover:shadow-lg
+          transition-all duration-150
+        "
       >
         Guardar
       </button>
     </div>
   );
 }
+
+/* ======================================================
+   ESTILOS PREMIUM REUTILIZABLES
+====================================================== */
+
+globalThis["input-premium"] = `
+  w-full px-4 py-2 rounded-xl
+  bg-gray-100 dark:bg-gray-800 
+  border border-gray-300 dark:border-gray-700
+  shadow-sm
+  focus:ring-2 focus:ring-blue-600
+  transition
+  text-gray-900 dark:text-gray-200
+`;
+
+globalThis["input-premium-disabled"] = `
+  w-full px-4 py-2 rounded-xl
+  bg-gray-200 dark:bg-gray-700
+  border border-gray-300 dark:border-gray-600
+  text-gray-600 dark:text-gray-400
+  opacity-70 cursor-not-allowed
+`;
+
+globalThis["btn-premium"] = `
+  px-5 py-2.5 rounded-xl font-semibold text-white
+  shadow-md hover:shadow-lg active:scale-95
+  transition-all duration-150
+`;
 
 /* ======================================================
    ESTILOS PREMIUM REUTILIZABLES

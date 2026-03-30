@@ -4,14 +4,23 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function GET(req, context) {
-  // ❌ context.params no es promesa — quitar await
-  const { pago_id } = context.params;
+export async function GET(req, ctx) {
+  // ✔ FIX Next.js 15/16 → params es una PROMESA
+  const { pago_id } = await ctx.params;
 
-  // ❗ FIX crítico: supabaseRoute es async en Next 16
+  if (!pago_id) {
+    return NextResponse.json(
+      { error: "id_invalido" },
+      { status: 400 }
+    );
+  }
+
+  // ✔ FIX Next.js 16 — supabaseRoute es async
   const supabase = await supabaseRoute();
 
+  // ----------------------------------------------
   // 1) Obtener datos del pago
+  // ----------------------------------------------
   const { data: pago, error } = await supabase
     .from("pagos")
     .select(`
@@ -38,18 +47,21 @@ export async function GET(req, context) {
     );
   }
 
+  // ----------------------------------------------
   // 2) Emails asociados
-  const { data: emails, error: emailsError } = await supabase
+  // ----------------------------------------------
+  const { data: emails } = await supabase
     .from("pagos_emails")
     .select("email_tekla")
     .eq("pago_id", pago_id);
 
-  // Evitar errores si hubo fallo en consulta
   const listaEmails = Array.isArray(emails)
     ? emails.map((e) => e.email_tekla)
     : [];
 
-  // 3) Respuesta final
+  // ----------------------------------------------
+  // 3) Respuesta final (manteniendo tu estructura)
+  // ----------------------------------------------
   return NextResponse.json({
     ...pago,
 
@@ -65,3 +77,4 @@ export async function GET(req, context) {
     factura_solicitada: pago.factura_solicitada ?? false,
   });
 }
+``

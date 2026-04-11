@@ -630,7 +630,7 @@ export default function MisDatosClient() {
 }
 
 /* ======================================================
-   COMPONENTES PREMIUM
+   COMPONENTES PREMIUM — INTEGRACIÓN CORRECTA
 ====================================================== */
 
 function UserSection({ title, children }) {
@@ -639,10 +639,11 @@ function UserSection({ title, children }) {
       className="
         bg-white dark:bg-gray-900 
         border border-gray-300 dark:border-gray-700
-        rounded-xl shadow p-6 space-y-4
+        rounded-2xl shadow-lg p-6 space-y-6
+        transition-all
       "
     >
-      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 pb-3 border-b border-gray-200 dark:border-gray-700">
         {title}
       </h2>
       {children}
@@ -652,8 +653,10 @@ function UserSection({ title, children }) {
 
 function Field({ label, children }) {
   return (
-    <div className="space-y-1">
-      <label className="font-semibold">{label}</label>
+    <div className="space-y-2">
+      <label className="font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -664,7 +667,16 @@ function EditableField({ label, value, onChange, editable }) {
     <Field label={label}>
       <input
         disabled={!editable}
-        className={`input-premium ${!editable ? "opacity-60" : ""}`}
+        className={`
+          w-full px-4 py-2 rounded-xl
+          bg-gray-100 dark:bg-gray-800
+          border border-gray-300 dark:border-gray-700 
+          shadow-sm
+          focus:ring-2 focus:ring-blue-600
+          transition
+          text-gray-900 dark:text-gray-200
+          ${!editable ? "opacity-60 cursor-not-allowed" : ""}
+        `}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -677,30 +689,76 @@ function BotonesEditarGuardar({ editMode, onEdit, onCancel, onSave }) {
     return (
       <button
         onClick={onEdit}
-        className="btn-premium bg-blue-600 hover:bg-blue-700"
+        className="
+          px-5 py-2.5 rounded-xl font-semibold
+          bg-blue-600 text-white 
+          hover:bg-blue-700 active:scale-95
+          shadow-md hover:shadow-lg
+          transition-all duration-150
+        "
       >
         Editar
       </button>
     );
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-4 pt-2">
       <button
         onClick={onCancel}
-        className="btn-premium bg-gray-500 hover:bg-gray-600"
+        className="
+          px-5 py-2.5 rounded-xl font-semibold
+          bg-gray-500 text-white 
+          hover:bg-gray-600 active:scale-95
+          shadow-md hover:shadow-lg
+          transition-all duration-150
+        "
       >
         Cancelar
       </button>
 
       <button
         onClick={onSave}
-        className="btn-premium bg-green-600 hover:bg-green-700"
+        className="
+          px-5 py-2.5 rounded-xl font-semibold
+          bg-green-600 text-white 
+          hover:bg-green-700 active:scale-95
+          shadow-md hover:shadow-lg
+          transition-all duration-150
+        "
       >
         Guardar
       </button>
     </div>
   );
 }
+
+/* ======================================================
+   ESTILOS PREMIUM REUTILIZABLES
+====================================================== */
+
+globalThis["input-premium"] = `
+  w-full px-4 py-2 rounded-xl
+  bg-gray-100 dark:bg-gray-800 
+  border border-gray-300 dark:border-gray-700
+  shadow-sm
+  focus:ring-2 focus:ring-blue-600
+  transition
+  text-gray-900 dark:text-gray-200
+`;
+
+globalThis["input-premium-disabled"] = `
+  w-full px-4 py-2 rounded-xl
+  bg-gray-200 dark:bg-gray-700
+  border border-gray-300 dark:border-gray-600
+  text-gray-600 dark:text-gray-400
+  opacity-70 cursor-not-allowed
+`;
+
+globalThis["btn-premium"] = `
+  px-5 py-2.5 rounded-xl font-semibold text-white
+  shadow-md hover:shadow-lg active:scale-95
+  transition-all duration-150
+`;
 
 /* ======================================================
    ESTILOS PREMIUM REUTILIZABLES
@@ -2368,8 +2426,8 @@ export default function Navbar({ className = "" }) {
   // Obtener usuario
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         setUser(data.user ?? null);
         setReady(true);
       })
@@ -2390,7 +2448,7 @@ export default function Navbar({ className = "" }) {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
-  // Cerrar menú usuario si se hace clic fuera
+  // Cerrar menú usuario al clicar fuera
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -2407,7 +2465,7 @@ export default function Navbar({ className = "" }) {
     setMenuOpen(false);
   }, [pathname]);
 
-  // Evitar scroll cuando drawer está abierto
+  // Evitar scroll al abrir drawer
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", open);
   }, [open]);
@@ -2427,17 +2485,16 @@ export default function Navbar({ className = "" }) {
   const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
 
   const nombre = user?.user_metadata?.nombre;
-  const avatar =
-    nombre?.charAt(0)?.toUpperCase() ||
-    user?.email?.charAt(0)?.toUpperCase();
+  const avatar = nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase();
 
   return (
     <nav
       className={`
-        w-full py-3 
+        fixed top-0 left-0 right-0 z-50
+        w-full py-3
         bg-[#f3f4f6] dark:bg-[#242424]
         border-b border-gray-300 dark:border-gray-700
-        fixed top-0 left-0 z-50 shadow-sm
+        shadow-sm
         ${className}
       `}
     >
@@ -2460,9 +2517,9 @@ export default function Navbar({ className = "" }) {
           </span>
         </Link>
 
-        {/* BOTÓN HAMBURGUESA */}
+        {/* HAMBURGUESA (visible SIEMPRE en móvil) */}
         <button
-          className="md:hidden relative w-8 h-8 flex items-center justify-center"
+          className="md:hidden relative w-9 h-9 flex items-center justify-center z-[60]"
           onClick={() => setOpen(!open)}
           aria-label="Abrir menú"
         >
@@ -2501,7 +2558,7 @@ export default function Navbar({ className = "" }) {
             {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
           </button>
 
-          {/* MENÚ USUARIO DESKTOP PREMIUM */}
+          {/* MENÚ USUARIO DESKTOP */}
           {user && (
             <div className="relative" ref={menuRef}>
               <button
@@ -2514,17 +2571,18 @@ export default function Navbar({ className = "" }) {
                 <span>{nombre}</span>
               </button>
 
+              {/* Dropdown */}
               <div
-                className={`absolute right-0 mt-1 w-56 bg-white dark:bg-[#2e2e2e] 
-                border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl 
-                p-3 transition-all origin-top-right z-[100] 
-                ${
-                  menuOpen
-                    ? "opacity-100 scale-100"
-                    : "opacity-0 scale-95 pointer-events-none"
-                }`}
+                className={`absolute right-0 mt-2 w-56 bg-white dark:bg-[#2e2e2e]
+                  border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl
+                  p-3 transition-all origin-top-right z-[100]
+                  ${
+                    menuOpen
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-95 pointer-events-none"
+                  }`}
               >
-                {/* HEADER DEL MENU */}
+                {/* HEADER */}
                 <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                   <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                     {avatar}
@@ -2571,7 +2629,7 @@ export default function Navbar({ className = "" }) {
         </div>
       </div>
 
-      {/* OVERLAY OSCURO */}
+      {/* OVERLAY OSCURO MÓVIL */}
       {open && (
         <div
           onClick={() => setOpen(false)}
@@ -2581,9 +2639,13 @@ export default function Navbar({ className = "" }) {
 
       {/* DRAWER MÓVIL */}
       <div
-        className={`fixed md:hidden top-0 right-0 h-full w-64 bg-[#f3f4f6] dark:bg-[#2e2e2e] text-[#1f2937] dark:text-[#e6e6e6] z-50 shadow-xl pt-20 px-6 pb-8 flex flex-col gap-6 transform transition-transform ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed md:hidden top-0 right-0 h-full w-64
+          bg-[#f3f4f6] dark:bg-[#2e2e2e]
+          text-[#1f2937] dark:text-[#e6e6e6]
+          z-[60] shadow-xl pt-20 px-6 pb-8 flex flex-col gap-6
+          transform transition-transform
+          ${open ? "translate-x-0" : "translate-x-full"}
+        `}
       >
         <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
         <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
@@ -2608,7 +2670,6 @@ export default function Navbar({ className = "" }) {
     </nav>
   );
 }
-
 
 
 ============================================================
@@ -2672,16 +2733,24 @@ export default function PanelWrapper({ children }) {
 
   return (
     <>
-      {/* Mostrar el navbar SIEMPRE, 
-          pero si es panel → sin sombra ni borde */}
+      {/* NAVBAR:
+          - En panel: ocultar en móvil (md:block), mostrar sólo escritorio.
+          - Fuera del panel: mostrar siempre. */}
       {isPanel ? (
-        <Navbar className="shadow-none border-b-0" />
+        <Navbar className="hidden md:block shadow-none border-b-0" />
       ) : (
         <Navbar />
       )}
 
-      {/* Espacio arriba para que el contenido no quede TAPADO por el navbar */}
-      <div className={isPanel ? "pt-20 md:pt-24 bg-[#f3f4f6] dark:bg-[#242424]" : ""}>
+      {/* Contenido principal.
+         Ajustado al navbar SOLO si está visible. */}
+      <div
+        className={
+          isPanel
+            ? "pt-4 md:pt-[72px] bg-[#f3f4f6] dark:bg-[#242424] min-h-screen"
+            : "pt-[72px] min-h-screen"
+        }
+      >
         {children}
       </div>
 

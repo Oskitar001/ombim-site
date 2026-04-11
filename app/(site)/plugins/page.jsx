@@ -15,7 +15,6 @@ export default function PluginsPage() {
         const d1 = await r1.json();
         setPlugins(Array.isArray(d1) ? d1 : []);
 
-        // ✔ FIX CRÍTICO → añadir credentials: "include"
         const r2 = await fetch("/api/auth/me", {
           credentials: "include",
         });
@@ -34,9 +33,19 @@ export default function PluginsPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-6">Plugins OMBIM</h2>
+      <h2 className="text-3xl font-bold mb-4">
+        Herramientas y plugins para Tekla Structures
+      </h2>
 
-      {!plugins.length && <p>No hay plugins disponibles todavía.</p>}
+      <p className="text-gray-700 dark:text-gray-300 mb-8 max-w-3xl">
+        Estas herramientas forman parte de mi forma de trabajar como modelador
+        profesional en Tekla Structures. Han sido desarrolladas a partir de
+        necesidades reales en proyectos de oficina técnica, fabricación y
+        montaje, y se utilizan para acelerar el trabajo, reducir errores y
+        mejorar la productividad.
+      </p>
+
+      {!plugins.length && <p>No hay herramientas disponibles todavía.</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => {
@@ -75,7 +84,7 @@ export default function PluginsPage() {
               )}
 
               <p className="font-semibold mb-4">
-                {precioMostrar > 0 ? `${precioMostrar} €` : "Gratis"}
+                {precioMostrar > 0 ? `${precioMostrar} €` : "Uso incluido en servicios"}
               </p>
 
               {user ? (
@@ -83,7 +92,7 @@ export default function PluginsPage() {
                   href={`/api/plugin/download?plugin_id=${p.id}`}
                   className="bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
                 >
-                  Descargar versión Trial
+                  Descargar versión de prueba
                 </a>
               ) : (
                 <Link
@@ -98,7 +107,7 @@ export default function PluginsPage() {
                 href={`/plugins/${p.id}`}
                 className="text-blue-600 underline text-sm inline-block mt-2"
               >
-                Más información →
+                Ver detalles →
               </Link>
             </div>
           );

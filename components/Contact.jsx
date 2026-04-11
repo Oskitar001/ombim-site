@@ -1,82 +1,46 @@
 export default function Contact() {
   return (
-    <section
-      id="contacto"
-      className="py-20 md:py-28 max-w-3xl mx-auto px-6 text-center"
-    >
+    <>
       {/* TÍTULO */}
-      <h2 className="text-3xl md:text-4xl font-bold mb-6 text-[#1f2937] dark:text-white">
-        Contacto
-      </h2>
+      <h3>Contacto</h3>
 
-      {/* DESCRIPCIÓN */}
-      <p className="text-base md:text-lg text-[#1f2937] dark:text-gray-300 opacity-90 max-w-2xl mx-auto mb-12 leading-relaxed">
-        ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
-        Estoy disponible para colaboraciones por proyecto, por horas o de forma
-        continua.
+      {/* DESCRIPCIÓN PRINCIPAL */}
+      <p>
+        Si necesitas <strong>reforzar tu equipo técnico</strong>, acelerar
+        el modelado en Tekla Structures o adaptar el software a los procesos
+        reales de tu empresa, puedo ayudarte.
+      </p>
+
+      <p>
+        Trabajo como <strong>colaborador externo</strong>, integrándome en
+        proyectos de forma puntual o continuada, siempre con un enfoque
+        práctico y orientado a producción.
+      </p>
+
+      {/* LISTA DE CASOS TÍPICOS */}
+      <p>Este contacto es adecuado si:</p>
+
+      <ul>
+        <li>Necesitas apoyo en un proyecto concreto</li>
+        <li>Tienes picos de trabajo en oficina técnica</li>
+        <li>Quieres mejorar la calidad y productividad en Tekla</li>
+        <li>Buscas automatizar tareas repetitivas</li>
+        <li>Te interesa adaptar plugins o herramientas a tu flujo interno</li>
+      </ul>
+
+      <p>
+        Puedes contactarme para colaboraciones{" "}
+        <strong>por proyecto, por horas o de forma continua</strong>.
+      </p>
+
+      {/* FORMULARIO */}
+      <p>
+        Rellena el formulario y cuéntame brevemente tu caso.
+        Te responderé lo antes posible.
       </p>
 
       {/* FORMULARIO PREMIUM */}
-      <form
-        method="POST"
-        action="/api/contact"
-        className="grid gap-5 bg-white dark:bg-[#2a2a2a] p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-      >
-        <input
-          type="text"
-          name="nombre"
-          placeholder="Nombre"
-          required
-          className="
-            w-full p-3 rounded-lg
-            bg-gray-100 dark:bg-[#3a3a3a]
-            border border-gray-300 dark:border-gray-600
-            focus:ring-2 focus:ring-blue-600 focus:border-blue-600
-            transition
-          "
-        />
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          required
-          className="
-            w-full p-3 rounded-lg
-            bg-gray-100 dark:bg-[#3a3a3a]
-            border border-gray-300 dark:border-gray-600
-            focus:ring-2 focus:ring-blue-600 focus:border-blue-600
-            transition
-          "
-        />
-
-        <textarea
-          name="mensaje"
-          placeholder="Mensaje"
-          rows="5"
-          required
-          className="
-            w-full p-3 rounded-lg
-            bg-gray-100 dark:bg-[#3a3a3a]
-            border border-gray-300 dark:border-gray-600
-            focus:ring-2 focus:ring-blue-600 focus:border-blue-600
-            transition
-          "
-        />
-
-        <button
-          type="submit"
-          className="
-            w-full py-3 rounded-lg 
-            bg-blue-600 hover:bg-blue-700
-            text-white font-semibold text-lg
-            shadow-md hover:shadow-lg
-            transition
-          "
-        >
-          Enviar mensaje
-        </button>
-      </form>
-    </section>
+      Enviar mensaje
+    </>
   );
 }

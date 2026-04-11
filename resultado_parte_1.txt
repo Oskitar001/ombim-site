@@ -1760,24 +1760,33 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET(req, { params }) {
-    const admin = await requireAdmin();
-    if (!admin.ok)
-        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+export async function GET(req, ctx) {
+  // 🔥 FIX: params es una PROMESA → hay que hacer await
+  const { id } = await ctx.params;
 
-    const id = params.id;
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+  }
 
-    const { data: licencia, error } = await supabaseAdmin
-        .from("licencias")
-        .select("*, plugins(nombre)")
-        .eq("id", id)
-        .single();
+  if (!id) {
+    return NextResponse.json({ error: "id_invalido" }, { status: 400 });
+  }
 
-    if (error || !licencia) {
-        return NextResponse.json({ error: "licencia_no_encontrada" }, { status: 404 });
-    }
+  const { data: licencia, error } = await supabaseAdmin
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .eq("id", id)
+    .single();
 
-    return NextResponse.json({ licencia });
+  if (error || !licencia) {
+    return NextResponse.json(
+      { error: "licencia_no_encontrada" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ licencia });
 }
 
 
@@ -2337,50 +2346,58 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\editar\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\editar\[id]\route.js
 ============================================================
 
+// app/api/admin/plugins/editar/[id]/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
 
-export async function POST(req) {
-  const body = await req.json();
+export const runtime = "nodejs";
 
-  const {
-    id,
-    nombre,
-    descripcion,
-    precio,
-    precio_anual,
-    precio_completa,
-    archivo_url,
-    video_url,
-    imagen_url,
-  } = body;
+export async function POST(req, ctx) {
+  // ✔ Next.js 15/16 → params es una PROMESA
+  const { id } = await ctx.params;
 
   if (!id) {
-    return NextResponse.json({ error: "Falta ID" }, { status: 400 });
+    return NextResponse.json({ error: "ID faltante" }, { status: 400 });
   }
 
-  // ✅ Normalización TOTAL (evitar null, undefined y strings no numéricos)
-  const updateData = {
-    nombre: nombre ?? "",
-    descripcion: descripcion ?? "",
-    precio: Number(precio) || 0,
-    precio_anual: Number(precio_anual) || 0,
-    precio_completa: Number(precio_completa) || 0,
-    archivo_url: archivo_url ?? "",
-    video_url: video_url ?? "",
-    imagen_url: imagen_url ?? "",
+  // ✔ Verificar administrador
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  // ✔ Leer body JSON
+  let body;
+  try {
+    body = await req.json();
+  } catch (err) {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
+
+  // ✔ Preparar datos normalizados
+  const payload = {
+    nombre: body.nombre ?? "",
+    descripcion: body.descripcion ?? "",
+    precio: Number(body.precio) || 0,
+    precio_anual: Number(body.precio_anual) || 0,
+    precio_completa: Number(body.precio_completa) || 0,
+    archivo_url: body.archivo_url ?? "",
+    video_url: body.video_url ?? "",
+    imagen_url: body.imagen_url ?? "",
   };
 
+  // ✔ Hacer UPDATE real
   const { error } = await supabaseAdmin
     .from("plugins")
-    .update(updateData)
+    .update(payload)
     .eq("id", id);
 
   if (error) {
-    console.error("❌ Error actualizando plugin:", error);
+    console.error("❌ Error Supabase UPDATE:", error);
     return NextResponse.json(
       { ok: false, error: error.message },
       { status: 500 }
@@ -2399,50 +2416,78 @@ export async function POST(req) {
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
-import { sendEmail } from "@/lib/email"; 
+import { sendEmail } from "@/lib/email";
+
+export const runtime = "nodejs"; // ✔ necesario en Next 16
 
 export async function POST(req) {
+  // 🔐 Verificar admin
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
+  // Leer body
   const { plugin_id, archivo_nombre } = await req.json();
 
   if (!plugin_id || !archivo_nombre) {
     return NextResponse.json({ error: "Faltan datos" }, { status: 400 });
   }
 
-  // 1. Obtener el nombre del plugin
-  const { data: plugin } = await supabaseAdmin
+  // 1. Obtener plugin
+  const { data: plugin, error: errPlugin } = await supabaseAdmin
     .from("plugins")
     .select("nombre")
     .eq("id", plugin_id)
     .single();
 
-  if (!plugin) {
-    return NextResponse.json({ error: "Plugin no encontrado" }, { status: 404 });
+  if (errPlugin || !plugin) {
+    return NextResponse.json(
+      { error: "Plugin no encontrado" },
+      { status: 404 }
+    );
   }
 
   // 2. Obtener compradores validados
-  const { data: pagos } = await supabaseAdmin
+  const { data: pagos, error: errPagos } = await supabaseAdmin
     .from("pagos")
     .select("user_id")
     .eq("plugin_id", plugin_id)
     .eq("estado", "validado");
 
+  if (errPagos) {
+    return NextResponse.json(
+      { error: "Error obteniendo compradores" },
+      { status: 500 }
+    );
+  }
+
   if (!pagos?.length) {
     return NextResponse.json({ ok: true, enviados: 0 });
   }
 
-  const compradoresIds = pagos.map(p => p.user_id);
+  const compradoresIds = pagos.map((p) => p.user_id);
 
   // 3. Listar usuarios
-  const { data: usuarios } = await supabaseAdmin.auth.admin.listUsers();
+  const { data: usersData, error: errUsers } =
+    await supabaseAdmin.auth.admin.listUsers();
 
-  const compradores = usuarios.users.filter(u => compradoresIds.includes(u.id));
+  if (errUsers) {
+    return NextResponse.json(
+      { error: "Error listando usuarios" },
+      { status: 500 }
+    );
+  }
 
-  // 4. Mandar email a cada comprador
+  // 🔥 FIX: antes usuarios.users era undefined
+  const usuarios = usersData?.users ?? [];
+
+  // Filtrar compradores reales
+  const compradores = usuarios.filter((u) =>
+    compradoresIds.includes(u.id)
+  );
+
+  // 4. Mandar correos
   for (const user of compradores) {
     const html = `
       <h2>Actualización disponible</h2>
@@ -2459,7 +2504,10 @@ export async function POST(req) {
     });
   }
 
-  return NextResponse.json({ ok: true, enviados: compradores.length });
+  return NextResponse.json({
+    ok: true,
+    enviados: compradores.length
+  });
 }
 
 
@@ -2467,12 +2515,23 @@ export async function POST(req) {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\nuevo\route.js
 ============================================================
 
+// /app/api/admin/plugins/nuevo/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
 
-export const runtime = "nodejs"; // ✔️ Requerido en Next 16
+export const runtime = "nodejs"; // Next 16
 
 export async function POST(req) {
+  // ✔️ Verificar que el usuario es ADMIN
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(
+      { error: "no_autorizado" },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
 
   const {
@@ -2490,7 +2549,7 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
   }
 
-  // ✔️ Normalización completa
+  // ✔️ Normalización segura
   const payload = {
     nombre: nombre ?? "",
     descripcion: descripcion ?? "",
@@ -2502,6 +2561,7 @@ export async function POST(req) {
     imagen_url: imagen_url ?? "",
   };
 
+  // ✔️ Insertar plugin
   const { error } = await supabaseAdmin
     .from("plugins")
     .insert(payload);
@@ -2516,6 +2576,7 @@ export async function POST(req) {
 
   return NextResponse.json({ ok: true });
 }
+
 
 
 ============================================================
@@ -2576,6 +2637,53 @@ export async function POST(req) {
   }
 
   return NextResponse.json({ id: data.id });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\plugins\[id]\route.js
+============================================================
+
+// /app/api/admin/plugins/[id]/route.js
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export async function GET(req, ctx) {
+  // NEXT 15/16 → params es una PROMESA
+  const { id } = await ctx.params;
+
+  // Verificar admin
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json(
+      { error: "no_autorizado" },
+      { status: 403 }
+    );
+  }
+
+  if (!id || id === "undefined") {
+    return NextResponse.json(
+      { error: "id_invalido" },
+      { status: 400 }
+    );
+  }
+
+  // Obtener plugin por ID
+  const { data: plugin, error } = await supabaseAdmin
+    .from("plugins")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !plugin) {
+    return NextResponse.json(
+      { error: "plugin_no_encontrado" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ plugin });
 }
 
 
@@ -2766,40 +2874,54 @@ export async function GET() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\[id]\route.js
 ============================================================
 
+// /app/api/admin/usuarios/[id]/route.js
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 
+export const runtime = "nodejs";
+
 export async function GET(req, ctx) {
-  // Next.js 16 → ctx.params es un promise
+  // 📌 FIX Next.js 15/16 → params es PROMISE
   const { id } = await ctx.params;
 
-  // Validar admin
+  // 1. Verificar admin
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
   }
 
-  // Validar id
-  if (!id || id === "undefined") {
-    return NextResponse.json({ error: "id_invalido" }, { status: 400 });
-  }
+  // 2. Obtener usuario desde AUTH
+  const authRes = await supabaseAdmin.auth.admin.getUserById(id);
 
-  // Buscar usuario
-  const { data, error } = await supabaseAdmin.auth.admin.getUserById(id);
-
-  if (error || !data?.user) {
+  if (!authRes?.data?.user) {
     return NextResponse.json({ error: "usuario_no_encontrado" }, { status: 404 });
   }
 
+  const user = authRes.data.user;
+
+  // 3. Obtener licencias del usuario
+  const { data: licencias, error: errLic } = await supabaseAdmin
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .eq("user_id", id);
+
+  // 4. Obtener pagos del usuario
+  const { data: pagos, error: errPagos } = await supabaseAdmin
+    .from("pagos")
+    .select("*, plugins(nombre)")
+    .eq("user_id", id);
+
   return NextResponse.json({
     user: {
-      id: data.user.id,
-      email: data.user.email,
-      created_at: data.user.created_at,
-      last_sign_in_at: data.user.last_sign_in_at,
-      user_metadata: data.user.user_metadata ?? {},
-    }
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at,
+      last_sign_in_at: user.last_sign_in_at,
+      user_metadata: user.user_metadata ?? {},
+    },
+    licencias: licencias ?? [],
+    pagos: pagos ?? [],
   });
 }
 
@@ -3232,98 +3354,5 @@ export async function GET() {
   }));
 
   return NextResponse.json(resultado);
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
-============================================================
-
-// /app/api/email/compra/route.js
-import { NextResponse } from "next/server";
-import { sendEmail } from "@/lib/email";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PLANTILLA_COMPRA } from "@/app/api/email/plantillas/compra"; // ✔ IMPORT CORRECTO
-
-export const runtime = "nodejs";
-
-export async function POST(req) {
-  const body = await req.json();
-  const { pago_id } = body;
-
-  if (!pago_id) {
-    return NextResponse.json({ error: "faltan_datos" }, { status: 400 });
-  }
-
-  // 1. Cargar pago
-  const { data: pago, error: pagoError } = await supabaseAdmin
-    .from("pagos")
-    .select("id, tipo, importe, cantidad_licencias, plugin_id, user_id")
-    .eq("id", pago_id)
-    .single();
-
-  if (pagoError || !pago) {
-    return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
-  }
-
-  // 2. Cargar plugin
-  const { data: plugin } = await supabaseAdmin
-    .from("plugins")
-    .select("nombre, precio, precio_anual, precio_completa")
-    .eq("id", pago.plugin_id)
-    .single();
-
-  // 3. Cargar usuario
-  const { data: usuario } = await supabaseAdmin
-    .from("usuarios")
-    .select("email, nombre")
-    .eq("id", pago.user_id)
-    .single();
-
-  // 4. Cargar emails tekla asociados
-  const { data: emails } = await supabaseAdmin
-    .from("pagos_emails")
-    .select("email_tekla")
-    .eq("pago_id", pago_id);
-
-  const listaEmails = emails?.map((e) => e.email_tekla) ?? [];
-
-  // 5. Calcular precio unitario
-  let precioUnitario = 0;
-
-  if (pago.tipo === "anual") {
-    precioUnitario = plugin.precio_anual > 0 ? plugin.precio_anual : 0;
-  }
-
-  if (pago.tipo === "completa") {
-    if (plugin.precio_completa > 0) {
-      precioUnitario = plugin.precio_completa;
-    } else {
-      precioUnitario = plugin.precio; // fallback
-    }
-  }
-
-  const total = precioUnitario * pago.cantidad_licencias;
-
-  // 6. Generar HTML final sustituyendo marcadores
-  const listaEmailsHtml = listaEmails
-    .map((e) => `- ${e}<br>`)
-    .join("");
-
-  const html = PLANTILLA_COMPRA
-    .replace("{{plugin_nombre}}", plugin.nombre)
-    .replace("{{lista_emails}}", listaEmailsHtml)
-    .replace("{{cuenta_banco}}", "ES00 0000 0000 0000 0000 0000")
-    .replace("{{pago_id}}", pago_id)
-    .replace("{{precio}}", total);
-
-  // 7. Enviar email al usuario
-  await sendEmail({
-    to: usuario.email,
-    subject: `Compra recibida – ${plugin.nombre}`,
-    html,
-  });
-
-  return NextResponse.json({ ok: true });
 }
 

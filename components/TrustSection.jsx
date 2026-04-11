@@ -6,26 +6,35 @@ export default function TrustSection() {
       <div className="grid md:grid-cols-3 gap-10 text-center">
 
         <div>
-          <h4 className="text-xl font-bold mb-2">+10 años de experiencia</h4>
+          <h4 className="text-xl font-bold mb-2">
+            Más de 23 años de experiencia real
+          </h4>
           <p className="opacity-80">
-            Desarrollando soluciones BIM para estructuras metálicas y de hormigón,
-            con enfoque práctico y orientado al trabajo real.
+            Trabajando en proyectos reales de estructuras metálicas y
+            prefabricado de hormigón, desde la ingeniería hasta la fabricación
+            y el montaje.
           </p>
         </div>
 
         <div>
-          <h4 className="text-xl font-bold mb-2">Software usado por empresas reales</h4>
+          <h4 className="text-xl font-bold mb-2">
+            Tekla adaptado al trabajo real
+          </h4>
           <p className="opacity-80">
-            Más de 40 empresas utilizan mis herramientas y automatizaciones para acelerar
-            su producción y mejorar sus flujos internos.
+            No me adapto al software: adapto el software a la empresa, creando
+            flujos de trabajo ágiles y productivos ajustados a su forma real
+            de trabajar.
           </p>
         </div>
 
         <div>
-          <h4 className="text-xl font-bold mb-2">Soluciones a medida</h4>
+          <h4 className="text-xl font-bold mb-2">
+            Herramientas usadas en producción diaria
+          </h4>
           <p className="opacity-80">
-            Desarrollo herramientas totalmente personalizadas adaptadas a las necesidades
-            reales de cada empresa.
+            Muchas empresas utilizan mis automatizaciones y herramientas
+            propias para acelerar su producción, reducir errores y mejorar
+            sus flujos internos.
           </p>
         </div>
 

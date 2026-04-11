@@ -19,8 +19,8 @@ export default function Navbar({ className = "" }) {
   // Obtener usuario
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setUser(data.user ?? null);
         setReady(true);
       })
@@ -78,7 +78,9 @@ export default function Navbar({ className = "" }) {
   const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
 
   const nombre = user?.user_metadata?.nombre;
-  const avatar = nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase();
+  const avatar =
+    nombre?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase();
 
   return (
     <nav
@@ -92,7 +94,6 @@ export default function Navbar({ className = "" }) {
       `}
     >
       <div className="max-w-6xl mx-auto flex justify-between items-center px-4">
-
         {/* LOGO */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <img
@@ -110,7 +111,7 @@ export default function Navbar({ className = "" }) {
           </span>
         </Link>
 
-        {/* HAMBURGUESA (visible SIEMPRE en móvil) */}
+        {/* HAMBURGUESA (móvil) */}
         <button
           className="md:hidden relative w-9 h-9 flex items-center justify-center z-[60]"
           onClick={() => setOpen(!open)}
@@ -135,13 +136,24 @@ export default function Navbar({ className = "" }) {
 
         {/* MENÚ DESKTOP */}
         <div className="hidden md:flex gap-6 items-center text-lg text-[#1f2937] dark:text-[#e6e6e6]">
-
-          <Link href="/" className="hover:text-blue-600 transition">Inicio</Link>
-          <Link href="/sobre-mi" className="hover:text-blue-600 transition">Sobre mí</Link>
-          <Link href="/servicios" className="hover:text-blue-600 transition">Servicios</Link>
-          <Link href="/plugins" className="hover:text-blue-600 transition">Plugins</Link>
-          <Link href="/demos" className="hover:text-blue-600 transition">Demos</Link>
-          <Link href="/contacto" className="hover:text-blue-600 transition">Contacto</Link>
+          <Link href="/" className="hover:text-blue-600 transition">
+            Inicio
+          </Link>
+          <Link href="/servicios" className="hover:text-blue-600 transition">
+            Servicios
+          </Link>
+          <Link href="/sobre-mi" className="hover:text-blue-600 transition">
+            Sobre mí
+          </Link>
+          <Link href="/demos" className="hover:text-blue-600 transition">
+            Demos
+          </Link>
+          <Link href="/plugins" className="hover:text-blue-600 transition">
+            Plugins
+          </Link>
+          <Link href="/contacto" className="hover:text-blue-600 transition">
+            Contacto
+          </Link>
 
           {/* CAMBIAR TEMA */}
           <button
@@ -151,8 +163,8 @@ export default function Navbar({ className = "" }) {
             {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
           </button>
 
-          {/* MENÚ USUARIO DESKTOP */}
-          {user && (
+          {/* MENÚ USUARIO */}
+          {user ? (
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -164,7 +176,6 @@ export default function Navbar({ className = "" }) {
                 <span>{nombre}</span>
               </button>
 
-              {/* Dropdown */}
               <div
                 className={`absolute right-0 mt-2 w-56 bg-white dark:bg-[#2e2e2e]
                   border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl
@@ -175,43 +186,22 @@ export default function Navbar({ className = "" }) {
                       : "opacity-0 scale-95 pointer-events-none"
                   }`}
               >
-                {/* HEADER */}
-                <div className="flex items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                    {avatar}
-                  </div>
-                  <div className="flex flex-col text-sm">
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {nombre}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400 text-xs">
-                      {user.email}
-                    </span>
-                  </div>
-                </div>
-
-                {/* OPCIONES */}
-                <div className="mt-3 flex flex-col gap-1">
-                  <Link
-                    href={panelUrl}
-                    onClick={() => setMenuOpen(false)}
-                    className="px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
-                  >
-                    Panel de usuario
-                  </Link>
-
-                  <button
-                    onClick={logout}
-                    className="px-3 py-2 rounded-lg text-left text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
+                <Link
+                  href={panelUrl}
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a]"
+                >
+                  Panel de usuario
+                </Link>
+                <button
+                  onClick={logout}
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a]"
+                >
+                  Cerrar sesión
+                </button>
               </div>
             </div>
-          )}
-
-          {!user && (
+          ) : (
             <Link
               href="/login"
               className="border px-4 py-2 rounded-lg bg-white dark:bg-[#2e2e2e] hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
@@ -226,7 +216,7 @@ export default function Navbar({ className = "" }) {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-40 transition-opacity"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-40"
         />
       )}
 
@@ -241,25 +231,35 @@ export default function Navbar({ className = "" }) {
         `}
       >
         <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
-        <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
         <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
-        <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
+        <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
         <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
+        <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
         <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
 
-        <button onClick={() => { toggleTheme(); setOpen(false); }}>
+        <button
+          onClick={() => {
+            toggleTheme();
+            setOpen(false);
+          }}
+        >
           {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
         </button>
 
         {user ? (
           <>
-            <Link href={panelUrl} onClick={() => setOpen(false)}>Panel</Link>
+            <Link href={panelUrl} onClick={() => setOpen(false)}>
+              Panel
+            </Link>
             <button onClick={logout}>Cerrar sesión</button>
           </>
         ) : (
-          <Link href="/login" onClick={() => setOpen(false)}>Iniciar sesión</Link>
+          <Link href="/login" onClick={() => setOpen(false)}>
+            Iniciar sesión
+          </Link>
         )}
       </div>
     </nav>
   );
 }
+``

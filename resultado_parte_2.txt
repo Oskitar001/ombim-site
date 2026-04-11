@@ -1,5 +1,98 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
+============================================================
+
+// /app/api/email/compra/route.js
+import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/email";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { PLANTILLA_COMPRA } from "@/app/api/email/plantillas/compra"; // ✔ IMPORT CORRECTO
+
+export const runtime = "nodejs";
+
+export async function POST(req) {
+  const body = await req.json();
+  const { pago_id } = body;
+
+  if (!pago_id) {
+    return NextResponse.json({ error: "faltan_datos" }, { status: 400 });
+  }
+
+  // 1. Cargar pago
+  const { data: pago, error: pagoError } = await supabaseAdmin
+    .from("pagos")
+    .select("id, tipo, importe, cantidad_licencias, plugin_id, user_id")
+    .eq("id", pago_id)
+    .single();
+
+  if (pagoError || !pago) {
+    return NextResponse.json({ error: "pago_no_encontrado" }, { status: 404 });
+  }
+
+  // 2. Cargar plugin
+  const { data: plugin } = await supabaseAdmin
+    .from("plugins")
+    .select("nombre, precio, precio_anual, precio_completa")
+    .eq("id", pago.plugin_id)
+    .single();
+
+  // 3. Cargar usuario
+  const { data: usuario } = await supabaseAdmin
+    .from("usuarios")
+    .select("email, nombre")
+    .eq("id", pago.user_id)
+    .single();
+
+  // 4. Cargar emails tekla asociados
+  const { data: emails } = await supabaseAdmin
+    .from("pagos_emails")
+    .select("email_tekla")
+    .eq("pago_id", pago_id);
+
+  const listaEmails = emails?.map((e) => e.email_tekla) ?? [];
+
+  // 5. Calcular precio unitario
+  let precioUnitario = 0;
+
+  if (pago.tipo === "anual") {
+    precioUnitario = plugin.precio_anual > 0 ? plugin.precio_anual : 0;
+  }
+
+  if (pago.tipo === "completa") {
+    if (plugin.precio_completa > 0) {
+      precioUnitario = plugin.precio_completa;
+    } else {
+      precioUnitario = plugin.precio; // fallback
+    }
+  }
+
+  const total = precioUnitario * pago.cantidad_licencias;
+
+  // 6. Generar HTML final sustituyendo marcadores
+  const listaEmailsHtml = listaEmails
+    .map((e) => `- ${e}<br>`)
+    .join("");
+
+  const html = PLANTILLA_COMPRA
+    .replace("{{plugin_nombre}}", plugin.nombre)
+    .replace("{{lista_emails}}", listaEmailsHtml)
+    .replace("{{cuenta_banco}}", "ES00 0000 0000 0000 0000 0000")
+    .replace("{{pago_id}}", pago_id)
+    .replace("{{precio}}", total);
+
+  // 7. Enviar email al usuario
+  await sendEmail({
+    to: usuario.email,
+    subject: `Compra recibida – ${plugin.nombre}`,
+    html,
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
 ============================================================
 
@@ -1209,14 +1302,23 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function GET(req, context) {
-  // ❌ context.params no es promesa — quitar await
-  const { pago_id } = context.params;
+export async function GET(req, ctx) {
+  // ✔ FIX Next.js 15/16 → params es una PROMESA
+  const { pago_id } = await ctx.params;
 
-  // ❗ FIX crítico: supabaseRoute es async en Next 16
+  if (!pago_id) {
+    return NextResponse.json(
+      { error: "id_invalido" },
+      { status: 400 }
+    );
+  }
+
+  // ✔ FIX Next.js 16 — supabaseRoute es async
   const supabase = await supabaseRoute();
 
+  // ----------------------------------------------
   // 1) Obtener datos del pago
+  // ----------------------------------------------
   const { data: pago, error } = await supabase
     .from("pagos")
     .select(`
@@ -1243,18 +1345,21 @@ export async function GET(req, context) {
     );
   }
 
+  // ----------------------------------------------
   // 2) Emails asociados
-  const { data: emails, error: emailsError } = await supabase
+  // ----------------------------------------------
+  const { data: emails } = await supabase
     .from("pagos_emails")
     .select("email_tekla")
     .eq("pago_id", pago_id);
 
-  // Evitar errores si hubo fallo en consulta
   const listaEmails = Array.isArray(emails)
     ? emails.map((e) => e.email_tekla)
     : [];
 
-  // 3) Respuesta final
+  // ----------------------------------------------
+  // 3) Respuesta final (manteniendo tu estructura)
+  // ----------------------------------------------
   return NextResponse.json({
     ...pago,
 
@@ -1270,6 +1375,7 @@ export async function GET(req, context) {
     factura_solicitada: pago.factura_solicitada ?? false,
   });
 }
+``
 
 
 ============================================================
@@ -2283,12 +2389,8 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     async function load() {
-      /* =====================================
-         1. STATS DASHBOARD
-      ===================================== */
-      const r1 = await fetch("/api/admin/dashboard", {
-        credentials: "include",
-      });
+      // STATS
+      const r1 = await fetch("/api/admin/dashboard", { credentials: "include" });
       const d1 = await r1.json();
 
       setStats({
@@ -2301,27 +2403,19 @@ export default function AdminDashboardPage() {
         ingresosTotales: d1.ingresosTotales ?? 0,
       });
 
-      /* =====================================
-         2. ULTIMOS PAGOS
-      ===================================== */
-      const r2 = await fetch("/api/admin/pagos/list", {
-        credentials: "include",
-      });
+      // ÚLTIMOS PAGOS
+      const r2 = await fetch("/api/admin/pagos/list", { credentials: "include" });
       const d2 = await r2.json();
       setUltimosPagos(Array.isArray(d2) ? d2.slice(0, 5) : []);
 
-      /* =====================================
-         3. ULTIMAS LICENCIAS
-      ===================================== */
+      // ÚLTIMAS LICENCIAS
       const r3 = await fetch("/api/admin/licencias");
       const d3 = await r3.json();
       setUltimasLicencias(
         Array.isArray(d3.licencias) ? d3.licencias.slice(0, 5) : []
       );
 
-      /* =====================================
-         4. ULTIMOS USUARIOS
-      ===================================== */
+      // ÚLTIMOS USUARIOS
       const r4 = await fetch("/api/admin/usuarios");
       const d4 = await r4.json();
       setUltimosUsuarios(
@@ -2333,10 +2427,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto min-h-[80vh]">
+    <div className="space-y-10 max-w-6xl mx-auto">
 
-      {/* TITULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-3">
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-3 mt-4">
         <Activity size={32} /> Panel de Administración
       </h1>
 
@@ -2434,7 +2528,7 @@ export default function AdminDashboardPage() {
 
 function Card({ title, value, icon }) {
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 hover:shadow-xl transition">
+    <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 flex flex-col gap-3 hover:shadow-lg transition">
       <div className="flex items-center gap-3">
         {icon}
         <h2 className="text-lg font-bold">{title}</h2>
@@ -2490,9 +2584,9 @@ export default function AdminLayout({ children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px] md:pt-[72px]">
 
-      {/* ---------- SIDEBAR ESCRITORIO PRIMERO EN EL DOM ---------- */}
+      {/* ---------- SIDEBAR ESCRITORIO ---------- */}
       <aside
         className="
           hidden md:flex
@@ -2501,6 +2595,7 @@ export default function AdminLayout({ children }) {
           bg-gray-100 dark:bg-gray-900
           p-4 space-y-4
           border-r border-gray-300 dark:border-gray-700
+          fixed top-[72px] left-0 bottom-0
           z-20
         "
       >
@@ -2537,9 +2632,15 @@ export default function AdminLayout({ children }) {
         </nav>
       </aside>
 
-      {/* ---------- BOTON HAMBURGUESA (MÓVIL) ---------- */}
+      {/* ---------- BOTÓN HAMBURGUESA (MÓVIL) ---------- */}
       <button
-        className="md:hidden absolute top-4 left-4 z-30 bg-gray-300 dark:bg-gray-700 p-2 rounded"
+        className="
+          md:hidden
+          fixed top-4 left-4
+          z-[60]
+          bg-gray-300 dark:bg-gray-700
+          p-2 rounded-lg shadow-lg border border-gray-600
+        "
         onClick={() => setOpen(true)}
       >
         <Menu size={24} />
@@ -2548,15 +2649,15 @@ export default function AdminLayout({ children }) {
       {/* ---------- OVERLAY (MÓVIL) ---------- */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setOpen(false)}
-        ></div>
+        />
       )}
 
       {/* ---------- SIDEBAR MÓVIL ---------- */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 p-4 z-30 shadow-xl
+          fixed top-[72px] left-0 h-full w-64 p-4 z-50 shadow-xl
           bg-gray-100 dark:bg-gray-900
           border-r border-gray-300 dark:border-gray-700
           transform transition-transform duration-300
@@ -2602,7 +2703,13 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* ---------- CONTENIDO PRINCIPAL ---------- */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main
+        className="
+          flex-1 overflow-y-auto
+          md:ml-64
+          p-6 pt-4
+        "
+      >
         {children}
       </main>
     </div>
@@ -3192,14 +3299,12 @@ export default function AdminLogsPage() {
 ============================================================
 
 // /app/panel/admin/page.jsx
+import { redirect } from "next/navigation";
+
 export const dynamic = "force-dynamic";
 
 export default function AdminHome() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">Panel de administración</h1>
-      <p className="mt-2">Selecciona una sección del menú para comenzar.</p>
-    </div>
-  );
+  redirect("/panel/admin/dashboard");
 }
+``
 

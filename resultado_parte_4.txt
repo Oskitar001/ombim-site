@@ -1644,17 +1644,31 @@ export default function AboutSection() {
     <section className="py-20 max-w-5xl mx-auto px-6 reveal">
       <h2 className="text-3xl font-bold mb-8 text-center">Sobre mí</h2>
 
-      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-        Soy Óscar Martínez, especialista en Tekla Structures con más de 23 años de experiencia
-        en modelado avanzado, fabricación, prefabricado y montaje. Durante más de dos décadas
-        trabajé en proyectos reales que me permitieron conocer cada fase del proceso constructivo:
-        desde la ingeniería, al taller y la obra.
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+        Soy Óscar Martínez, especialista en Tekla Structures con más de 23 años de
+        experiencia real en modelado avanzado, fabricación, prefabricado y
+        montaje. Durante más de dos décadas he trabajado en entornos industriales
+        reales que me han permitido conocer en profundidad cada fase del proceso
+        constructivo: desde la ingeniería y la oficina técnica, hasta el taller
+        y la obra.
+      </p>
+
+      <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+        Actualmente colaboro con empresas como modelador externo, ayudándolas a
+        mejorar su productividad y fiabilidad técnica.
       </p>
 
       <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-        Actualmente ayudo a empresas a mejorar su productividad mediante automatizaciones,
-        plugins personalizados y flujos BIM optimizados. Mi objetivo es claro: que tus modelos
-        sean más rápidos de producir, más precisos y totalmente adaptados a tus necesidades reales.
+        🔹 Aumentar su productividad
+        <br />
+        🔹 Reducir errores de modelado
+        <br />
+        🔹 Automatizar tareas repetitivas
+        <br />
+        🔹 Adaptar Tekla a su forma real de trabajar
+        <br />
+        <br />
+        Mi enfoque es claro: menos clics, menos errores y más producción.
       </p>
     </section>
   );
@@ -2083,84 +2097,48 @@ export default function ConfirmDialog({
 
 export default function Contact() {
   return (
-    <section
-      id="contacto"
-      className="py-20 md:py-28 max-w-3xl mx-auto px-6 text-center"
-    >
+    <>
       {/* TÍTULO */}
-      <h2 className="text-3xl md:text-4xl font-bold mb-6 text-[#1f2937] dark:text-white">
-        Contacto
-      </h2>
+      <h3>Contacto</h3>
 
-      {/* DESCRIPCIÓN */}
-      <p className="text-base md:text-lg text-[#1f2937] dark:text-gray-300 opacity-90 max-w-2xl mx-auto mb-12 leading-relaxed">
-        ¿Necesitas apoyo en un proyecto o quieres automatizar procesos en Tekla?
-        Estoy disponible para colaboraciones por proyecto, por horas o de forma
-        continua.
+      {/* DESCRIPCIÓN PRINCIPAL */}
+      <p>
+        Si necesitas <strong>reforzar tu equipo técnico</strong>, acelerar
+        el modelado en Tekla Structures o adaptar el software a los procesos
+        reales de tu empresa, puedo ayudarte.
+      </p>
+
+      <p>
+        Trabajo como <strong>colaborador externo</strong>, integrándome en
+        proyectos de forma puntual o continuada, siempre con un enfoque
+        práctico y orientado a producción.
+      </p>
+
+      {/* LISTA DE CASOS TÍPICOS */}
+      <p>Este contacto es adecuado si:</p>
+
+      <ul>
+        <li>Necesitas apoyo en un proyecto concreto</li>
+        <li>Tienes picos de trabajo en oficina técnica</li>
+        <li>Quieres mejorar la calidad y productividad en Tekla</li>
+        <li>Buscas automatizar tareas repetitivas</li>
+        <li>Te interesa adaptar plugins o herramientas a tu flujo interno</li>
+      </ul>
+
+      <p>
+        Puedes contactarme para colaboraciones{" "}
+        <strong>por proyecto, por horas o de forma continua</strong>.
+      </p>
+
+      {/* FORMULARIO */}
+      <p>
+        Rellena el formulario y cuéntame brevemente tu caso.
+        Te responderé lo antes posible.
       </p>
 
       {/* FORMULARIO PREMIUM */}
-      <form
-        method="POST"
-        action="/api/contact"
-        className="grid gap-5 bg-white dark:bg-[#2a2a2a] p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
-      >
-        <input
-          type="text"
-          name="nombre"
-          placeholder="Nombre"
-          required
-          className="
-            w-full p-3 rounded-lg
-            bg-gray-100 dark:bg-[#3a3a3a]
-            border border-gray-300 dark:border-gray-600
-            focus:ring-2 focus:ring-blue-600 focus:border-blue-600
-            transition
-          "
-        />
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          required
-          className="
-            w-full p-3 rounded-lg
-            bg-gray-100 dark:bg-[#3a3a3a]
-            border border-gray-300 dark:border-gray-600
-            focus:ring-2 focus:ring-blue-600 focus:border-blue-600
-            transition
-          "
-        />
-
-        <textarea
-          name="mensaje"
-          placeholder="Mensaje"
-          rows="5"
-          required
-          className="
-            w-full p-3 rounded-lg
-            bg-gray-100 dark:bg-[#3a3a3a]
-            border border-gray-300 dark:border-gray-600
-            focus:ring-2 focus:ring-blue-600 focus:border-blue-600
-            transition
-          "
-        />
-
-        <button
-          type="submit"
-          className="
-            w-full py-3 rounded-lg 
-            bg-blue-600 hover:bg-blue-700
-            text-white font-semibold text-lg
-            shadow-md hover:shadow-lg
-            transition
-          "
-        >
-          Enviar mensaje
-        </button>
-      </form>
-    </section>
+      Enviar mensaje
+    </>
   );
 }
 
@@ -2348,33 +2326,41 @@ export default function Footer() {
     text-center px-6 sm:px-10
     overflow-hidden
   "
-  style={{
-    backgroundImage: "url('/images/hero-tekla.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }}
+  
 >
   {/* Overlay premium */}
-  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/40 to-black/60 dark:from-black/50 dark:via-black/60 dark:to-black/70 backdrop-blur-[2px]" />
+  <div className="absolute inset-0 bg-gradient-to-b
+  from-black/70 via-black/70 to-black/80 dark:from-black/50 dark:via-black/60 dark:to-black/70 backdrop-blur-[2px]" />
 
   {/* Contenido */}
   <div className="relative max-w-3xl mx-auto text-white">
-    <h1 className="
-      text-3xl sm:text-4xl md:text-5xl font-bold 
-      leading-tight md:leading-tight 
-      mb-5 drop-shadow-xl
-    ">
-      Plugins, automatizaciones y modelado 3D <br />
-      para Tekla Structures
+    <h1
+      className="
+        text-3xl sm:text-4xl md:text-5xl font-bold 
+        leading-tight md:leading-tight 
+        mb-5 drop-shadow-xl
+      "
+    >
+      Modelado Tekla orientado a producción
+      <br />
+      para prefabricado y estructuras metálicas
     </h1>
 
-    <p className="
-      text-base sm:text-lg md:text-xl 
-      opacity-95 leading-relaxed 
-      mb-8 drop-shadow-lg
-    ">
-      Acelera tu flujo BIM con herramientas profesionales creadas desde la experiencia real
-      en obra, fabricación y modelado avanzado.
+    <p
+      className="
+        text-base sm:text-lg md:text-xl 
+        opacity-95 leading-relaxed 
+        mb-8 drop-shadow-lg
+      "
+    >
+      Ayudo a empresas de prefabricado de hormigón y estructuras metálicas
+      a modelar estructuras listas para fabricar, reducir errores en taller
+      y optimizar tiempos de producción.
+      <br />
+      <br />
+      Más de 23 años de experiencia real en entorno industrial, combinando
+      modelado avanzado en Tekla con automatización y herramientas propias
+      desarrolladas para producción.
     </p>
 
     <Link
@@ -2391,19 +2377,19 @@ export default function Footer() {
         transition
       "
     >
-      Solicitar demo personalizada →
+      Hablemos de tu proyecto →
     </Link>
   </div>
 
   {/* Fade inferior premium */}
   <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-black/40 dark:from-black/50 to-transparent"></div>
 </section>
-``
 
 
 ============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
 ============================================================
+
 
 "use client";
 
@@ -2418,6 +2404,7 @@ export default function Navbar({ className = "" }) {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState("user"); // ✅ AÑADIDO
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState("light");
 
@@ -2429,6 +2416,7 @@ export default function Navbar({ className = "" }) {
       .then(res => res.json())
       .then(data => {
         setUser(data.user ?? null);
+        setRole(data.role ?? "user"); // ✅ ahora sí existe
         setReady(true);
       })
       .catch(() => setReady(true));
@@ -2476,16 +2464,21 @@ export default function Navbar({ className = "" }) {
       credentials: "include",
     });
     setUser(null);
+    setRole("user");
     router.push("/");
   };
 
   if (!ready) return null;
 
-  const role = user?.user_metadata?.role;
-  const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
+  const panelUrl =
+    role === "admin"
+      ? "/panel/admin"
+      : "/panel/user";
 
   const nombre = user?.user_metadata?.nombre;
-  const avatar = nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase();
+  const avatar =
+    nombre?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase();
 
   return (
     <nav
@@ -2497,6 +2490,7 @@ export default function Navbar({ className = "" }) {
         shadow-sm
         ${className}
       `}
+
     >
       <div className="max-w-6xl mx-auto flex justify-between items-center px-4">
 
@@ -2961,26 +2955,35 @@ export default function TrustSection() {
       <div className="grid md:grid-cols-3 gap-10 text-center">
 
         <div>
-          <h4 className="text-xl font-bold mb-2">+10 años de experiencia</h4>
+          <h4 className="text-xl font-bold mb-2">
+            Más de 23 años de experiencia real
+          </h4>
           <p className="opacity-80">
-            Desarrollando soluciones BIM para estructuras metálicas y de hormigón,
-            con enfoque práctico y orientado al trabajo real.
+            Trabajando en proyectos reales de estructuras metálicas y
+            prefabricado de hormigón, desde la ingeniería hasta la fabricación
+            y el montaje.
           </p>
         </div>
 
         <div>
-          <h4 className="text-xl font-bold mb-2">Software usado por empresas reales</h4>
+          <h4 className="text-xl font-bold mb-2">
+            Tekla adaptado al trabajo real
+          </h4>
           <p className="opacity-80">
-            Más de 40 empresas utilizan mis herramientas y automatizaciones para acelerar
-            su producción y mejorar sus flujos internos.
+            No me adapto al software: adapto el software a la empresa, creando
+            flujos de trabajo ágiles y productivos ajustados a su forma real
+            de trabajar.
           </p>
         </div>
 
         <div>
-          <h4 className="text-xl font-bold mb-2">Soluciones a medida</h4>
+          <h4 className="text-xl font-bold mb-2">
+            Herramientas usadas en producción diaria
+          </h4>
           <p className="opacity-80">
-            Desarrollo herramientas totalmente personalizadas adaptadas a las necesidades
-            reales de cada empresa.
+            Muchas empresas utilizan mis automatizaciones y herramientas
+            propias para acelerar su producción, reducir errores y mejorar
+            sus flujos internos.
           </p>
         </div>
 

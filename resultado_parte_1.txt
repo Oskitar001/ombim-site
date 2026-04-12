@@ -226,21 +226,21 @@ import Link from "next/link";
 
 const apps = [
   {
-    title: "Modelado 3D con automatización",
+    title: "Modelado Tekla apoyado en automatización",
     description:
-      "Reduce horas de trabajo automatizando tareas repetitivas en Tekla. Más precisión, menos errores y un flujo BIM más rápido.",
+      "Trabajo de modelado profesional en Tekla Structures apoyado en automatizaciones para reducir tiempos, minimizar errores y mejorar la productividad real del proyecto.",
     video: "https://www.youtube.com/embed/gQp1t5xRz5Q",
   },
   {
-    title: "Aplicaciones Tekla Structures",
+    title: "Herramientas y aplicaciones para producción",
     description:
-      "Combina aplicaciones con plugins para crear elementos estructurales en segundos. Configurable, preciso y pensado para acelerar tus proyectos.",
+      "Herramientas desarrolladas para generar elementos estructurales de forma rápida y consistente, pensadas para flujos reales de oficina técnica y fábrica.",
     video: "https://www.youtube.com/embed/MBL7E9rF2HU",
   },
   {
-    title: "Plugins profesionales para Tekla",
+    title: "Automatización aplicada a proyectos reales",
     description:
-      "Mejora tu productividad con herramientas creadas para resolver problemas reales del día a día en ingeniería, taller y obra.",
+      "Plugins y aplicaciones creados a partir de necesidades reales en ingeniería, taller y obra, utilizados como apoyo al modelado profesional.",
     video: "https://www.youtube.com/embed/9HiQz_x9UCU",
   },
 ];
@@ -251,28 +251,51 @@ export default function HomePage() {
       <RevealObserver />
 
       {/* ----------------------------- */}
-      {/* TÍTULO SIMPLE                 */}
+      {/* HERO / MENSAJE PRINCIPAL      */}
       {/* ----------------------------- */}
-      <section className="pt-24 pb-10 text-center max-w-4xl mx-auto px-6">
-        <h1 className="text-4xl font-bold mb-6">
-          Modelado 3D, automatizaciones y plugins
-          <br />
-          para Tekla Structures
-        </h1>
+     <section className="
+  w-full
+  py-24 md:py-32
+  text-center
+  px-6 sm:px-10
+  bg-[#f3f4f6] dark:bg-[#242424]
+">
+  <div className="max-w-4xl mx-auto">
+    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-[#1f2937] dark:text-[#e6e6e6]">
+      Modelado Tekla 
+      <br />
+      para prefabricado y<br />
+       estructuras metálicas
+    </h1>
 
-        <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-8">
-          Aumento la productividad de ingenierías, constructoras y oficinas técnicas
-          mediante herramientas personalizadas, flujos BIM optimizados y 23 años de
-          experiencia real en obra, fabricación y modelado avanzado.
-        </p>
+    <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-8 text-[#1f2937] dark:text-[#e6e6e6]">
+      Ayudo a empresas de prefabricado de hormigón y estructuras metálicas
+      a modelar estructuras listas para fabricar, reducir errores en taller
+      y optimizar tiempos de producción.
+      <br />
+      <br />
+      Más de 23 años de experiencia real en entorno industrial, combinando
+      modelado avanzado en Tekla con automatización y herramientas propias
+      desarrolladas para producción.
+    </p>
 
-        <Link
-          href="/contacto"
-          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
-        >
-          Solicitar demo personalizada →
-        </Link>
-      </section>
+    <Link
+      href="/contacto"
+      className="
+        inline-block
+        bg-blue-600 hover:bg-blue-700
+        text-white
+        px-6 py-3 md:px-7 md:py-4
+        rounded-lg
+        text-base md:text-lg
+        font-semibold
+        transition
+      "
+    >
+      Hablemos de tu proyecto →
+    </Link>
+  </div>
+</section>
 
       {/* ----------------------------- */}
       {/* CARDS CON VÍDEO              */}
@@ -325,19 +348,20 @@ export default function HomePage() {
       {/* ----------------------------- */}
       <section className="py-20 text-center max-w-3xl mx-auto px-6 reveal">
         <h2 className="text-3xl font-bold mb-4">
-          ¿Quieres mejorar tu productividad en Tekla?
+          ¿Hablamos de tu proyecto?
         </h2>
 
         <p className="text-gray-700 dark:text-gray-300 mb-6 text-lg">
-          Preparo una demo personalizada adaptada a tu empresa: automatizaciones, plugins,
-          modelado 3D o flujos BIM. Soluciones reales y prácticas.
+          Si necesitas reforzar tu equipo técnico, optimizar tu flujo de trabajo
+          en Tekla Structures o aplicar automatización real en tus proyectos,
+          puedo ayudarte con soluciones prácticas y orientadas a producción.
         </p>
 
         <Link
           href="/contacto"
           className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
         >
-          Solicitar demo →
+          Contactar →
         </Link>
       </section>
     </>
@@ -851,7 +875,6 @@ export default function PluginsPage() {
         const d1 = await r1.json();
         setPlugins(Array.isArray(d1) ? d1 : []);
 
-        // ✔ FIX CRÍTICO → añadir credentials: "include"
         const r2 = await fetch("/api/auth/me", {
           credentials: "include",
         });
@@ -870,9 +893,19 @@ export default function PluginsPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-6">Plugins OMBIM</h2>
+      <h2 className="text-3xl font-bold mb-4">
+        Herramientas y plugins para Tekla Structures
+      </h2>
 
-      {!plugins.length && <p>No hay plugins disponibles todavía.</p>}
+      <p className="text-gray-700 dark:text-gray-300 mb-8 max-w-3xl">
+        Estas herramientas forman parte de mi forma de trabajar como modelador
+        profesional en Tekla Structures. Han sido desarrolladas a partir de
+        necesidades reales en proyectos de oficina técnica, fabricación y
+        montaje, y se utilizan para acelerar el trabajo, reducir errores y
+        mejorar la productividad.
+      </p>
+
+      {!plugins.length && <p>No hay herramientas disponibles todavía.</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => {
@@ -911,7 +944,7 @@ export default function PluginsPage() {
               )}
 
               <p className="font-semibold mb-4">
-                {precioMostrar > 0 ? `${precioMostrar} €` : "Gratis"}
+                {precioMostrar > 0 ? `${precioMostrar} €` : "Uso incluido en servicios"}
               </p>
 
               {user ? (
@@ -919,7 +952,7 @@ export default function PluginsPage() {
                   href={`/api/plugin/download?plugin_id=${p.id}`}
                   className="bg-blue-600 text-white px-3 py-2 rounded text-sm font-semibold inline-block mb-2"
                 >
-                  Descargar versión Trial
+                  Descargar versión de prueba
                 </a>
               ) : (
                 <Link
@@ -934,7 +967,7 @@ export default function PluginsPage() {
                 href={`/plugins/${p.id}`}
                 className="text-blue-600 underline text-sm inline-block mt-2"
               >
-                Más información →
+                Ver detalles →
               </Link>
             </div>
           );
@@ -1359,7 +1392,7 @@ export default function ResetRequestPage() {
 export const metadata = {
   title: "Servicios | Óscar Martínez",
   description:
-    "Servicios de modelado en Tekla, planos, producción y automatizaciones.",
+    "Servicios profesionales de modelado en Tekla Structures, documentación técnica y automatización de procesos.",
 };
 
 export default function ServiciosPage() {
@@ -1380,10 +1413,10 @@ export default function ServiciosPage() {
             </h2>
 
             <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
-              <li>• Modelado de estructuras metálicas y de hormigón</li>
-              <li>• Detallado constructivo</li>
-              <li>• Colaboración con Trimble Connect y Tekla Model Sharing</li>
-              <li>• Exportación de planos y modelo a PDF, CAD e IFC</li>
+              <li>• Modelado avanzado de estructuras metálicas y prefabricadas de hormigón</li>
+              <li>• Modelado orientado a fabricación y montaje</li>
+              <li>• Gestión de revisiones y cambios de proyecto</li>
+              <li>• Coordinación directa con ingeniería, taller y obra</li>
             </ul>
           </div>
 
@@ -1397,35 +1430,35 @@ export default function ServiciosPage() {
               <li>• Planos de fabricación</li>
               <li>• Planos de montaje</li>
               <li>• Listados y planillas de producción</li>
-              <li>• Cuadros de materiales</li>
+              <li>• Extracción de datos fiables para producción y obra</li>
             </ul>
           </div>
 
           {/* BLOQUE 3 */}
           <div className="p-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
             <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
-              Automatizaciones y plugins para Tekla
+              Automatización y optimización de flujos Tekla
             </h2>
 
             <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
-              <li>• Desarrollo de plugins a medida</li>
+              <li>• Uso y desarrollo de plugins y herramientas propias</li>
               <li>• Automatización de tareas repetitivas</li>
-              <li>• Generación automática de planos y listados</li>
-              <li>• Herramientas internas para prefabricadores e ingenierías</li>
+              <li>• Generación automática de planos y documentación</li>
+              <li>• Adaptación de Tekla a los procesos reales de cada empresa</li>
             </ul>
           </div>
 
           {/* BLOQUE 4 */}
           <div className="p-6 bg-[#f3f4f6] dark:bg-[#1a1a1a] rounded-xl shadow border border-[#d1d5db] dark:border-[#3a3a3a]">
             <h2 className="text-2xl font-semibold mb-4 text-[#1f2937] dark:text-[#e6e6e6]">
-              Colaboración externa
+              Colaboración externa flexible
             </h2>
 
             <ul className="text-[#1f2937] dark:text-[#e6e6e6] space-y-2">
               <li>• Refuerzo de equipos técnicos</li>
               <li>• Soporte en picos de trabajo</li>
-              <li>• Trabajo por proyecto o por horas</li>
-              <li>• Comunicación directa y flexible</li>
+              <li>• Colaboración por proyecto, por horas o continuada</li>
+              <li>• Trabajo remoto con comunicación directa y fluida</li>
             </ul>
           </div>
 
@@ -1443,7 +1476,7 @@ export default function ServiciosPage() {
 export const metadata = {
   title: "Sobre mí | Óscar Martínez",
   description:
-    "Especialista en Tekla Structures con más de 23 años de experiencia.",
+    "Especialista en Tekla Structures con más de 23 años de experiencia real en producción, prefabricado y estructuras.",
 };
 
 export default function SobreMiPage() {
@@ -1455,30 +1488,34 @@ export default function SobreMiPage() {
       </h1>
 
       <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
-        Soy <strong>Óscar Martínez</strong>, técnico especialista en Tekla Structures.
-        Durante <strong>23 años</strong> trabajé en
-        <strong> PACADAR (Buñol, Valencia)</strong>, una empresa referente en
-        prefabricado y estructuras. Allí participé en proyectos reales de
-        fabricación, montaje y producción, lo que me dio una visión completa del
-        proceso constructivo.
+        Soy <strong>Óscar Martínez</strong>, especialista en Tekla Structures con
+        más de <strong>23 años de experiencia real</strong> en el sector de las
+        estructuras y el prefabricado de hormigón. Durante ese tiempo trabajé en
+        <strong> PACADAR (Buñol, Valencia)</strong>, una empresa referente en el
+        sector, participando directamente en proyectos de fabricación, montaje
+        y producción.
       </p>
 
       <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
-        Esa experiencia me permite entender no solo el modelo, sino también las
-        necesidades reales de taller y obra.
+        Esta experiencia me permitió adquirir una visión completa del proceso
+        constructivo, entendiendo no solo el modelo, sino también las
+        necesidades reales de la oficina técnica, el taller y la obra.
       </p>
 
       <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed mb-6">
-        Desde hace un año trabajo como <strong>autónomo</strong>, colaborando con
+        Desde hace un año colaboro como <strong>profesional autónomo</strong> con
         empresas que necesitan apoyo técnico fiable, rápido y con experiencia
-        real. Además, me especialicé en <strong>programación para Tekla</strong>,
-        creando plugins y automatizaciones que ahorran horas de trabajo y reducen
-        errores.
+        real en Tekla Structures. Como parte de este trabajo, me especialicé en
+        <strong> desarrollo y programación para Tekla</strong>, creando plugins
+        y automatizaciones que ayudan a reducir errores y ahorrar horas de
+        trabajo en proyectos reales.
       </p>
 
       <p className="text-[#1f2937] dark:text-[#e6e6e6] leading-relaxed">
-        Mi objetivo es sencillo:{" "}
-        <strong>hacer el trabajo más fácil, más rápido y más preciso</strong>.
+        Mi objetivo es sencillo y práctico:{" "}
+        <strong>
+          hacer el trabajo más fácil, más rápido y más preciso
+        </strong>.
       </p>
 
     </section>
@@ -2972,75 +3009,92 @@ export async function requireAdmin() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
 ============================================================
 
-// /app/api/auth/login/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function POST(req) {
-  const { email, password } = await req.json();
+  try {
+    const { email, password } = await req.json();
+    const normalizedEmail = email?.trim()?.toLowerCase();
+    const cookieHeader = req.headers.get("cookie") ?? "";
 
-  const normalizedEmail = email?.trim()?.toLowerCase();
-  const cookieHeader = req.headers.get("cookie") ?? "";
+    // ✅ Headers compartidos para cookies
+    const headers = new Headers();
 
-  // Siempre usamos ESTA respuesta para permitir que Supabase modifique cookies
-  const response = NextResponse.json({ ok: true });
-
-  // Supabase client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        // ✔ FIX: permitir "=" en valores de cookie
-        get(name) {
-          const raw = cookieHeader
-            .split("; ")
-            .find((c) => c.startsWith(name + "="));
-
-          if (!raw) return undefined;
-
-          return raw.slice(name.length + 1);
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          get(name) {
+            const raw = cookieHeader
+              .split("; ")
+              .find((c) => c.startsWith(name + "="));
+            if (!raw) return undefined;
+            return raw.slice(name.length + 1);
+          },
+          set(name, value, options) {
+            const cookie = `${name}=${value}; Path=/; SameSite=Lax${
+              options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
+            }`;
+            headers.append("Set-Cookie", cookie);
+          },
+          remove(name) {
+            headers.append(
+              "Set-Cookie",
+              `${name}=; Path=/; Max-Age=0; SameSite=Lax`
+            );
+          },
         },
-
-        set(name, value, options) {
-          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
-            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
-          }`;
-
-          response.headers.append("Set-Cookie", cookie);
-        },
-
-        remove(name) {
-          response.headers.append(
-            "Set-Cookie",
-            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
-          );
-        }
       }
+    );
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    // ❌ ERROR DE LOGIN
+    if (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
-  );
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: normalizedEmail,
-    password
-  });
+    // ✅ Cookie adicional para middleware
+    const role = data.user.user_metadata?.role ?? "user";
+    headers.append(
+      "Set-Cookie",
+      `sb-user-role=${role}; Path=/; SameSite=Lax`
+    );
 
-  // ❗ FIX: devolver SIEMPRE usando el mismo response
-  if (error) {
-    response.body = JSON.stringify({ error: error.message });
-    response.status = 400;
-    return response;
+    // ✅ RESPUESTA OK
+    return new Response(
+      JSON.stringify({ user: data.user }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...Object.fromEntries(headers),
+        },
+      }
+    );
+
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Error interno del servidor" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
-
-  const role = data.user.user_metadata?.role ?? "user";
-
-  // Cookie adicional para middleware
-  response.headers.append(
-    "Set-Cookie",
-    `sb-user-role=${role}; Path=/; SameSite=Lax`
-  );
-
-  return response;
 }
 
 
@@ -3283,76 +3337,5 @@ export async function POST(req) {
   }
 
   return NextResponse.json({ ok: true });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-request\route.js
-============================================================
-
-// /app/api/auth/reset-request/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export async function POST(req) {
-  const body = await req.json();
-  const email = body?.email?.trim()?.toLowerCase();
-
-  if (!email) {
-    return NextResponse.json({ error: "Falta email" }, { status: 400 });
-  }
-
-  // ✔ FIX: supabaseServer es async
-  const supabase = await supabaseServer();
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
-
-  if (error) {
-    console.error("Error enviando reset password:", error);
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    message: "Enlace enviado. Revisa tu correo.",
-  });
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\download\route.js
-============================================================
-
-// app/api/download/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export async function GET() {
-  const supabase = await supabaseServer();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  const { data, error } = await supabase
-    .from("descargas")
-    .select("id, fecha, plugins(nombre)")
-    .eq("user_id", userData.user.id)
-    .order("fecha", { ascending: false });
-
-  if (error) {
-    return NextResponse.json(
-      { error: "Error obteniendo descargas" },
-      { status: 500 }
-    );
-  }
-
-  const resultado = (data ?? []).map((d) => ({
-    id: d.id,
-    plugin_nombre: d.plugins?.nombre ?? "",
-    fecha: d.fecha,
-  }));
-
-  return NextResponse.json(resultado);
 }
 

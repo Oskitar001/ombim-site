@@ -12,8 +12,16 @@ export default function EditarPluginPage() {
     nombre: "",
     descripcion: "",
     precio: 0,
+
+    // ✅ NUEVOS
+    precio_trimestral: 0,
     precio_anual: 0,
     precio_completa: 0,
+
+    permite_trimestral: false,
+    permite_anual: false,
+    permite_completa: false,
+
     archivo_url: "",
     video_url: "",
     imagen_url: "",
@@ -41,15 +49,22 @@ export default function EditarPluginPage() {
         return;
       }
 
-      // 🔥 FIX: usar d.plugin en vez de d
       const p = d.plugin;
 
       setForm({
         nombre: p.nombre ?? "",
         descripcion: p.descripcion ?? "",
         precio: p.precio ?? 0,
+
+        // ✅ NUEVOS CAMPOS
+        precio_trimestral: p.precio_trimestral ?? 0,
         precio_anual: p.precio_anual ?? 0,
         precio_completa: p.precio_completa ?? 0,
+
+        permite_trimestral: p.permite_trimestral ?? false,
+        permite_anual: p.permite_anual ?? false,
+        permite_completa: p.permite_completa ?? false,
+
         archivo_url: p.archivo_url ?? "",
         video_url: p.video_url ?? "",
         imagen_url: p.imagen_url ?? "",
@@ -123,6 +138,7 @@ export default function EditarPluginPage() {
     const payload = {
       ...form,
       precio: Number(form.precio) || 0,
+      precio_trimestral: Number(form.precio_trimestral) || 0,
       precio_anual: Number(form.precio_anual) || 0,
       precio_completa: Number(form.precio_completa) || 0,
     };
@@ -149,103 +165,79 @@ export default function EditarPluginPage() {
   return (
     <div className="space-y-8 p-4 max-w-2xl mx-auto">
 
-      <Link
-        href="/panel/admin/plugins"
-        className="flex items-center gap-2 text-blue-600 hover:underline"
-      >
+      <Link href="/panel/admin/plugins" className="flex items-center gap-2 text-blue-600 hover:underline">
         <ArrowLeft size={20} /> Volver
       </Link>
 
       <h1 className="text-3xl font-bold">Editar Plugin</h1>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 shadow rounded-xl p-6 space-y-6">
+      <div className="bg-white dark:bg-gray-900 border shadow rounded-xl p-6 space-y-6">
 
         <Field label="Nombre">
-          <input
-            className="input-premium"
-            value={form.nombre}
-            onChange={(e) => update("nombre", e.target.value)}
-          />
+          <input className="input-premium" value={form.nombre} onChange={(e) => update("nombre", e.target.value)} />
         </Field>
 
         <Field label="Descripción">
-          <textarea
-            rows={4}
-            className="input-premium"
-            value={form.descripcion}
-            onChange={(e) => update("descripcion", e.target.value)}
-          />
+          <textarea rows={4} className="input-premium" value={form.descripcion} onChange={(e) => update("descripcion", e.target.value)} />
         </Field>
 
-        <Field label="Precio (€)">
-          <input
-            type="number"
-            className="input-premium"
-            value={form.precio}
-            onChange={(e) => update("precio", e.target.value)}
-          />
-        </Field>
+        {/* ✅ TIPOS DE LICENCIA */}
+        <div className="space-y-4">
+          <h3 className="font-semibold">Tipos de licencia</h3>
 
-        <Field label="Precio anual (€)">
-          <input
-            type="number"
-            className="input-premium"
-            value={form.precio_anual}
-            onChange={(e) => update("precio_anual", e.target.value)}
-          />
-        </Field>
+          {/* TRIMESTRAL */}
+          <div className="flex justify-between items-center border p-3 rounded">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={form.permite_trimestral} onChange={(e) => update("permite_trimestral", e.target.checked)} />
+              Trimestral
+            </label>
 
-        <Field label="Precio completa (€)">
-          <input
-            type="number"
-            className="input-premium"
-            value={form.precio_completa}
-            onChange={(e) => update("precio_completa", e.target.value)}
-          />
-        </Field>
-
-        <Field label="Archivo (.tsep)">
-          <input
-            type="file"
-            accept=".tsep"
-            className="input-premium"
-            onChange={subirTsep}
-          />
-          {form.archivo_url && (
-            <p className="text-green-600 text-sm mt-1">Archivo subido ✓</p>
-          )}
-        </Field>
-
-        <Field label="Video URL (YouTube)">
-          <input
-            className="input-premium"
-            value={form.video_url}
-            onChange={(e) => update("video_url", e.target.value)}
-          />
-        </Field>
-
-        <Field label="Imagen del plugin">
-          <input
-            type="file"
-            accept="image/*"
-            className="input-premium"
-            onChange={subirImagen}
-          />
-
-          {form.imagen_url && (
-            <img
-              src={form.imagen_url}
-              className="w-32 h-32 object-cover mt-2 rounded shadow"
+            <input
+              type="number"
+              className="input-premium w-32"
+              value={form.precio_trimestral}
+              disabled={!form.permite_trimestral}
+              onChange={(e) => update("precio_trimestral", e.target.value)}
             />
-          )}
-        </Field>
+          </div>
 
-        <button
-          onClick={guardar}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 shadow text-lg font-semibold"
-        >
+          {/* ANUAL */}
+          <div className="flex justify-between items-center border p-3 rounded">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={form.permite_anual} onChange={(e) => update("permite_anual", e.target.checked)} />
+              Anual
+            </label>
+
+            <input
+              type="number"
+              className="input-premium w-32"
+              value={form.precio_anual}
+              disabled={!form.permite_anual}
+              onChange={(e) => update("precio_anual", e.target.value)}
+            />
+          </div>
+
+          {/* COMPLETA */}
+          <div className="flex justify-between items-center border p-3 rounded">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={form.permite_completa} onChange={(e) => update("permite_completa", e.target.checked)} />
+              Completa
+            </label>
+
+            <input
+              type="number"
+              className="input-premium w-32"
+              value={form.precio_completa}
+              disabled={!form.permite_completa}
+              onChange={(e) => update("precio_completa", e.target.value)}
+            />
+          </div>
+        </div>
+
+        <button onClick={guardar} className="w-full bg-blue-600 text-white py-3 rounded-lg">
           Guardar Cambios
         </button>
+
       </div>
     </div>
   );

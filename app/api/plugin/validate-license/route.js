@@ -10,30 +10,27 @@ export async function POST(req) {
   return NextResponse.json({ estado: "error", mensaje: "json_invalido" }); 
  } 
 
- // Normalización segura 
- const email_tekla = payload?.email_tekla?.trim()?.toLowerCase(); 
+ // ✅ CAMBIO: YA NO usamos email
+ const license_key = payload?.license_key?.trim()?.toUpperCase(); 
  const plugin_id = payload?.plugin_id; 
  const maquina_id = payload?.maquina_id; 
 
- if (!email_tekla || !plugin_id) { 
+ if (!license_key || !plugin_id) { 
   return NextResponse.json({ 
    estado: "error", 
    mensaje: "Datos incompletos" 
   }); 
  } 
 
- // obtener licencia 
+ // ✅ CAMBIO: buscar por license_key
  const { data: lic, error } = await supabaseAdmin 
   .from("licencias") 
   .select("*") 
-  
+  .eq("license_key", license_key)
   .eq("plugin_id", plugin_id) 
-  .order("fecha_creacion", { ascending: false }) 
-  .limit(1) 
   .maybeSingle(); 
 
  if (error || !lic) { 
-  console.error("Error obteniendo licencia:", error); 
   return NextResponse.json({ estado: "sin_licencia" }); 
  } 
 
@@ -55,7 +52,7 @@ export async function POST(req) {
   } 
  } 
 
- // 🔥 NUEVA LÓGICA DE MÁQUINAS
+ // ✅ LÓGICA DE MÁQUINAS
  const { data: maquinas } = await supabaseAdmin
   .from("licencias_maquinas")
   .select("maquina_id")
@@ -64,7 +61,7 @@ export async function POST(req) {
  const maquinasIds = (maquinas ?? []).map(m => m.maquina_id);
  const max = Number(lic.max_activaciones ?? 0);
 
- // ✅ si YA existe → NO consume activación
+ // ✅ misma máquina → no consume
  if (maquina_id && maquinasIds.includes(maquina_id)) {
   return NextResponse.json({
    estado: lic.estado,
@@ -73,12 +70,12 @@ export async function POST(req) {
   });
  }
 
- // ❌ sin activaciones disponibles
+ // ❌ sin activaciones
  if (maquinasIds.length >= max) {
   return NextResponse.json({ estado: "sin_activaciones" });
  }
 
- // ✅ registrar nueva máquina
+ // ✅ registrar máquina
  const { error: insertErr } = await supabaseAdmin
   .from("licencias_maquinas")
   .insert({
@@ -88,7 +85,7 @@ export async function POST(req) {
   });
 
  if (insertErr) {
-  console.error("Error activando licencia:", insertErr);
+  console.error(insertErr);
   return NextResponse.json({ estado: "error_actualizando" });
  }
 

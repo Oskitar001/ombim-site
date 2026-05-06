@@ -3,10 +3,9 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 
-export const runtime = "nodejs"; // Next 16
+export const runtime = "nodejs";
 
 export async function POST(req) {
-  // ✔️ Verificar que el usuario es ADMIN
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json(
@@ -21,8 +20,12 @@ export async function POST(req) {
     nombre,
     descripcion,
     precio,
+    precio_trimestral,     // ✅ NUEVO
     precio_anual,
     precio_completa,
+    permite_trimestral,    // ✅ NUEVO
+    permite_anual,         // ✅ NUEVO
+    permite_completa,      // ✅ NUEVO
     archivo_url,
     video_url,
     imagen_url,
@@ -32,19 +35,25 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
   }
 
-  // ✔️ Normalización segura
   const payload = {
     nombre: nombre ?? "",
     descripcion: descripcion ?? "",
     precio: Number(precio) || 0,
+
+    // ✅ NUEVOS CAMPOS
+    precio_trimestral: Number(precio_trimestral) || 0,
     precio_anual: Number(precio_anual) || 0,
     precio_completa: Number(precio_completa) || 0,
+
+    permite_trimestral: Boolean(permite_trimestral),
+    permite_anual: Boolean(permite_anual),
+    permite_completa: Boolean(permite_completa),
+
     archivo_url: archivo_url ?? "",
     video_url: video_url ?? "",
     imagen_url: imagen_url ?? "",
   };
 
-  // ✔️ Insertar plugin
   const { error } = await supabaseAdmin
     .from("plugins")
     .insert(payload);

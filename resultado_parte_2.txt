@@ -1190,9 +1190,7 @@ export async function GET(req) {
   // ------------------------------------------------------
   // 1. Validaciones básicas
   // ------------------------------------------------------
-  if (!email_tekla) {
-    return Response.json({ ok: false, motivo: "sin_email" });
-  }
+ 
 
   if (!plugin_id) {
     return Response.json({ ok: false, motivo: "sin_plugin" });
@@ -1204,13 +1202,12 @@ export async function GET(req) {
   const { data: licencia, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
-    .eq("email_tekla", email_tekla)
+    
     .eq("plugin_id", plugin_id)
     .order("fecha_creacion", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  // ✔ Controlar error real del SELECT
   if (error || !licencia) {
     console.error("Error consultando licencia:", error);
     return Response.json({ ok: false, motivo: "no_existe" });
@@ -1242,9 +1239,14 @@ export async function GET(req) {
   }
 
   // ------------------------------------------------------
-  // 5. Verificar activaciones restantes (parse seguro)
+  // 5. ✅ NUEVA LÓGICA DE ACTIVACIONES (MÁQUINAS)
   // ------------------------------------------------------
-  const usadas = Number(licencia.activaciones_usadas ?? 0);
+  const { data: maquinas } = await supabaseAdmin
+    .from("licencias_maquinas")
+    .select("maquina_id")
+    .eq("licencia_id", licencia.id);
+
+  const usadas = (maquinas ?? []).length;
   const max = Number(licencia.max_activaciones ?? 0);
 
   const activaciones_restantes = max - usadas;
@@ -1260,7 +1262,7 @@ export async function GET(req) {
     ok: true,
     plugin_id: licencia.plugin_id,
     estado: licencia.estado,
-    activaciones_usadas: usadas,
+    activaciones_usadas: usadas, // ✅ ahora son máquinas reales
     max_activaciones: max,
     soporte_activo,
     activaciones_restantes
@@ -1276,7 +1278,6 @@ export async function GET(req) {
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  // ✅ FIX: supabaseRoute es async (Next 16)
   const supabase = await supabaseRoute();
 
   const {
@@ -1288,16 +1289,24 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-  const { plugin_id, emails_tekla, tipo } = body;
 
-  if (!plugin_id || !emails_tekla?.length || !tipo) {
+  const { plugin_id, cantidad, tipo } = body;
+
+  if (!plugin_id || !cantidad || !tipo) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
-  // Obtener plugin y precios
+  // ✅ CAMBIO: ahora pedimos también permisos + precio trimestral
   const { data: plugin, error: pluginError } = await supabase
     .from("plugins")
-    .select("precio, precio_anual, precio_completa")
+    .select(`
+      precio_anual,
+      precio_completa,
+      precio_trimestral,
+      permite_anual,
+      permite_completa,
+      permite_trimestral
+    `)
     .eq("id", plugin_id)
     .single();
 
@@ -1305,14 +1314,31 @@ export async function POST(req) {
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // ✅ FIX: evitar undefined o NaN
-  const precioUnitario = Number(
-    tipo === "anual"
-      ? plugin.precio_anual
-      : plugin.precio_completa
-  ) || 0;
+  // ✅ VALIDACIÓN DE TIPO PERMITIDO
+  if (
+    (tipo === "anual" && !plugin.permite_anual) ||
+    (tipo === "completa" && !plugin.permite_completa) ||
+    (tipo === "trimestral" && !plugin.permite_trimestral)
+  ) {
+    return Response.json({ error: "tipo_no_permitido" }, { status: 400 });
+  }
 
-  const subtotal = precioUnitario * emails_tekla.length;
+  // ✅ PRECIO DINÁMICO
+  let precioUnitario = 0;
+
+  if (tipo === "trimestral") {
+    precioUnitario = Number(plugin.precio_trimestral) || 0;
+  }
+
+  if (tipo === "anual") {
+    precioUnitario = Number(plugin.precio_anual) || 0;
+  }
+
+  if (tipo === "completa") {
+    precioUnitario = Number(plugin.precio_completa) || 0;
+  }
+
+  const subtotal = precioUnitario * cantidad;
   const iva = subtotal * 0.21;
   const importe_total = subtotal + iva;
 
@@ -1322,7 +1348,7 @@ export async function POST(req) {
     .insert({
       user_id: user.id,
       plugin_id,
-      cantidad_licencias: emails_tekla.length,
+      cantidad_licencias: cantidad,
       estado: "pendiente",
       tipo,
       fecha: new Date(),
@@ -1336,21 +1362,6 @@ export async function POST(req) {
   if (pagoError) {
     console.error("Error creando pago:", pagoError);
     return Response.json({ error: "error_creando_pago" }, { status: 500 });
-  }
-
-  // Asociar emails
-  const emailsInsert = emails_tekla.map((e) => ({
-    pago_id: pago.id,
-    email_tekla: e.trim(),
-  }));
-
-  const { error: emailErr } = await supabase
-    .from("pagos_emails")
-    .insert(emailsInsert);
-
-  // ⚠️ Aviso seguro: pago creado pero falló emails
-  if (emailErr) {
-    console.error("Error guardando emails:", emailErr);
   }
 
   return Response.json({
@@ -1781,92 +1792,104 @@ export async function GET(req) {
 ============================================================
 
 // /app/api/plugin/validate-license/route.js
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server"; 
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; 
 
-export async function POST(req) {
-  let payload;
+export async function POST(req) { 
+ let payload; 
+ try { 
+  payload = await req.json(); 
+ } catch { 
+  return NextResponse.json({ estado: "error", mensaje: "json_invalido" }); 
+ } 
 
-  try {
-    payload = await req.json();
-  } catch {
-    return NextResponse.json({ estado: "error", mensaje: "json_invalido" });
-  }
+ // Normalización segura 
+ const email_tekla = payload?.email_tekla?.trim()?.toLowerCase(); 
+ const plugin_id = payload?.plugin_id; 
+ const maquina_id = payload?.maquina_id; 
 
-  // Normalización segura
-  const email_tekla = payload?.email_tekla?.trim()?.toLowerCase();
-  const plugin_id = payload?.plugin_id;
-  const maquina_id = payload?.maquina_id;
+ if (!email_tekla || !plugin_id) { 
+  return NextResponse.json({ 
+   estado: "error", 
+   mensaje: "Datos incompletos" 
+  }); 
+ } 
 
-  if (!email_tekla || !plugin_id) {
-    return NextResponse.json({
-      estado: "error",
-      mensaje: "Datos incompletos"
-    });
-  }
+ // obtener licencia 
+ const { data: lic, error } = await supabaseAdmin 
+  .from("licencias") 
+  .select("*") 
+  
+  .eq("plugin_id", plugin_id) 
+  .order("fecha_creacion", { ascending: false }) 
+  .limit(1) 
+  .maybeSingle(); 
 
-  // obtener licencia
-  const { data: lic, error } = await supabaseAdmin
-    .from("licencias")
-    .select("*")
-    .eq("email_tekla", email_tekla)
-    .eq("plugin_id", plugin_id)
-    .order("fecha_creacion", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+ if (error || !lic) { 
+  console.error("Error obteniendo licencia:", error); 
+  return NextResponse.json({ estado: "sin_licencia" }); 
+ } 
 
-  if (error || !lic) {
-    console.error("Error obteniendo licencia:", error);
-    return NextResponse.json({ estado: "sin_licencia" });
-  }
+ // bloqueada 
+ if (lic.estado === "bloqueada") { 
+  return NextResponse.json({ estado: "bloqueada" }); 
+ } 
 
-  // bloqueada
-  if (lic.estado === "bloqueada") {
-    return NextResponse.json({ estado: "bloqueada" });
-  }
+ // pendiente 
+ if (lic.estado === "pendiente") { 
+  return NextResponse.json({ estado: "pendiente" }); 
+ } 
 
-  // pendiente (EVITA activar licencias antes de validarlas)
-  if (lic.estado === "pendiente") {
-    return NextResponse.json({ estado: "pendiente" });
-  }
+ // expiración 
+ if (lic.fecha_expiracion) { 
+  const exp = new Date(lic.fecha_expiracion); 
+  if (exp < new Date()) { 
+   return NextResponse.json({ estado: "expirada" }); 
+  } 
+ } 
 
-  // trial or anual expirado
-  if (lic.fecha_expiracion) {
-    const exp = new Date(lic.fecha_expiracion);
-    if (exp < new Date()) {
-      return NextResponse.json({ estado: "expirada" });
-    }
-  }
+ // 🔥 NUEVA LÓGICA DE MÁQUINAS
+ const { data: maquinas } = await supabaseAdmin
+  .from("licencias_maquinas")
+  .select("maquina_id")
+  .eq("licencia_id", lic.id);
 
-  // sin activaciones
-  const usadas = Number(lic.activaciones_usadas ?? 0);
-  const max = Number(lic.max_activaciones ?? 0);
+ const maquinasIds = (maquinas ?? []).map(m => m.maquina_id);
+ const max = Number(lic.max_activaciones ?? 0);
 
-  if (usadas >= max) {
-    return NextResponse.json({ estado: "sin_activaciones" });
-  }
-
-  // registrar activación
-  const nuevas = usadas + 1;
-
-  const { error: updateErr } = await supabaseAdmin
-    .from("licencias")
-    .update({
-      activaciones_usadas: nuevas,
-      maquina_id: maquina_id ?? lic.maquina_id
-    })
-    .eq("id", lic.id);
-
-  if (updateErr) {
-    console.error("Error actualizando licencia:", updateErr);
-    return NextResponse.json({ estado: "error_actualizando" });
-  }
-
+ // ✅ si YA existe → NO consume activación
+ if (maquina_id && maquinasIds.includes(maquina_id)) {
   return NextResponse.json({
-    estado: lic.estado,
-    activaciones_restantes: max - nuevas,
-    fecha_expiracion: lic.fecha_expiracion ?? null
+   estado: lic.estado,
+   activaciones_restantes: max - maquinasIds.length,
+   fecha_expiracion: lic.fecha_expiracion ?? null
   });
+ }
+
+ // ❌ sin activaciones disponibles
+ if (maquinasIds.length >= max) {
+  return NextResponse.json({ estado: "sin_activaciones" });
+ }
+
+ // ✅ registrar nueva máquina
+ const { error: insertErr } = await supabaseAdmin
+  .from("licencias_maquinas")
+  .insert({
+   licencia_id: lic.id,
+   maquina_id,
+   fecha: new Date().toISOString()
+  });
+
+ if (insertErr) {
+  console.error("Error activando licencia:", insertErr);
+  return NextResponse.json({ estado: "error_actualizando" });
+ }
+
+ return NextResponse.json({
+  estado: lic.estado,
+  activaciones_restantes: max - (maquinasIds.length + 1),
+  fecha_expiracion: lic.fecha_expiracion ?? null
+ });
 }
 
 
@@ -2796,156 +2819,149 @@ export default function AdminLayout({ children }) {
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Ticket, Eye, Calendar, KeyRound, Ban, CheckCircle } from "lucide-react";
+import {
+  Ticket,
+  Eye,
+  Calendar,
+  Ban,
+  CheckCircle,
+} from "lucide-react";
 
 export default function AdminLicenciasPage() {
   const [licencias, setLicencias] = useState([]);
+  const [maquinas, setMaquinas] = useState({});
 
   useEffect(() => {
     async function load() {
-      const r = await fetch("/api/admin/licencias", { credentials: "include" });
+      const r = await fetch("/api/admin/licencias", {
+        credentials: "include",
+      });
       const d = await r.json();
-      setLicencias(d.licencias ?? []);
+      const list = d.licencias ?? [];
+      setLicencias(list);
+
+      const maquinasMap = {};
+
+      for (const l of list) {
+        const rM = await fetch(
+          `/api/admin/licencias/maquinas?id=${l.id}`,
+          { credentials: "include" }
+        );
+        const dM = await rM.json();
+        maquinasMap[l.id] = dM.maquinas ?? [];
+      }
+
+      setMaquinas(maquinasMap);
     }
+
     load();
   }, []);
 
+  // ✅ NUEVO: liberar máquina
+  async function liberarMaquina(id) {
+    await fetch("/api/admin/licencias/maquinas", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    location.reload(); // recargar rápido
+  }
+
   return (
     <div className="space-y-6">
-
-      {/* TITULO */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <Ticket size={28} /> Licencias
       </h1>
 
-      {/* MOBILE VERSION → CARDS */}
-      <div className="grid gap-4 md:hidden">
-        {licencias.map((l) => (
-          <div
-            key={l.id}
-            className="p-4 rounded-xl shadow border border-gray-200 dark:border-gray-700 
-                       bg-white dark:bg-gray-900 space-y-3"
-          >
-            <div className="flex justify-between items-center">
-              <p className="text-lg font-semibold">{l.email_tekla}</p>
-              <Link
-                href={`/panel/admin/licencias/${l.id}`}
-                className="text-blue-600 flex items-center gap-1"
-              >
-                <Eye size={16} /> Ver
-              </Link>
-            </div>
-
-            <div className="text-sm opacity-70">
-              Plugin: {l.plugins?.nombre ?? l.plugin_id}
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              Tipo:
-              <span className="font-semibold capitalize">{l.tipo}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              Estado:
-              {l.estado === "activa" && (
-                <span className="text-green-600 flex items-center gap-1 font-semibold">
-                  <CheckCircle size={14} /> Activa
-                </span>
-              )}
-              {l.estado === "bloqueada" && (
-                <span className="text-red-600 flex items-center gap-1 font-semibold">
-                  <Ban size={14} /> Bloqueada
-                </span>
-              )}
-              {l.estado === "trial" && (
-                <span className="text-blue-600 flex items-center gap-1 font-semibold">
-                  <KeyRound size={14} /> Trial
-                </span>
-              )}
-            </div>
-
-            <div className="text-sm">
-              Activaciones:
-              <span className="font-semibold">
-                {" "}
-                {l.activaciones_usadas}/{l.max_activaciones}
-              </span>
-            </div>
-
-            <div className="text-sm flex items-center gap-1">
-              <Calendar size={14} className="opacity-60" />
-              Expira:{" "}
-              {l.fecha_expiracion
-                ? new Date(l.fecha_expiracion).toLocaleDateString()
-                : "—"}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* DESKTOP VERSION → TABLE */}
-      <div className="hidden md:block overflow-x-auto shadow rounded-xl border border-gray-300 dark:border-gray-700">
+      {/* DESKTOP */}
+      <div className="overflow-x-auto shadow rounded-xl border">
         <table className="min-w-full">
           <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-left text-sm uppercase tracking-wide">
-              <th className="p-3">Email</th>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-sm">
+              <th className="p-3">ID</th>
               <th className="p-3">Plugin</th>
               <th className="p-3">Tipo</th>
               <th className="p-3">Estado</th>
+              <th className="p-3">Máquinas</th>
               <th className="p-3">Activaciones</th>
               <th className="p-3">Expira</th>
               <th className="p-3"></th>
             </tr>
           </thead>
 
-          <tbody className="text-sm">
-            {licencias.map((l) => (
-              <tr
-                key={l.id}
-                className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td className="p-3 font-medium">{l.email_tekla}</td>
+          <tbody>
+            {licencias.map((l) => {
+              const maq = maquinas[l.id] ?? [];
 
-                <td className="p-3">{l.plugins?.nombre ?? l.plugin_id}</td>
+              return (
+                <tr key={l.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3">#{l.id}</td>
 
-                <td className="p-3 capitalize">{l.tipo}</td>
+                  <td className="p-3">
+                    {l.plugins?.nombre ?? l.plugin_id}
+                  </td>
 
-                <td className="p-3 capitalize">
-                  {l.estado === "activa" && (
-                    <span className="text-green-600 font-semibold">Activa</span>
-                  )}
-                  {l.estado === "bloqueada" && (
-                    <span className="text-red-600 font-semibold">Bloqueada</span>
-                  )}
-                  {l.estado === "trial" && (
-                    <span className="text-blue-600 font-semibold">Trial</span>
-                  )}
-                </td>
+                  <td className="p-3">{l.tipo}</td>
 
-                <td className="p-3">
-                  {l.activaciones_usadas}/{l.max_activaciones}
-                </td>
+                  <td className="p-3">
+                    {l.estado === "activa" && (
+                      <span className="text-green-600">Activa</span>
+                    )}
+                    {l.estado === "bloqueada" && (
+                      <span className="text-red-600">Bloqueada</span>
+                    )}
+                  </td>
 
-                <td className="p-3">
-                  {l.fecha_expiracion
-                    ? new Date(l.fecha_expiracion).toLocaleDateString()
-                    : "—"}
-                </td>
+                  {/* ✅ MÁQUINAS + BOTÓN */}
+                  <td className="p-3 text-xs space-y-2">
+                    {maq.length === 0 && (
+                      <div className="opacity-50">Sin máquinas</div>
+                    )}
 
-                <td className="p-3">
-                  <Link
-                    href={`/panel/admin/licencias/${l.id}`}
-                    className="text-blue-600 flex items-center gap-1 font-medium"
-                  >
-                    <Eye size={16} /> Ver
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                    {maq.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span>{m.maquina_id}</span>
+
+                        {/* 🔥 BOTÓN LIBERAR */}
+                        <button
+                          onClick={() => liberarMaquina(m.id)}
+                          className="text-red-600 hover:text-red-800 text-xs"
+                        >
+                          liberar
+                        </button>
+                      </div>
+                    ))}
+                  </td>
+
+                  <td className="p-3">
+                    {maq.length}/{l.max_activaciones}
+                  </td>
+
+                  <td className="p-3">
+                    {l.fecha_expiracion
+                      ? new Date(l.fecha_expiracion).toLocaleDateString()
+                      : "—"}
+                  </td>
+
+                  <td className="p-3">
+                    <Link
+                      href={`/panel/admin/licencias/${l.id}`}
+                      className="text-blue-600 flex items-center gap-1 font-medium"
+                    >
+                      <Eye size={16} /> Ver
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }
@@ -2970,11 +2986,13 @@ import {
 } from "lucide-react";
 
 export default function AdminLicenciaDetallePage({ params }) {
-  // Next.js 16 fix (params es una Promise)
   const { id } = use(params);
 
   const [licencia, setLicencia] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ✅ NUEVO
+  const [maquinas, setMaquinas] = useState([]);
 
   useEffect(() => {
     if (!id) return;
@@ -2986,6 +3004,14 @@ export default function AdminLicenciaDetallePage({ params }) {
 
       const d = await r.json();
       setLicencia(d.licencia ?? null);
+
+      // ✅ NUEVO
+      const rM = await fetch(`/api/admin/licencias/maquinas?id=${id}`, {
+        credentials: "include",
+      });
+      const dM = await rM.json();
+      setMaquinas(dM.maquinas ?? []);
+
       setLoading(false);
     }
     load();
@@ -3000,6 +3026,18 @@ export default function AdminLicenciaDetallePage({ params }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: licencia.id }),
+    });
+
+    location.reload();
+  }
+
+  // ✅ NUEVO
+  async function borrarMaquina(maquinaId) {
+    await fetch("/api/admin/licencias/maquinas", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: maquinaId }),
     });
 
     location.reload();
@@ -3043,6 +3081,7 @@ export default function AdminLicenciaDetallePage({ params }) {
         </Row>
 
         <Row label="Activaciones">
+          {/* ✅ sigue igual visualmente */}
           {licencia.activaciones_usadas}/{licencia.max_activaciones}
         </Row>
 
@@ -3055,6 +3094,31 @@ export default function AdminLicenciaDetallePage({ params }) {
         <Row label="Creada">
           {new Date(licencia.fecha_creacion).toLocaleString()}
         </Row>
+      </div>
+
+      {/* ✅ NUEVO: MÁQUINAS */}
+      <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
+        <h3 className="font-semibold">Máquinas activas</h3>
+
+        {maquinas.length === 0 && (
+          <p className="text-sm opacity-70">No hay máquinas registradas</p>
+        )}
+
+        {maquinas.map((m) => (
+          <div
+            key={m.id}
+            className="flex justify-between items-center border p-2 rounded bg-white dark:bg-gray-900"
+          >
+            <span>{m.maquina_id}</span>
+
+            <button
+              onClick={() => borrarMaquina(m.id)}
+              className="text-red-600 text-sm"
+            >
+              Eliminar
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* ACCIONES */}
@@ -3094,10 +3158,10 @@ export default function AdminLicenciaDetallePage({ params }) {
           onClick={() => accion("hacer-completa")}
         />
       </div>
-
     </div>
   );
 }
+
 
 /* ================= COMPONENTES PREMIUM ================= */
 

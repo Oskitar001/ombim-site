@@ -684,19 +684,17 @@ export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Tipo inicial (solo anual o completa)
-  const planInicial = searchParams.get("plan") ?? "completa";
-
   const [plugin, setPlugin] = useState(null);
   const [user, setUser] = useState(null);
-  const [emails, setEmails] = useState([""]);
+
+  const [cantidad, setCantidad] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [tipo, setTipo] = useState(planInicial);
+  const [tipo, setTipo] = useState("completa");
 
   useEffect(() => {
-    if (!plugin_id) return; // ✔ FIX mínimo necesario
+    if (!plugin_id) return;
 
     async function load() {
       try {
@@ -706,7 +704,37 @@ export default function Page() {
 
         const rPlugin = await fetch(`/api/plugin/${plugin_id}`);
         const dPlugin = await rPlugin.json();
+
         setPlugin(dPlugin?.error ? null : dPlugin);
+
+        // ✅ 🔥 BLOQUE IMPORTANTE (tipo seguro)
+        const plan = searchParams.get("plan");
+
+        if (dPlugin && !dPlugin.error) {
+          let tipoValido = null;
+
+          if (plan === "trimestral" && dPlugin.permite_trimestral) {
+            tipoValido = "trimestral";
+          }
+
+          if (plan === "anual" && dPlugin.permite_anual) {
+            tipoValido = "anual";
+          }
+
+          if (plan === "completa" && dPlugin.permite_completa) {
+            tipoValido = "completa";
+          }
+
+          // ✅ fallback automático
+          if (!tipoValido) {
+            if (dPlugin.permite_trimestral) tipoValido = "trimestral";
+            else if (dPlugin.permite_anual) tipoValido = "anual";
+            else if (dPlugin.permite_completa) tipoValido = "completa";
+          }
+
+          setTipo(tipoValido);
+        }
+
       } catch {
         setError("Error cargando datos");
       } finally {
@@ -717,23 +745,9 @@ export default function Page() {
     load();
   }, [plugin_id]);
 
-  function actualizarEmail(i, valor) {
-    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
-  }
-
-  function añadirFila() {
-    setEmails((prev) => [...prev, ""]);
-  }
-
   async function crearPago() {
     if (!user) {
       router.push("/login");
-      return;
-    }
-
-    const emailsLimpios = emails.map((e) => e.trim());
-    if (emailsLimpios.some((e) => e === "")) {
-      setError("Debes completar TODOS los emails Tekla.");
       return;
     }
 
@@ -744,7 +758,7 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plugin_id,
-          emails_tekla: emailsLimpios,
+          cantidad,
           tipo,
         }),
       });
@@ -766,15 +780,22 @@ export default function Page() {
   if (loading) return <p>Cargando...</p>;
   if (!plugin) return <p>Plugin no encontrado.</p>;
 
-  // PRECIOS BASE (sin IVA)
-  const precioAnual = Number(plugin.precio_anual) || 0;
-  const precioCompleta = Number(plugin.precio_completa) || 0;
+  // ✅ precios dinámicos según tipo
+  let precioUnitario = 0;
 
-  // PRECIO UNITARIO
-  const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
+  if (tipo === "trimestral") {
+    precioUnitario = Number(plugin.precio_trimestral) || 0;
+  }
 
-  // DESGLOSE IVA
-  const subtotal = precioUnitario * emails.length; // sin IVA
+  if (tipo === "anual") {
+    precioUnitario = Number(plugin.precio_anual) || 0;
+  }
+
+  if (tipo === "completa") {
+    precioUnitario = Number(plugin.precio_completa) || 0;
+  }
+
+  const subtotal = precioUnitario * cantidad;
   const iva = subtotal * 0.21;
   const total = subtotal + iva;
 
@@ -795,39 +816,40 @@ export default function Page() {
           onChange={(e) => setTipo(e.target.value)}
           className="border p-2 rounded w-full dark:bg-gray-900"
         >
-          {precioAnual > 0 && (
-            <option value="anual">Anual – {precioAnual.toFixed(2)} €</option>
+          {plugin.permite_trimestral && (
+            <option value="trimestral">
+              Trimestral – {(Number(plugin.precio_trimestral) || 0).toFixed(2)} €
+            </option>
           )}
 
-          {precioCompleta > 0 && (
+          {plugin.permite_anual && (
+            <option value="anual">
+              Anual – {(Number(plugin.precio_anual) || 0).toFixed(2)} €
+            </option>
+          )}
+
+          {plugin.permite_completa && (
             <option value="completa">
-              Completa – {precioCompleta.toFixed(2)} €
+              Completa – {(Number(plugin.precio_completa) || 0).toFixed(2)} €
             </option>
           )}
         </select>
       </div>
 
-      {/* EMAILS TEKLA */}
+      {/* CANTIDAD */}
       <div>
-        <h3 className="font-semibold mb-2">Emails Tekla:</h3>
+        <h3 className="font-semibold mb-2">Cantidad de licencias:</h3>
 
-        {emails.map((email, i) => (
-          <input
-            key={i}
-            type="email"
-            value={email}
-            placeholder="usuario@empresa.com"
-            onChange={(e) => actualizarEmail(i, e.target.value)}
-            className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
-          />
-        ))}
-
-        <button onClick={añadirFila} className="text-blue-600 underline mb-4">
-          Añadir otro email
-        </button>
+        <input
+          type="number"
+          min="1"
+          value={cantidad}
+          onChange={(e) => setCantidad(Number(e.target.value))}
+          className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
+        />
       </div>
 
-      {/* DESGLOSE DE PRECIOS */}
+      {/* PRECIOS */}
       <div className="space-y-1 text-lg">
         <p>
           <strong>Subtotal:</strong> {subtotal.toFixed(2)} €
@@ -842,7 +864,6 @@ export default function Page() {
 
       {error && <p className="text-red-600">{error}</p>}
 
-      {/* BOTÓN COMPRAR */}
       <button
         onClick={crearPago}
         className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
@@ -852,6 +873,7 @@ export default function Page() {
     </div>
   );
 }
+
 
 
 ============================================================
@@ -1733,29 +1755,89 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\reset-activaciones\route.js
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\maquinas\route.js
 ============================================================
 
-// /app/api/admin/licencias/reset-activaciones/route.js
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function POST(req) {
-    const admin = await requireAdmin();
-    if (!admin.ok)
-        return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+export async function GET(req) {
+  const admin = await requireAdmin();
 
-    const { id } = await req.json();
-    if (!id)
-        return NextResponse.json({ error: "falta_id" }, { status: 400 });
+  if (!admin.ok) {
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+  }
 
-    await supabaseAdmin
-        .from("licencias")
-        .update({ activaciones_usadas: 0 })
-        .eq("id", id);
+  const licencia_id = new URL(req.url).searchParams.get("id");
 
-    return NextResponse.json({ ok: true });
+  if (!licencia_id) {
+    return NextResponse.json({ error: "falta_id" }, { status: 400 });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("licencias_maquinas")
+    .select("*")
+    .eq("licencia_id", licencia_id)
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ error: "error_db" }, { status: 500 });
+  }
+
+  return NextResponse.json({ maquinas: data ?? [] });
+}
+
+// ✅ borrar UNA máquina concreta
+export async function DELETE(req) {
+  const admin = await requireAdmin();
+
+  if (!admin.ok) {
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+  }
+
+  const { id } = await req.json();
+
+  if (!id) {
+    return NextResponse.json({ error: "falta_id" }, { status: 400 });
+  }
+
+  await supabaseAdmin
+    .from("licencias_maquinas")
+    .delete()
+    .eq("id", id);
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\admin\licencias\reset-activaciones\route.js
+============================================================
+
+// /app/api/admin/licencias/reset-activaciones/route.js
+import { NextResponse } from "next/server"; 
+import { requireAdmin } from "@/lib/checkAdmin"; 
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; 
+
+export async function POST(req) { 
+ const admin = await requireAdmin(); 
+ if (!admin.ok) 
+  return NextResponse.json({ error: "no_autorizado" }, { status: 403 }); 
+
+ const { id } = await req.json(); 
+
+ if (!id) 
+  return NextResponse.json({ error: "falta_id" }, { status: 400 }); 
+
+ // ✅ CAMBIO: ahora borramos las máquinas en vez de resetear contador
+ await supabaseAdmin
+  .from("licencias_maquinas")
+  .delete()
+  .eq("licencia_id", id);
+
+ return NextResponse.json({ ok: true }); 
 }
 
 
@@ -2175,6 +2257,17 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 import { sendEmail } from "@/lib/email";
 
+// ✅ NUEVO: GENERADOR DE KEY
+function generarLicenseKey() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const part = () =>
+    Array.from({ length: 4 }, () =>
+      chars[Math.floor(Math.random() * chars.length)]
+    ).join("");
+
+  return `${part()}-${part()}-${part()}`;
+}
+
 export async function POST(req) {
   const admin = await requireAdmin();
   if (!admin.ok) {
@@ -2193,14 +2286,12 @@ export async function POST(req) {
     return NextResponse.json(
       {
         ok: false,
-        error: "faltan_datos",
-        mensaje: "Debes enviar el ID del pago."
+        error: "faltan_datos"
       },
       { status: 400 }
     );
   }
 
-  // 1. Obtener pago
   const { data: pago, error: pagoErr } = await supabaseAdmin
     .from("pagos")
     .select("*")
@@ -2209,51 +2300,20 @@ export async function POST(req) {
 
   if (pagoErr || !pago) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: "pago_no_encontrado",
-        mensaje: "El pago no existe en la base de datos."
-      },
+      { ok: false, error: "pago_no_encontrado" },
       { status: 404 }
     );
   }
 
-  // 2. Obtener emails asociados
-  const { data: emails, error: emailsErr } = await supabaseAdmin
-    .from("pagos_emails")
-    .select("email_tekla")
-    .eq("pago_id", pago_id);
-
-  if (emailsErr) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "error_emails",
-        mensaje: "No se pudieron obtener los emails asociados al pago."
-      },
-      { status: 500 }
-    );
-  }
-
-  const emailsTekla = emails?.map((e) => e.email_tekla) ?? [];
-
-  if (emailsTekla.length === 0) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "no_hay_emails",
-        mensaje: "Este pago no tiene emails Tekla, no se puede validar."
-      },
-      { status: 400 }
-    );
-  }
-
-  // 3. Crear licencias (pero antes verificar duplicados)
-  const ahora = new Date().toISOString();
   const tipo = pago.tipo;
+  const ahora = new Date().toISOString();
 
-  const maxActivaciones = tipo === "completa" ? 5 : 1;
+  let maxActivaciones = 1;
   let fechaExp = null;
+
+  if (tipo === "completa") {
+    maxActivaciones = 5;
+  }
 
   if (tipo === "anual") {
     const f = new Date();
@@ -2261,65 +2321,48 @@ export async function POST(req) {
     fechaExp = f.toISOString();
   }
 
+  if (tipo === "trimestral") {
+    const f = new Date();
+    f.setMonth(f.getMonth() + 3);
+    fechaExp = f.toISOString();
+  }
+
+  // ✅ CREAR LICENCIAS CON KEY
   const licenciasInsertar = [];
 
-  for (const email of emailsTekla) {
-    // Verificar si YA existe una licencia activa para el mismo plugin + email
-    const { data: existente } = await supabaseAdmin
-      .from("licencias")
-      .select("id")
-      .eq("plugin_id", pago.plugin_id)
-      .eq("email_tekla", email)
-      .maybeSingle();
-
-    if (existente) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "licencia_existente",
-          mensaje: `El email ${email} ya tiene una licencia para este plugin. No se puede validar este pago.`,
-        },
-        { status: 400 }
-      );
-    }
-
+  for (let i = 0; i < pago.cantidad_licencias; i++) {
     licenciasInsertar.push({
       user_id: pago.user_id,
       pago_id,
       plugin_id: pago.plugin_id,
-      email_tekla: email,
       tipo,
       estado: "activa",
       activaciones_usadas: 0,
       max_activaciones: maxActivaciones,
       fecha_creacion: ahora,
       fecha_expiracion: fechaExp,
+
+      // ✅ AQUÍ VA LA CLAVE
+      license_key: generarLicenseKey(),
     });
   }
 
-  // Insertar licencias
   const { error: licErr } = await supabaseAdmin
     .from("licencias")
     .insert(licenciasInsertar);
 
   if (licErr) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: "error_creando_licencias",
-        mensaje: "No se pudieron crear las licencias. Revisa los datos."
-      },
+      { ok: false, error: "error_creando_licencias" },
       { status: 500 }
     );
   }
 
-  // 4. Actualizar estado del pago
   await supabaseAdmin
     .from("pagos")
     .update({ estado: "aprobado", fecha_validacion: ahora })
     .eq("id", pago_id);
 
-  // 5. Enviar email al usuario
   const { data: usuario } = await supabaseAdmin
     .from("usuarios")
     .select("email, nombre")
@@ -2327,33 +2370,16 @@ export async function POST(req) {
     .maybeSingle();
 
   if (usuario?.email) {
-    const subject = "Tus licencias ya han sido activadas";
-    const html = `
-      <h2>Licencias activadas ✔</h2>
-      <p>Hola ${usuario.nombre ?? ""},</p>
-      <p>Te confirmamos que tu compra ha sido validada.</p>
-      <p>Las licencias asociadas ya están activas y disponibles en tu panel:</p>
-      <p><a href="https://ombim.site/panel/user/licencias" target="_blank">Ver mis licencias</a></p>
-      <p>Gracias por confiar en OMBIM.</p>
-    `;
-
     await sendEmail({
       to: usuario.email,
-      subject,
-      html,
+      subject: "Licencias activadas",
+      html: `<p>Tus licencias ya están disponibles en tu panel.</p>`
     });
   }
 
-  // 6. Respuesta final
   return NextResponse.json({
     ok: true,
-    mensaje: `Pago validado correctamente. Se han creado ${licenciasInsertar.length} licencia(s).`,
-    detalle: {
-      pago_id,
-      tipo,
-      licencias_creadas: licenciasInsertar.length,
-      emails: emailsTekla
-    }
+    mensaje: `Se han creado ${licenciasInsertar.length} licencias`
   });
 }
 
@@ -2394,20 +2420,17 @@ import { requireAdmin } from "@/lib/checkAdmin";
 export const runtime = "nodejs";
 
 export async function POST(req, ctx) {
-  // ✔ Next.js 15/16 → params es una PROMESA
   const { id } = await ctx.params;
 
   if (!id) {
     return NextResponse.json({ error: "ID faltante" }, { status: 400 });
   }
 
-  // ✔ Verificar administrador
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  // ✔ Leer body JSON
   let body;
   try {
     body = await req.json();
@@ -2415,19 +2438,27 @@ export async function POST(req, ctx) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  // ✔ Preparar datos normalizados
+  // ✅ ACTUALIZADO
   const payload = {
     nombre: body.nombre ?? "",
     descripcion: body.descripcion ?? "",
+
     precio: Number(body.precio) || 0,
+
+    // ✅ NUEVOS CAMPOS
+    precio_trimestral: Number(body.precio_trimestral) || 0,
     precio_anual: Number(body.precio_anual) || 0,
     precio_completa: Number(body.precio_completa) || 0,
+
+    permite_trimestral: Boolean(body.permite_trimestral),
+    permite_anual: Boolean(body.permite_anual),
+    permite_completa: Boolean(body.permite_completa),
+
     archivo_url: body.archivo_url ?? "",
     video_url: body.video_url ?? "",
     imagen_url: body.imagen_url ?? "",
   };
 
-  // ✔ Hacer UPDATE real
   const { error } = await supabaseAdmin
     .from("plugins")
     .update(payload)
@@ -2557,10 +2588,9 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { requireAdmin } from "@/lib/checkAdmin";
 
-export const runtime = "nodejs"; // Next 16
+export const runtime = "nodejs";
 
 export async function POST(req) {
-  // ✔️ Verificar que el usuario es ADMIN
   const admin = await requireAdmin();
   if (!admin.ok) {
     return NextResponse.json(
@@ -2575,8 +2605,12 @@ export async function POST(req) {
     nombre,
     descripcion,
     precio,
+    precio_trimestral,     // ✅ NUEVO
     precio_anual,
     precio_completa,
+    permite_trimestral,    // ✅ NUEVO
+    permite_anual,         // ✅ NUEVO
+    permite_completa,      // ✅ NUEVO
     archivo_url,
     video_url,
     imagen_url,
@@ -2586,19 +2620,25 @@ export async function POST(req) {
     return NextResponse.json({ error: "Falta nombre" }, { status: 400 });
   }
 
-  // ✔️ Normalización segura
   const payload = {
     nombre: nombre ?? "",
     descripcion: descripcion ?? "",
     precio: Number(precio) || 0,
+
+    // ✅ NUEVOS CAMPOS
+    precio_trimestral: Number(precio_trimestral) || 0,
     precio_anual: Number(precio_anual) || 0,
     precio_completa: Number(precio_completa) || 0,
+
+    permite_trimestral: Boolean(permite_trimestral),
+    permite_anual: Boolean(permite_anual),
+    permite_completa: Boolean(permite_completa),
+
     archivo_url: archivo_url ?? "",
     video_url: video_url ?? "",
     imagen_url: imagen_url ?? "",
   };
 
-  // ✔️ Insertar plugin
   const { error } = await supabaseAdmin
     .from("plugins")
     .insert(payload);
@@ -2613,7 +2653,6 @@ export async function POST(req) {
 
   return NextResponse.json({ ok: true });
 }
-
 
 
 ============================================================

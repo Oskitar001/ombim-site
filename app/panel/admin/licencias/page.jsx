@@ -2,156 +2,149 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Ticket, Eye, Calendar, KeyRound, Ban, CheckCircle } from "lucide-react";
+import {
+  Ticket,
+  Eye,
+  Calendar,
+  Ban,
+  CheckCircle,
+} from "lucide-react";
 
 export default function AdminLicenciasPage() {
   const [licencias, setLicencias] = useState([]);
+  const [maquinas, setMaquinas] = useState({});
 
   useEffect(() => {
     async function load() {
-      const r = await fetch("/api/admin/licencias", { credentials: "include" });
+      const r = await fetch("/api/admin/licencias", {
+        credentials: "include",
+      });
       const d = await r.json();
-      setLicencias(d.licencias ?? []);
+      const list = d.licencias ?? [];
+      setLicencias(list);
+
+      const maquinasMap = {};
+
+      for (const l of list) {
+        const rM = await fetch(
+          `/api/admin/licencias/maquinas?id=${l.id}`,
+          { credentials: "include" }
+        );
+        const dM = await rM.json();
+        maquinasMap[l.id] = dM.maquinas ?? [];
+      }
+
+      setMaquinas(maquinasMap);
     }
+
     load();
   }, []);
 
+  // ✅ NUEVO: liberar máquina
+  async function liberarMaquina(id) {
+    await fetch("/api/admin/licencias/maquinas", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    location.reload(); // recargar rápido
+  }
+
   return (
     <div className="space-y-6">
-
-      {/* TITULO */}
       <h1 className="text-3xl font-bold flex items-center gap-2">
         <Ticket size={28} /> Licencias
       </h1>
 
-      {/* MOBILE VERSION → CARDS */}
-      <div className="grid gap-4 md:hidden">
-        {licencias.map((l) => (
-          <div
-            key={l.id}
-            className="p-4 rounded-xl shadow border border-gray-200 dark:border-gray-700 
-                       bg-white dark:bg-gray-900 space-y-3"
-          >
-            <div className="flex justify-between items-center">
-              <p className="text-lg font-semibold">{l.email_tekla}</p>
-              <Link
-                href={`/panel/admin/licencias/${l.id}`}
-                className="text-blue-600 flex items-center gap-1"
-              >
-                <Eye size={16} /> Ver
-              </Link>
-            </div>
-
-            <div className="text-sm opacity-70">
-              Plugin: {l.plugins?.nombre ?? l.plugin_id}
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              Tipo:
-              <span className="font-semibold capitalize">{l.tipo}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              Estado:
-              {l.estado === "activa" && (
-                <span className="text-green-600 flex items-center gap-1 font-semibold">
-                  <CheckCircle size={14} /> Activa
-                </span>
-              )}
-              {l.estado === "bloqueada" && (
-                <span className="text-red-600 flex items-center gap-1 font-semibold">
-                  <Ban size={14} /> Bloqueada
-                </span>
-              )}
-              {l.estado === "trial" && (
-                <span className="text-blue-600 flex items-center gap-1 font-semibold">
-                  <KeyRound size={14} /> Trial
-                </span>
-              )}
-            </div>
-
-            <div className="text-sm">
-              Activaciones:
-              <span className="font-semibold">
-                {" "}
-                {l.activaciones_usadas}/{l.max_activaciones}
-              </span>
-            </div>
-
-            <div className="text-sm flex items-center gap-1">
-              <Calendar size={14} className="opacity-60" />
-              Expira:{" "}
-              {l.fecha_expiracion
-                ? new Date(l.fecha_expiracion).toLocaleDateString()
-                : "—"}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* DESKTOP VERSION → TABLE */}
-      <div className="hidden md:block overflow-x-auto shadow rounded-xl border border-gray-300 dark:border-gray-700">
+      {/* DESKTOP */}
+      <div className="overflow-x-auto shadow rounded-xl border">
         <table className="min-w-full">
           <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-left text-sm uppercase tracking-wide">
-              <th className="p-3">Email</th>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-sm">
+              <th className="p-3">ID</th>
               <th className="p-3">Plugin</th>
               <th className="p-3">Tipo</th>
               <th className="p-3">Estado</th>
+              <th className="p-3">Máquinas</th>
               <th className="p-3">Activaciones</th>
               <th className="p-3">Expira</th>
               <th className="p-3"></th>
             </tr>
           </thead>
 
-          <tbody className="text-sm">
-            {licencias.map((l) => (
-              <tr
-                key={l.id}
-                className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                <td className="p-3 font-medium">{l.email_tekla}</td>
+          <tbody>
+            {licencias.map((l) => {
+              const maq = maquinas[l.id] ?? [];
 
-                <td className="p-3">{l.plugins?.nombre ?? l.plugin_id}</td>
+              return (
+                <tr key={l.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3">#{l.id}</td>
 
-                <td className="p-3 capitalize">{l.tipo}</td>
+                  <td className="p-3">
+                    {l.plugins?.nombre ?? l.plugin_id}
+                  </td>
 
-                <td className="p-3 capitalize">
-                  {l.estado === "activa" && (
-                    <span className="text-green-600 font-semibold">Activa</span>
-                  )}
-                  {l.estado === "bloqueada" && (
-                    <span className="text-red-600 font-semibold">Bloqueada</span>
-                  )}
-                  {l.estado === "trial" && (
-                    <span className="text-blue-600 font-semibold">Trial</span>
-                  )}
-                </td>
+                  <td className="p-3">{l.tipo}</td>
 
-                <td className="p-3">
-                  {l.activaciones_usadas}/{l.max_activaciones}
-                </td>
+                  <td className="p-3">
+                    {l.estado === "activa" && (
+                      <span className="text-green-600">Activa</span>
+                    )}
+                    {l.estado === "bloqueada" && (
+                      <span className="text-red-600">Bloqueada</span>
+                    )}
+                  </td>
 
-                <td className="p-3">
-                  {l.fecha_expiracion
-                    ? new Date(l.fecha_expiracion).toLocaleDateString()
-                    : "—"}
-                </td>
+                  {/* ✅ MÁQUINAS + BOTÓN */}
+                  <td className="p-3 text-xs space-y-2">
+                    {maq.length === 0 && (
+                      <div className="opacity-50">Sin máquinas</div>
+                    )}
 
-                <td className="p-3">
-                  <Link
-                    href={`/panel/admin/licencias/${l.id}`}
-                    className="text-blue-600 flex items-center gap-1 font-medium"
-                  >
-                    <Eye size={16} /> Ver
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                    {maq.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span>{m.maquina_id}</span>
+
+                        {/* 🔥 BOTÓN LIBERAR */}
+                        <button
+                          onClick={() => liberarMaquina(m.id)}
+                          className="text-red-600 hover:text-red-800 text-xs"
+                        >
+                          liberar
+                        </button>
+                      </div>
+                    ))}
+                  </td>
+
+                  <td className="p-3">
+                    {maq.length}/{l.max_activaciones}
+                  </td>
+
+                  <td className="p-3">
+                    {l.fecha_expiracion
+                      ? new Date(l.fecha_expiracion).toLocaleDateString()
+                      : "—"}
+                  </td>
+
+                  <td className="p-3">
+                    <Link
+                      href={`/panel/admin/licencias/${l.id}`}
+                      className="text-blue-600 flex items-center gap-1 font-medium"
+                    >
+                      <Eye size={16} /> Ver
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }

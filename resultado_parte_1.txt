@@ -3009,92 +3009,75 @@ export async function requireAdmin() {
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
 ============================================================
 
+// /app/api/auth/login/route.js
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/auth-helpers-nextjs";
 
 export async function POST(req) {
-  try {
-    const { email, password } = await req.json();
-    const normalizedEmail = email?.trim()?.toLowerCase();
-    const cookieHeader = req.headers.get("cookie") ?? "";
+  const { email, password } = await req.json();
 
-    // ✅ Headers compartidos para cookies
-    const headers = new Headers();
+  const normalizedEmail = email?.trim()?.toLowerCase();
+  const cookieHeader = req.headers.get("cookie") ?? "";
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name) {
-            const raw = cookieHeader
-              .split("; ")
-              .find((c) => c.startsWith(name + "="));
-            if (!raw) return undefined;
-            return raw.slice(name.length + 1);
-          },
-          set(name, value, options) {
-            const cookie = `${name}=${value}; Path=/; SameSite=Lax${
-              options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
-            }`;
-            headers.append("Set-Cookie", cookie);
-          },
-          remove(name) {
-            headers.append(
-              "Set-Cookie",
-              `${name}=; Path=/; Max-Age=0; SameSite=Lax`
-            );
-          },
+  // Siempre usamos ESTA respuesta para permitir que Supabase modifique cookies
+  const response = NextResponse.json({ ok: true });
+
+  // Supabase client
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        // ✔ FIX: permitir "=" en valores de cookie
+        get(name) {
+          const raw = cookieHeader
+            .split("; ")
+            .find((c) => c.startsWith(name + "="));
+
+          if (!raw) return undefined;
+
+          return raw.slice(name.length + 1);
         },
-      }
-    );
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
+        set(name, value, options) {
+          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
+            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
+          }`;
 
-    // ❌ ERROR DE LOGIN
-    if (error) {
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          response.headers.append("Set-Cookie", cookie);
+        },
+
+        remove(name) {
+          response.headers.append(
+            "Set-Cookie",
+            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
+          );
         }
-      );
+      }
     }
+  );
 
-    // ✅ Cookie adicional para middleware
-    const role = data.user.user_metadata?.role ?? "user";
-    headers.append(
-      "Set-Cookie",
-      `sb-user-role=${role}; Path=/; SameSite=Lax`
-    );
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: normalizedEmail,
+    password
+  });
 
-    // ✅ RESPUESTA OK
-    return new Response(
-      JSON.stringify({ user: data.user }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...Object.fromEntries(headers),
-        },
-      }
-    );
-
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Error interno del servidor" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+  // ❗ FIX: devolver SIEMPRE usando el mismo response
+  if (error) {
+    response.body = JSON.stringify({ error: error.message });
+    response.status = 400;
+    return response;
   }
+
+  const role = data.user.user_metadata?.role ?? "user";
+
+  // Cookie adicional para middleware
+  response.headers.append(
+    "Set-Cookie",
+    `sb-user-role=${role}; Path=/; SameSite=Lax`
+  );
+
+  return response;
 }
 
 

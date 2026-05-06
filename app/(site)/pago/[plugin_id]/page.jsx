@@ -8,19 +8,17 @@ export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Tipo inicial (solo anual o completa)
-  const planInicial = searchParams.get("plan") ?? "completa";
-
   const [plugin, setPlugin] = useState(null);
   const [user, setUser] = useState(null);
-  const [emails, setEmails] = useState([""]);
+
+  const [cantidad, setCantidad] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [tipo, setTipo] = useState(planInicial);
+  const [tipo, setTipo] = useState("completa");
 
   useEffect(() => {
-    if (!plugin_id) return; // ✔ FIX mínimo necesario
+    if (!plugin_id) return;
 
     async function load() {
       try {
@@ -30,7 +28,37 @@ export default function Page() {
 
         const rPlugin = await fetch(`/api/plugin/${plugin_id}`);
         const dPlugin = await rPlugin.json();
+
         setPlugin(dPlugin?.error ? null : dPlugin);
+
+        // ✅ 🔥 BLOQUE IMPORTANTE (tipo seguro)
+        const plan = searchParams.get("plan");
+
+        if (dPlugin && !dPlugin.error) {
+          let tipoValido = null;
+
+          if (plan === "trimestral" && dPlugin.permite_trimestral) {
+            tipoValido = "trimestral";
+          }
+
+          if (plan === "anual" && dPlugin.permite_anual) {
+            tipoValido = "anual";
+          }
+
+          if (plan === "completa" && dPlugin.permite_completa) {
+            tipoValido = "completa";
+          }
+
+          // ✅ fallback automático
+          if (!tipoValido) {
+            if (dPlugin.permite_trimestral) tipoValido = "trimestral";
+            else if (dPlugin.permite_anual) tipoValido = "anual";
+            else if (dPlugin.permite_completa) tipoValido = "completa";
+          }
+
+          setTipo(tipoValido);
+        }
+
       } catch {
         setError("Error cargando datos");
       } finally {
@@ -41,23 +69,9 @@ export default function Page() {
     load();
   }, [plugin_id]);
 
-  function actualizarEmail(i, valor) {
-    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
-  }
-
-  function añadirFila() {
-    setEmails((prev) => [...prev, ""]);
-  }
-
   async function crearPago() {
     if (!user) {
       router.push("/login");
-      return;
-    }
-
-    const emailsLimpios = emails.map((e) => e.trim());
-    if (emailsLimpios.some((e) => e === "")) {
-      setError("Debes completar TODOS los emails Tekla.");
       return;
     }
 
@@ -68,7 +82,7 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plugin_id,
-          emails_tekla: emailsLimpios,
+          cantidad,
           tipo,
         }),
       });
@@ -90,15 +104,22 @@ export default function Page() {
   if (loading) return <p>Cargando...</p>;
   if (!plugin) return <p>Plugin no encontrado.</p>;
 
-  // PRECIOS BASE (sin IVA)
-  const precioAnual = Number(plugin.precio_anual) || 0;
-  const precioCompleta = Number(plugin.precio_completa) || 0;
+  // ✅ precios dinámicos según tipo
+  let precioUnitario = 0;
 
-  // PRECIO UNITARIO
-  const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
+  if (tipo === "trimestral") {
+    precioUnitario = Number(plugin.precio_trimestral) || 0;
+  }
 
-  // DESGLOSE IVA
-  const subtotal = precioUnitario * emails.length; // sin IVA
+  if (tipo === "anual") {
+    precioUnitario = Number(plugin.precio_anual) || 0;
+  }
+
+  if (tipo === "completa") {
+    precioUnitario = Number(plugin.precio_completa) || 0;
+  }
+
+  const subtotal = precioUnitario * cantidad;
   const iva = subtotal * 0.21;
   const total = subtotal + iva;
 
@@ -119,39 +140,40 @@ export default function Page() {
           onChange={(e) => setTipo(e.target.value)}
           className="border p-2 rounded w-full dark:bg-gray-900"
         >
-          {precioAnual > 0 && (
-            <option value="anual">Anual – {precioAnual.toFixed(2)} €</option>
+          {plugin.permite_trimestral && (
+            <option value="trimestral">
+              Trimestral – {(Number(plugin.precio_trimestral) || 0).toFixed(2)} €
+            </option>
           )}
 
-          {precioCompleta > 0 && (
+          {plugin.permite_anual && (
+            <option value="anual">
+              Anual – {(Number(plugin.precio_anual) || 0).toFixed(2)} €
+            </option>
+          )}
+
+          {plugin.permite_completa && (
             <option value="completa">
-              Completa – {precioCompleta.toFixed(2)} €
+              Completa – {(Number(plugin.precio_completa) || 0).toFixed(2)} €
             </option>
           )}
         </select>
       </div>
 
-      {/* EMAILS TEKLA */}
+      {/* CANTIDAD */}
       <div>
-        <h3 className="font-semibold mb-2">Emails Tekla:</h3>
+        <h3 className="font-semibold mb-2">Cantidad de licencias:</h3>
 
-        {emails.map((email, i) => (
-          <input
-            key={i}
-            type="email"
-            value={email}
-            placeholder="usuario@empresa.com"
-            onChange={(e) => actualizarEmail(i, e.target.value)}
-            className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
-          />
-        ))}
-
-        <button onClick={añadirFila} className="text-blue-600 underline mb-4">
-          Añadir otro email
-        </button>
+        <input
+          type="number"
+          min="1"
+          value={cantidad}
+          onChange={(e) => setCantidad(Number(e.target.value))}
+          className="w-full p-2 border rounded mb-2 dark:bg-gray-900"
+        />
       </div>
 
-      {/* DESGLOSE DE PRECIOS */}
+      {/* PRECIOS */}
       <div className="space-y-1 text-lg">
         <p>
           <strong>Subtotal:</strong> {subtotal.toFixed(2)} €
@@ -166,7 +188,6 @@ export default function Page() {
 
       {error && <p className="text-red-600">{error}</p>}
 
-      {/* BOTÓN COMPRAR */}
       <button
         onClick={crearPago}
         className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"

@@ -13,11 +13,13 @@ import {
 } from "lucide-react";
 
 export default function AdminLicenciaDetallePage({ params }) {
-  // Next.js 16 fix (params es una Promise)
   const { id } = use(params);
 
   const [licencia, setLicencia] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ✅ NUEVO
+  const [maquinas, setMaquinas] = useState([]);
 
   useEffect(() => {
     if (!id) return;
@@ -29,6 +31,14 @@ export default function AdminLicenciaDetallePage({ params }) {
 
       const d = await r.json();
       setLicencia(d.licencia ?? null);
+
+      // ✅ NUEVO
+      const rM = await fetch(`/api/admin/licencias/maquinas?id=${id}`, {
+        credentials: "include",
+      });
+      const dM = await rM.json();
+      setMaquinas(dM.maquinas ?? []);
+
       setLoading(false);
     }
     load();
@@ -43,6 +53,18 @@ export default function AdminLicenciaDetallePage({ params }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: licencia.id }),
+    });
+
+    location.reload();
+  }
+
+  // ✅ NUEVO
+  async function borrarMaquina(maquinaId) {
+    await fetch("/api/admin/licencias/maquinas", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: maquinaId }),
     });
 
     location.reload();
@@ -86,6 +108,7 @@ export default function AdminLicenciaDetallePage({ params }) {
         </Row>
 
         <Row label="Activaciones">
+          {/* ✅ sigue igual visualmente */}
           {licencia.activaciones_usadas}/{licencia.max_activaciones}
         </Row>
 
@@ -98,6 +121,31 @@ export default function AdminLicenciaDetallePage({ params }) {
         <Row label="Creada">
           {new Date(licencia.fecha_creacion).toLocaleString()}
         </Row>
+      </div>
+
+      {/* ✅ NUEVO: MÁQUINAS */}
+      <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
+        <h3 className="font-semibold">Máquinas activas</h3>
+
+        {maquinas.length === 0 && (
+          <p className="text-sm opacity-70">No hay máquinas registradas</p>
+        )}
+
+        {maquinas.map((m) => (
+          <div
+            key={m.id}
+            className="flex justify-between items-center border p-2 rounded bg-white dark:bg-gray-900"
+          >
+            <span>{m.maquina_id}</span>
+
+            <button
+              onClick={() => borrarMaquina(m.id)}
+              className="text-red-600 text-sm"
+            >
+              Eliminar
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* ACCIONES */}
@@ -137,10 +185,10 @@ export default function AdminLicenciaDetallePage({ params }) {
           onClick={() => accion("hacer-completa")}
         />
       </div>
-
     </div>
   );
 }
+
 
 /* ================= COMPONENTES PREMIUM ================= */
 

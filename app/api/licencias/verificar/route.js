@@ -14,9 +14,7 @@ export async function GET(req) {
   // ------------------------------------------------------
   // 1. Validaciones básicas
   // ------------------------------------------------------
-  if (!email_tekla) {
-    return Response.json({ ok: false, motivo: "sin_email" });
-  }
+ 
 
   if (!plugin_id) {
     return Response.json({ ok: false, motivo: "sin_plugin" });
@@ -28,13 +26,12 @@ export async function GET(req) {
   const { data: licencia, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
-    .eq("email_tekla", email_tekla)
+    
     .eq("plugin_id", plugin_id)
     .order("fecha_creacion", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  // ✔ Controlar error real del SELECT
   if (error || !licencia) {
     console.error("Error consultando licencia:", error);
     return Response.json({ ok: false, motivo: "no_existe" });
@@ -66,9 +63,14 @@ export async function GET(req) {
   }
 
   // ------------------------------------------------------
-  // 5. Verificar activaciones restantes (parse seguro)
+  // 5. ✅ NUEVA LÓGICA DE ACTIVACIONES (MÁQUINAS)
   // ------------------------------------------------------
-  const usadas = Number(licencia.activaciones_usadas ?? 0);
+  const { data: maquinas } = await supabaseAdmin
+    .from("licencias_maquinas")
+    .select("maquina_id")
+    .eq("licencia_id", licencia.id);
+
+  const usadas = (maquinas ?? []).length;
   const max = Number(licencia.max_activaciones ?? 0);
 
   const activaciones_restantes = max - usadas;
@@ -84,7 +86,7 @@ export async function GET(req) {
     ok: true,
     plugin_id: licencia.plugin_id,
     estado: licencia.estado,
-    activaciones_usadas: usadas,
+    activaciones_usadas: usadas, // ✅ ahora son máquinas reales
     max_activaciones: max,
     soporte_activo,
     activaciones_restantes

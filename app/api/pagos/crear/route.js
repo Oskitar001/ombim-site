@@ -2,7 +2,6 @@
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
-  // ✅ FIX: supabaseRoute es async (Next 16)
   const supabase = await supabaseRoute();
 
   const {
@@ -14,16 +13,24 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-  const { plugin_id, emails_tekla, tipo } = body;
 
-  if (!plugin_id || !emails_tekla?.length || !tipo) {
+  const { plugin_id, cantidad, tipo } = body;
+
+  if (!plugin_id || !cantidad || !tipo) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
-  // Obtener plugin y precios
+  // ✅ CAMBIO: ahora pedimos también permisos + precio trimestral
   const { data: plugin, error: pluginError } = await supabase
     .from("plugins")
-    .select("precio, precio_anual, precio_completa")
+    .select(`
+      precio_anual,
+      precio_completa,
+      precio_trimestral,
+      permite_anual,
+      permite_completa,
+      permite_trimestral
+    `)
     .eq("id", plugin_id)
     .single();
 
@@ -31,14 +38,31 @@ export async function POST(req) {
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // ✅ FIX: evitar undefined o NaN
-  const precioUnitario = Number(
-    tipo === "anual"
-      ? plugin.precio_anual
-      : plugin.precio_completa
-  ) || 0;
+  // ✅ VALIDACIÓN DE TIPO PERMITIDO
+  if (
+    (tipo === "anual" && !plugin.permite_anual) ||
+    (tipo === "completa" && !plugin.permite_completa) ||
+    (tipo === "trimestral" && !plugin.permite_trimestral)
+  ) {
+    return Response.json({ error: "tipo_no_permitido" }, { status: 400 });
+  }
 
-  const subtotal = precioUnitario * emails_tekla.length;
+  // ✅ PRECIO DINÁMICO
+  let precioUnitario = 0;
+
+  if (tipo === "trimestral") {
+    precioUnitario = Number(plugin.precio_trimestral) || 0;
+  }
+
+  if (tipo === "anual") {
+    precioUnitario = Number(plugin.precio_anual) || 0;
+  }
+
+  if (tipo === "completa") {
+    precioUnitario = Number(plugin.precio_completa) || 0;
+  }
+
+  const subtotal = precioUnitario * cantidad;
   const iva = subtotal * 0.21;
   const importe_total = subtotal + iva;
 
@@ -48,7 +72,7 @@ export async function POST(req) {
     .insert({
       user_id: user.id,
       plugin_id,
-      cantidad_licencias: emails_tekla.length,
+      cantidad_licencias: cantidad,
       estado: "pendiente",
       tipo,
       fecha: new Date(),
@@ -62,21 +86,6 @@ export async function POST(req) {
   if (pagoError) {
     console.error("Error creando pago:", pagoError);
     return Response.json({ error: "error_creando_pago" }, { status: 500 });
-  }
-
-  // Asociar emails
-  const emailsInsert = emails_tekla.map((e) => ({
-    pago_id: pago.id,
-    email_tekla: e.trim(),
-  }));
-
-  const { error: emailErr } = await supabase
-    .from("pagos_emails")
-    .insert(emailsInsert);
-
-  // ⚠️ Aviso seguro: pago creado pero falló emails
-  if (emailErr) {
-    console.error("Error guardando emails:", emailErr);
   }
 
   return Response.json({

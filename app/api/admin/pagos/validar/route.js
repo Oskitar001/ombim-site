@@ -46,76 +46,40 @@ export async function POST(req) {
     );
   }
 
-  // 2. Obtener emails asociados
-  const { data: emails, error: emailsErr } = await supabaseAdmin
-    .from("pagos_emails")
-    .select("email_tekla")
-    .eq("pago_id", pago_id);
-
-  if (emailsErr) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "error_emails",
-        mensaje: "No se pudieron obtener los emails asociados al pago."
-      },
-      { status: 500 }
-    );
-  }
-
-  const emailsTekla = emails?.map((e) => e.email_tekla) ?? [];
-
-  if (emailsTekla.length === 0) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "no_hay_emails",
-        mensaje: "Este pago no tiene emails Tekla, no se puede validar."
-      },
-      { status: 400 }
-    );
-  }
-
-  // 3. Crear licencias (pero antes verificar duplicados)
-  const ahora = new Date().toISOString();
   const tipo = pago.tipo;
+  const ahora = new Date().toISOString();
 
-  const maxActivaciones = tipo === "completa" ? 5 : 1;
+  // ✅ NUEVO: calcular configuración de licencia
+  let maxActivaciones = 1;
   let fechaExp = null;
 
+  if (tipo === "completa") {
+    maxActivaciones = 5;
+    fechaExp = null;
+  }
+
   if (tipo === "anual") {
+    maxActivaciones = 1;
     const f = new Date();
     f.setFullYear(f.getFullYear() + 1);
     fechaExp = f.toISOString();
   }
 
+  if (tipo === "trimestral") {
+    maxActivaciones = 1;
+    const f = new Date();
+    f.setMonth(f.getMonth() + 3);
+    fechaExp = f.toISOString();
+  }
+
+  // ✅ NUEVO: generar licencias según cantidad
   const licenciasInsertar = [];
 
-  for (const email of emailsTekla) {
-    // Verificar si YA existe una licencia activa para el mismo plugin + email
-    const { data: existente } = await supabaseAdmin
-      .from("licencias")
-      .select("id")
-      .eq("plugin_id", pago.plugin_id)
-      .eq("email_tekla", email)
-      .maybeSingle();
-
-    if (existente) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "licencia_existente",
-          mensaje: `El email ${email} ya tiene una licencia para este plugin. No se puede validar este pago.`,
-        },
-        { status: 400 }
-      );
-    }
-
+  for (let i = 0; i < pago.cantidad_licencias; i++) {
     licenciasInsertar.push({
       user_id: pago.user_id,
       pago_id,
       plugin_id: pago.plugin_id,
-      email_tekla: email,
       tipo,
       estado: "activa",
       activaciones_usadas: 0,
@@ -135,7 +99,7 @@ export async function POST(req) {
       {
         ok: false,
         error: "error_creando_licencias",
-        mensaje: "No se pudieron crear las licencias. Revisa los datos."
+        mensaje: "No se pudieron crear las licencias."
       },
       { status: 500 }
     );
@@ -160,7 +124,7 @@ export async function POST(req) {
       <h2>Licencias activadas ✔</h2>
       <p>Hola ${usuario.nombre ?? ""},</p>
       <p>Te confirmamos que tu compra ha sido validada.</p>
-      <p>Las licencias asociadas ya están activas y disponibles en tu panel:</p>
+      <p>Ya tienes ${licenciasInsertar.length} licencia(s) activas en tu cuenta.</p>
       <p><a href="https://ombim.site/panel/user/licencias" target="_blank">Ver mis licencias</a></p>
       <p>Gracias por confiar en OMBIM.</p>
     `;
@@ -179,8 +143,7 @@ export async function POST(req) {
     detalle: {
       pago_id,
       tipo,
-      licencias_creadas: licenciasInsertar.length,
-      emails: emailsTekla
+      licencias_creadas: licenciasInsertar.length
     }
   });
 }

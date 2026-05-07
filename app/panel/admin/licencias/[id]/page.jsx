@@ -17,8 +17,6 @@ export default function AdminLicenciaDetallePage({ params }) {
 
   const [licencia, setLicencia] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // ✅ NUEVO
   const [maquinas, setMaquinas] = useState([]);
 
   useEffect(() => {
@@ -32,7 +30,6 @@ export default function AdminLicenciaDetallePage({ params }) {
       const d = await r.json();
       setLicencia(d.licencia ?? null);
 
-      // ✅ NUEVO
       const rM = await fetch(`/api/admin/licencias/maquinas?id=${id}`, {
         credentials: "include",
       });
@@ -41,6 +38,7 @@ export default function AdminLicenciaDetallePage({ params }) {
 
       setLoading(false);
     }
+
     load();
   }, [id]);
 
@@ -58,7 +56,6 @@ export default function AdminLicenciaDetallePage({ params }) {
     location.reload();
   }
 
-  // ✅ NUEVO
   async function borrarMaquina(maquinaId) {
     await fetch("/api/admin/licencias/maquinas", {
       method: "DELETE",
@@ -86,44 +83,72 @@ export default function AdminLicenciaDetallePage({ params }) {
         <KeyRound size={30} /> Licencia #{licencia.id}
       </h1>
 
-      {/* CARD PREMIUM DATOS */}
+      {/* CARD DATOS */}
       <div className="
         p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
         bg-white dark:bg-gray-900 space-y-4
       ">
+
+        {/* ✅ Plugin */}
         <Row label="Plugin">
-          {licencia.plugins?.nombre ?? licencia.plugin_id}
+          {licencia.plugins?.nombre || licencia.plugin_nombre || licencia.plugin_id}
         </Row>
 
-        <Row label="Email Tekla">
-          {licencia.email_tekla}
-        </Row>
+        {/* ✅ LICENSE KEY */}
+        <div className="flex flex-col gap-1">
+          <p className="font-semibold text-gray-700 dark:text-gray-300">
+            License Key:
+          </p>
 
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={licencia.license_key || ""}
+              readOnly
+              className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-800 text-sm"
+            />
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(licencia.license_key);
+                alert("License key copiada");
+              }}
+              className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        {/* ✅ Tipo */}
         <Row label="Tipo">
           <TipoBadge tipo={licencia.tipo} />
         </Row>
 
+        {/* ✅ Estado */}
         <Row label="Estado">
           <EstadoBadge estado={licencia.estado} />
         </Row>
 
+        {/* ✅ Activaciones */}
         <Row label="Activaciones">
-          {/* ✅ sigue igual visualmente */}
           {licencia.activaciones_usadas}/{licencia.max_activaciones}
         </Row>
 
+        {/* ✅ Expira */}
         <Row label="Expira">
           {licencia.fecha_expiracion
             ? new Date(licencia.fecha_expiracion).toLocaleString()
             : "—"}
         </Row>
 
+        {/* ✅ Creada */}
         <Row label="Creada">
           {new Date(licencia.fecha_creacion).toLocaleString()}
         </Row>
       </div>
 
-      {/* ✅ NUEVO: MÁQUINAS */}
+      {/* MÁQUINAS */}
       <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
         <h3 className="font-semibold">Máquinas activas</h3>
 
@@ -189,45 +214,28 @@ export default function AdminLicenciaDetallePage({ params }) {
   );
 }
 
-
-/* ================= COMPONENTES PREMIUM ================= */
+/* COMPONENTES */
 
 function Row({ label, children }) {
   return (
-    <div className="flex justify-between items-start">
-      <p className="font-semibold text-gray-700 dark:text-gray-300">
-        {label}:
-      </p>
-      <p className="text-right">{children}</p>
+    <div className="flex justify-between">
+      <p className="font-semibold">{label}:</p>
+      <p>{children}</p>
     </div>
   );
 }
 
 function TipoBadge({ tipo }) {
   const map = {
-    anual: {
-      color: "bg-yellow-200 text-yellow-800",
-      icon: <Calendar size={14} />,
-      label: "Anual",
-    },
-    completa: {
-      color: "bg-purple-200 text-purple-800",
-      icon: <Star size={14} />,
-      label: "Completa",
-    },
-    trial: {
-      color: "bg-blue-200 text-blue-800",
-      icon: <KeyRound size={14} />,
-      label: "Trial",
-    },
+    anual: { color: "bg-yellow-200 text-yellow-800", icon: <Calendar size={14} />, label: "Anual" },
+    completa: { color: "bg-purple-200 text-purple-800", icon: <Star size={14} />, label: "Completa" },
+    trial: { color: "bg-blue-200 text-blue-800", icon: <KeyRound size={14} />, label: "Trial" },
   };
 
   const t = map[tipo];
 
   return (
-    <span
-      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}
-    >
+    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}>
       {t.icon} {t.label}
     </span>
   );
@@ -235,34 +243,15 @@ function TipoBadge({ tipo }) {
 
 function EstadoBadge({ estado }) {
   const map = {
-    activa: {
-      color: "bg-green-200 text-green-800",
-      icon: <CheckCircle size={14} />,
-      label: "Activa",
-    },
-    bloqueada: {
-      color: "bg-red-200 text-red-800",
-      icon: <Ban size={14} />,
-      label: "Bloqueada",
-    },
-    trial: {
-      color: "bg-blue-200 text-blue-800",
-      icon: <KeyRound size={14} />,
-      label: "Trial",
-    },
-    expirada: {
-      color: "bg-orange-200 text-orange-800",
-      icon: <Calendar size={14} />,
-      label: "Expirada",
-    },
+    activa: { color: "bg-green-200 text-green-800", icon: <CheckCircle size={14} />, label: "Activa" },
+    bloqueada: { color: "bg-red-200 text-red-800", icon: <Ban size={14} />, label: "Bloqueada" },
+    expirada: { color: "bg-orange-200 text-orange-800", icon: <Calendar size={14} />, label: "Expirada" },
   };
 
   const e = map[estado];
 
   return (
-    <span
-      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}
-    >
+    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}>
       {e.icon} {e.label}
     </span>
   );
@@ -280,7 +269,7 @@ function ActionButton({ color, icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition`}
+      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md`}
     >
       {icon} {label}
     </button>

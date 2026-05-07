@@ -1097,75 +1097,84 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: "json_invalido" });
   }
 
-  const email_tekla = payload?.email_tekla?.trim()?.toLowerCase();
-  const { plugin_id } = payload;
+  // ✅ CAMBIO TOTAL
+  const license_key = payload?.license_key?.trim()?.toUpperCase();
+  const plugin_id = payload?.plugin_id;
+  const maquina_id = payload?.maquina_id?.trim();
 
-  if (!email_tekla || !plugin_id) {
+  if (!license_key || !plugin_id) {
     return NextResponse.json({ ok: false, error: "faltan_datos" });
   }
 
-  // 1. Buscar licencia existente
+  // ✅ buscar por license_key
   const { data: lic, error } = await supabaseAdmin
     .from("licencias")
     .select("*")
-    .eq("email_tekla", email_tekla)
+    .eq("license_key", license_key)
     .eq("plugin_id", plugin_id)
-    .single();
+    .maybeSingle();
 
   if (error || !lic) {
     return NextResponse.json({ ok: false, error: "no_existe" });
   }
 
-  // 2. Bloqueada
+  // bloqueada
   if (lic.estado === "bloqueada") {
     return NextResponse.json({ ok: false, error: "bloqueada" });
   }
 
-  // 2.2 No permitir validar licencias "pendiente"
   if (lic.estado === "pendiente") {
     return NextResponse.json({ ok: false, error: "pendiente" });
   }
 
-  // 3. Licencia anual expirada
-  if (lic.tipo === "anual") {
-    if (!lic.fecha_expiracion) {
-      return NextResponse.json({ ok: false, error: "expirada" });
-    }
-
-    const ahora = new Date();
-    const expira = new Date(lic.fecha_expiracion);
-
-    if (expira < ahora) {
+  // expiración
+  if (lic.fecha_expiracion) {
+    const exp = new Date(lic.fecha_expiracion);
+    if (exp < new Date()) {
       return NextResponse.json({ ok: false, error: "expirada" });
     }
   }
 
-  // 4. Activaciones disponibles
-  if (lic.activaciones_usadas >= lic.max_activaciones) {
+  // ✅ lógica nueva con máquinas
+  const { data: maquinas } = await supabaseAdmin
+    .from("licencias_maquinas")
+    .select("maquina_id")
+    .eq("licencia_id", lic.id);
+
+  const maquinasIds = (maquinas ?? []).map((m) => m.maquina_id);
+  const max = Number(lic.max_activaciones ?? 0);
+
+  // ✅ máquina ya registrada
+  if (maquina_id && maquinasIds.includes(maquina_id)) {
+    return NextResponse.json({
+      ok: true,
+      estado: lic.estado,
+      fecha_expiracion: lic.fecha_expiracion
+    });
+  }
+
+  // ❌ sin slots
+  if (maquinasIds.length >= max) {
     return NextResponse.json({ ok: false, error: "sin_activaciones" });
   }
 
-  // 5. Incrementar activaciones
-  const nuevas = lic.activaciones_usadas + 1;
+  // ✅ registrar máquina
+  const { error: insertErr } = await supabaseAdmin
+    .from("licencias_maquinas")
+    .insert({
+      licencia_id: lic.id,
+      maquina_id,
+      fecha: new Date().toISOString()
+    });
 
-  const { error: updateErr } = await supabaseAdmin
-    .from("licencias")
-    .update({
-      activaciones_usadas: nuevas
-    })
-    .eq("id", lic.id);
-
-  if (updateErr) {
+  if (insertErr) {
     return NextResponse.json({ ok: false, error: "error_actualizando" });
   }
 
-  // 6. Respuesta
   return NextResponse.json({
     ok: true,
-    licencia: {
-      estado: lic.estado,
-      fecha_expiracion: lic.fecha_expiracion
-    }
+    estado: lic.estado,
+    fecha_expiracion: lic.fecha_expiracion
   });
 }
 
@@ -1803,30 +1812,27 @@ export async function POST(req) {
   return NextResponse.json({ estado: "error", mensaje: "json_invalido" }); 
  } 
 
- // Normalización segura 
- const email_tekla = payload?.email_tekla?.trim()?.toLowerCase(); 
+ // ✅ CAMBIO: YA NO usamos email
+ const license_key = payload?.license_key?.trim()?.toUpperCase(); 
  const plugin_id = payload?.plugin_id; 
  const maquina_id = payload?.maquina_id; 
 
- if (!email_tekla || !plugin_id) { 
+ if (!license_key || !plugin_id) { 
   return NextResponse.json({ 
    estado: "error", 
    mensaje: "Datos incompletos" 
   }); 
  } 
 
- // obtener licencia 
+ // ✅ CAMBIO: buscar por license_key
  const { data: lic, error } = await supabaseAdmin 
   .from("licencias") 
   .select("*") 
-  
+  .eq("license_key", license_key)
   .eq("plugin_id", plugin_id) 
-  .order("fecha_creacion", { ascending: false }) 
-  .limit(1) 
   .maybeSingle(); 
 
  if (error || !lic) { 
-  console.error("Error obteniendo licencia:", error); 
   return NextResponse.json({ estado: "sin_licencia" }); 
  } 
 
@@ -1848,7 +1854,7 @@ export async function POST(req) {
   } 
  } 
 
- // 🔥 NUEVA LÓGICA DE MÁQUINAS
+ // ✅ LÓGICA DE MÁQUINAS
  const { data: maquinas } = await supabaseAdmin
   .from("licencias_maquinas")
   .select("maquina_id")
@@ -1857,7 +1863,7 @@ export async function POST(req) {
  const maquinasIds = (maquinas ?? []).map(m => m.maquina_id);
  const max = Number(lic.max_activaciones ?? 0);
 
- // ✅ si YA existe → NO consume activación
+ // ✅ misma máquina → no consume
  if (maquina_id && maquinasIds.includes(maquina_id)) {
   return NextResponse.json({
    estado: lic.estado,
@@ -1866,12 +1872,12 @@ export async function POST(req) {
   });
  }
 
- // ❌ sin activaciones disponibles
+ // ❌ sin activaciones
  if (maquinasIds.length >= max) {
   return NextResponse.json({ estado: "sin_activaciones" });
  }
 
- // ✅ registrar nueva máquina
+ // ✅ registrar máquina
  const { error: insertErr } = await supabaseAdmin
   .from("licencias_maquinas")
   .insert({
@@ -1881,7 +1887,7 @@ export async function POST(req) {
   });
 
  if (insertErr) {
-  console.error("Error activando licencia:", insertErr);
+  console.error(insertErr);
   return NextResponse.json({ estado: "error_actualizando" });
  }
 

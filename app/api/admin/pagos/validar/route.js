@@ -98,11 +98,17 @@ export async function POST(req) {
     .insert(licenciasInsertar);
 
   if (licErr) {
-    return NextResponse.json(
-      { ok: false, error: "error_creando_licencias" },
-      { status: 500 }
-    );
-  }
+  console.error("ERROR LICENCIAS:", licErr);
+
+  return NextResponse.json(
+    {
+      ok: false,
+      error: licErr.message,
+      detail: licErr.details
+    },
+    { status: 500 }
+  );
+}
 
   await supabaseAdmin
     .from("pagos")

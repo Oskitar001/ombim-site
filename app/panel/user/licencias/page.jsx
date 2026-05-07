@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { KeyRound, Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
-
-/* -----------------------------------------------------
-   LICENCIAS USER — ESTÉTICA PREMIUM TOTAL
------------------------------------------------------ */
+import { Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
 
 export default function UserLicenciasPage() {
   const [licencias, setLicencias] = useState(null);
@@ -33,7 +29,9 @@ export default function UserLicenciasPage() {
 
       <UserSection title="Listado de licencias">
         {licencias.length === 0 && (
-          <p className="text-gray-600 dark:text-gray-400">Todavía no tienes licencias.</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Todavía no tienes licencias.
+          </p>
         )}
 
         {licencias.length > 0 && (
@@ -42,7 +40,6 @@ export default function UserLicenciasPage() {
               <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
                 <tr>
                   <th className="p-3">Plugin</th>
-                  <th className="p-3">Email Tekla</th>
                   <th className="p-3">Tipo</th>
                   <th className="p-3">Estado</th>
                   <th className="p-3">Activaciones</th>
@@ -57,15 +54,12 @@ export default function UserLicenciasPage() {
                     key={l.id}
                     className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
                   >
-                    {/* Plugin */}
+                    {/* ✅ Plugin */}
                     <td className="p-3 font-semibold">
-                      {l.plugin_nombre ?? l.plugin_id}
+                      {l.plugin_nombre || l.plugin_id}
                     </td>
 
-                    {/* Email */}
-                    <td className="p-3">{l.email_tekla}</td>
-
-                    {/* Tipo */}
+                    {/* ✅ Tipo */}
                     <td className="p-3">
                       {l.tipo === "trial" && (
                         <Badge color="blue" icon={<Clock size={14} />}>
@@ -86,24 +80,24 @@ export default function UserLicenciasPage() {
                       )}
                     </td>
 
-                    {/* Estado */}
+                    {/* ✅ Estado */}
                     <td className="p-3">
                       <EstadoBadge estado={l.estado} />
                     </td>
 
-                    {/* Activaciones */}
+                    {/* ✅ Activaciones */}
                     <td className="p-3">
                       {l.activaciones_usadas}/{l.max_activaciones}
                     </td>
 
-                    {/* Fecha expiración */}
+                    {/* ✅ Expiración */}
                     <td className="p-3">
-                      {l.tipo === "anual" && l.fecha_expiracion
+                      {l.fecha_expiracion
                         ? new Date(l.fecha_expiracion).toLocaleDateString()
                         : "—"}
                     </td>
 
-                    {/* Acción */}
+                    {/* ✅ Ver */}
                     <td className="p-3 text-right">
                       <Link
                         href={`/panel/user/licencias/${l.id}`}
@@ -123,26 +117,16 @@ export default function UserLicenciasPage() {
   );
 }
 
-/* -----------------------------------------------------
-   COMPONENTES PREMIUM (reutilizables)
------------------------------------------------------ */
+/* COMPONENTES */
 
 function UserSection({ title, children }) {
   return (
-    <div
-      className="
-        bg-white dark:bg-gray-900 
-        rounded-xl shadow 
-        border border-gray-300 dark:border-gray-700
-        p-6 space-y-4
-      "
-    >
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-300 dark:border-gray-700 p-6 space-y-4">
       {title && (
         <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
           {title}
         </h3>
       )}
-
       {children}
     </div>
   );
@@ -156,18 +140,12 @@ function Badge({ color, icon, children }) {
   };
 
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded 
-        ${colors[color]}
-      `}
-    >
+    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded ${colors[color]}`}>
       {icon} {children}
     </span>
   );
 }
 
-/* Estado (versión premium unificada con detalle de licencia) */
 function EstadoBadge({ estado }) {
   const styles = {
     activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -186,12 +164,7 @@ function EstadoBadge({ estado }) {
   };
 
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
-        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
-      `}
-    >
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${styles[estado] ?? "bg-gray-200"}`}>
       {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
     </span>
   );

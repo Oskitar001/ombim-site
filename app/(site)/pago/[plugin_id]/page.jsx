@@ -15,7 +15,8 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [tipo, setTipo] = useState("completa");
+  // ✅ nunca vacío
+  const [tipo, setTipo] = useState("");
 
   useEffect(() => {
     if (!plugin_id) return;
@@ -31,7 +32,6 @@ export default function Page() {
 
         setPlugin(dPlugin?.error ? null : dPlugin);
 
-        // ✅ 🔥 BLOQUE IMPORTANTE (tipo seguro)
         const plan = searchParams.get("plan");
 
         if (dPlugin && !dPlugin.error) {
@@ -49,11 +49,12 @@ export default function Page() {
             tipoValido = "completa";
           }
 
-          // ✅ fallback automático
+          // ✅ fallback SIEMPRE a algo válido
           if (!tipoValido) {
             if (dPlugin.permite_trimestral) tipoValido = "trimestral";
             else if (dPlugin.permite_anual) tipoValido = "anual";
             else if (dPlugin.permite_completa) tipoValido = "completa";
+            else tipoValido = "completa"; // 🔥 seguridad total
           }
 
           setTipo(tipoValido);
@@ -67,7 +68,7 @@ export default function Page() {
     }
 
     load();
-  }, [plugin_id]);
+  }, [plugin_id, searchParams]);
 
   async function crearPago() {
     if (!user) {
@@ -104,7 +105,6 @@ export default function Page() {
   if (loading) return <p>Cargando...</p>;
   if (!plugin) return <p>Plugin no encontrado.</p>;
 
-  // ✅ precios dinámicos según tipo
   let precioUnitario = 0;
 
   if (tipo === "trimestral") {
@@ -123,6 +123,8 @@ export default function Page() {
   const iva = subtotal * 0.21;
   const total = subtotal + iva;
 
+  const vieneConPlan = !!searchParams.get("plan");
+
   return (
     <div className="p-4 max-w-xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">Comprar licencias</h1>
@@ -131,36 +133,37 @@ export default function Page() {
         Plugin: <strong>{plugin.nombre}</strong>
       </p>
 
-      {/* SELECTOR DE PLAN */}
-      <div>
-        <label className="font-semibold">Tipo de licencia:</label>
+      {/* ✅ ocultar selector si viene con plan */}
+      {!vieneConPlan && (
+        <div>
+          <label className="font-semibold">Tipo de licencia:</label>
 
-        <select
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
-          className="border p-2 rounded w-full dark:bg-gray-900"
-        >
-          {plugin.permite_trimestral && (
-            <option value="trimestral">
-              Trimestral – {(Number(plugin.precio_trimestral) || 0).toFixed(2)} €
-            </option>
-          )}
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className="border p-2 rounded w-full dark:bg-gray-900"
+          >
+            {plugin.permite_trimestral && (
+              <option value="trimestral">
+                Trimestral – {(Number(plugin.precio_trimestral) || 0).toFixed(2)} €
+              </option>
+            )}
 
-          {plugin.permite_anual && (
-            <option value="anual">
-              Anual – {(Number(plugin.precio_anual) || 0).toFixed(2)} €
-            </option>
-          )}
+            {plugin.permite_anual && (
+              <option value="anual">
+                Anual – {(Number(plugin.precio_anual) || 0).toFixed(2)} €
+              </option>
+            )}
 
-          {plugin.permite_completa && (
-            <option value="completa">
-              Completa – {(Number(plugin.precio_completa) || 0).toFixed(2)} €
-            </option>
-          )}
-        </select>
-      </div>
+            {plugin.permite_completa && (
+              <option value="completa">
+                Completa – {(Number(plugin.precio_completa) || 0).toFixed(2)} €
+              </option>
+            )}
+          </select>
+        </div>
+      )}
 
-      {/* CANTIDAD */}
       <div>
         <h3 className="font-semibold mb-2">Cantidad de licencias:</h3>
 
@@ -173,7 +176,6 @@ export default function Page() {
         />
       </div>
 
-      {/* PRECIOS */}
       <div className="space-y-1 text-lg">
         <p>
           <strong>Subtotal:</strong> {subtotal.toFixed(2)} €

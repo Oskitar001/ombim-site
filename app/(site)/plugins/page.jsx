@@ -49,19 +49,6 @@ export default function PluginsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => {
-          const precioNormal = Number(p.precio) || 0;
-          const precioCompleta = Number(p.precio_completa) || 0;
-          const precioAnual = Number(p.precio_anual) || 0;
-
-          const precioMostrar =
-            precioNormal > 0
-              ? precioNormal
-              : precioCompleta > 0
-              ? precioCompleta
-              : precioAnual > 0
-              ? precioAnual
-              : 0;
-
           return (
             <div
               key={p.id}
@@ -83,9 +70,62 @@ export default function PluginsPage() {
                 </p>
               )}
 
-              <p className="font-semibold mb-4">
-                {precioMostrar > 0 ? `${precioMostrar} €` : "Uso incluido en servicios"}
-              </p>
+              {/* ✅ PRECIOS SOLO DEPENDEN DE permite_* */}
+              <div className="font-semibold mb-4 space-y-1">
+                {p.permite_trimestral && (
+                  <p>
+                    Trimestral: {(Number(p.precio_trimestral) || 0).toFixed(2)} €
+                  </p>
+                )}
+
+                {p.permite_anual && (
+                  <p>
+                    Anual: {(Number(p.precio_anual) || 0).toFixed(2)} €
+                  </p>
+                )}
+
+                {p.permite_completa && (
+                  <p>
+                    Completa: {(Number(p.precio_completa) || 0).toFixed(2)} €
+                  </p>
+                )}
+
+                {!p.permite_trimestral &&
+                  !p.permite_anual &&
+                  !p.permite_completa && (
+                    <p>Uso incluido en servicios</p>
+                  )}
+              </div>
+
+              {/* ✅ BOTONES BASADOS EN permite_* */}
+              <div className="flex gap-2 flex-wrap mb-3">
+                {p.permite_trimestral && (
+                  <Link
+                    href={`/pago/${p.id}?plan=trimestral`}
+                    className="bg-gray-200 px-3 py-1 rounded"
+                  >
+                    Trimestral
+                  </Link>
+                )}
+
+                {p.permite_anual && (
+                  <Link
+                    href={`/pago/${p.id}?plan=anual`}
+                    className="bg-gray-200 px-3 py-1 rounded"
+                  >
+                    Anual
+                  </Link>
+                )}
+
+                {p.permite_completa && (
+                  <Link
+                    href={`/pago/${p.id}?plan=completa`}
+                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                  >
+                    Completa
+                  </Link>
+                )}
+              </div>
 
               {user ? (
                 <a

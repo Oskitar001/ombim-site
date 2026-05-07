@@ -19,7 +19,6 @@ export default function AdminPagoDetallePage() {
   const id = params.id;
 
   const [pago, setPago] = useState(null);
-  const [emails, setEmails] = useState([]);
   const [facturacion, setFacturacion] = useState(null);
   const [numeroFactura, setNumeroFactura] = useState("");
 
@@ -30,10 +29,6 @@ export default function AdminPagoDetallePage() {
   const [openRechazar, setOpenRechazar] = useState(false);
   const [openReenviar, setOpenReenviar] = useState(false);
   const [openBorrar, setOpenBorrar] = useState(false);
-
-  /* ===================================
-     CARGA INICIAL
-  ====================================== */
 
   useEffect(() => {
     async function load() {
@@ -52,7 +47,6 @@ export default function AdminPagoDetallePage() {
 
         setPago(data.pago);
         setNumeroFactura(data.pago.numero_factura ?? "");
-        setEmails(data.pago.emails ?? []);
         setFacturacion(data.facturacion ?? null);
 
       } catch {
@@ -64,10 +58,6 @@ export default function AdminPagoDetallePage() {
 
     load();
   }, [id]);
-
-  /* ===================================
-     ACCIONES
-  ====================================== */
 
   async function guardarNumeroFactura() {
     if (!numeroFactura.trim()) {
@@ -138,10 +128,6 @@ export default function AdminPagoDetallePage() {
     window.location.href = "/panel/admin/pagos?deleted=1";
   }
 
-  /* ===================================
-     RENDER
-  ====================================== */
-
   if (loading) return <p>Cargando…</p>;
   if (error) return <p>{error}</p>;
   if (!pago) return <p>Pago no encontrado.</p>;
@@ -150,18 +136,20 @@ export default function AdminPagoDetallePage() {
     <div className="max-w-3xl mx-auto space-y-10 p-4">
 
       {/* VOLVER */}
-      <Link href="/panel/admin/pagos" className="text-blue-600 hover:underline flex items-center gap-1">
+      <Link
+        href="/panel/admin/pagos"
+        className="text-blue-600 hover:underline flex items-center gap-1"
+      >
         <ArrowLeft size={18} /> Volver
       </Link>
 
-      {/* TÍTULO */}
+      {/* TITULO */}
       <h1 className="text-3xl font-bold">Pago #{pago.id}</h1>
 
-      {/* ======================= FACTURA ======================= */}
+      {/* FACTURA */}
       <Section title="Factura">
         <div className="space-y-3">
 
-          {/* BADGES */}
           {pago.numero_factura && (
             <Badge color="blue">
               <BadgeCheck size={14} /> Factura lista
@@ -178,25 +166,24 @@ export default function AdminPagoDetallePage() {
             <Badge color="gray">— No solicitada —</Badge>
           )}
 
-          {/* INPUT */}
           <label className="font-semibold block">Número de factura</label>
           <input
             type="text"
             value={numeroFactura}
             onChange={(e) => setNumeroFactura(e.target.value)}
-            placeholder="Ej: OMBIM-2026-000123"
             className="w-full border p-2 rounded dark:bg-gray-800"
           />
+
           <button
             onClick={guardarNumeroFactura}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Guardar número
           </button>
         </div>
       </Section>
 
-      {/* ======================= RESUMEN ECONÓMICO ======================= */}
+      {/* RESUMEN */}
       <Section title="Resumen económico">
         <Field label="Tipo" value={pago.tipo} />
         <Field label="Licencias" value={pago.cantidad_licencias} />
@@ -211,57 +198,7 @@ export default function AdminPagoDetallePage() {
         </div>
       </Section>
 
-      {/* ======================= EMAILS TEKLA ======================= */}
-      <Section title="Emails Tekla">
-        <div className="space-y-3">
-          {emails.map((email, i) => (
-            <input
-              key={i}
-              value={email}
-              onChange={(ev) => {
-                const copia = [...emails];
-                copia[i] = ev.target.value;
-                setEmails(copia);
-              }}
-              className="border p-2 rounded w-full dark:bg-gray-900"
-            />
-          ))}
-
-          <button
-            onClick={() => setEmails([...emails, ""])}
-            className="bg-gray-500 text-white py-1 rounded"
-          >
-            Añadir email
-          </button>
-
-          <button
-            onClick={async () => {
-              const vacios = emails.some((x) => !x.trim());
-              if (vacios) return alert("Todos los emails deben estar completos.");
-
-              const r = await fetch("/api/pagos/guardar-emails", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  pago_id: id,
-                  emails: emails.map((e) => ({
-                    email_tekla: e.trim(),
-                  })),
-                }),
-              });
-
-              if (!r.ok) return alert("Error guardando emails.");
-              window.location.reload();
-            }}
-            className="bg-blue-600 text-white py-2 rounded"
-          >
-            Guardar emails
-          </button>
-        </div>
-      </Section>
-
-      {/* ======================= FACTURACIÓN ======================= */}
+      {/* FACTURACIÓN */}
       <Section title="Datos de facturación">
         {!facturacion && (
           <p className="text-gray-500">No hay datos de facturación.</p>
@@ -280,7 +217,7 @@ export default function AdminPagoDetallePage() {
         )}
       </Section>
 
-      {/* ======================= ACCIONES ======================= */}
+      {/* ACCIONES */}
       <Section title="Acciones">
         <div className="space-y-3 max-w-sm">
 
@@ -302,7 +239,7 @@ export default function AdminPagoDetallePage() {
         </div>
       </Section>
 
-      {/* ======================= DIÁLOGOS ======================= */}
+      {/* DIALOGOS */}
       <ConfirmDialog
         open={openValidar}
         title="Validar pago"
@@ -346,16 +283,12 @@ export default function AdminPagoDetallePage() {
   );
 }
 
-/* -----------------------------------
-   COMPONENTES PREMIUM
--------------------------------------- */
+/* COMPONENTES */
 
 function Section({ title, children }) {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow p-6 space-y-4">
-      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
-        {title}
-      </h2>
+    <div className="bg-white dark:bg-gray-900 border rounded-xl p-6 space-y-4">
+      <h2 className="text-xl font-bold border-b pb-2">{title}</h2>
       {children}
     </div>
   );
@@ -363,9 +296,7 @@ function Section({ title, children }) {
 
 function Field({ label, value }) {
   return (
-    <p>
-      <strong>{label}:</strong> {value}
-    </p>
+    <p><strong>{label}:</strong> {value}</p>
   );
 }
 
@@ -377,7 +308,7 @@ function Badge({ children, color }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${styles[color]}`}>
+    <span className={`px-3 py-1 rounded text-xs font-semibold ${styles[color]}`}>
       {children}
     </span>
   );
@@ -394,7 +325,7 @@ function ActionButton({ children, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`${styles[color]} text-white w-full py-2 rounded-lg flex items-center justify-center gap-2 shadow`}
+      className={`${styles[color]} text-white w-full py-2 rounded-lg flex items-center justify-center gap-2`}
     >
       {children}
     </button>

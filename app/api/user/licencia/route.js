@@ -3,10 +3,8 @@ import { supabaseRoute } from "@/lib/supabaseRoute";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
-  // ✔ FIX: supabaseRoute es async
   const supabase = await supabaseRoute();
 
-  // Normalizar id
   const id = req.nextUrl.searchParams.get("id")?.trim();
 
   const {
@@ -19,18 +17,39 @@ export async function GET(req) {
 
   const { data, error } = await supabase
     .from("licencias")
-    .select(
-      "id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)"
-    )
+    .select(`
+      id,
+      plugin_id,
+      tipo,
+      estado,
+      activaciones_usadas,
+      max_activaciones,
+      fecha_creacion,
+      fecha_expiracion,
+      license_key,
+      plugins (nombre)
+    `)
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
-  // ✔ FIX: controlar error real
   if (error || !data) {
     console.error("Error obteniendo licencia:", error);
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return NextResponse.json({ licencia: data });
+  const licencia = {
+    id: data.id,
+    plugin_id: data.plugin_id,
+    plugin_nombre: data.plugins?.nombre ?? data.plugin_id,
+    tipo: data.tipo,
+    estado: data.estado,
+    license_key: data.license_key,
+    activaciones_usadas: data.activaciones_usadas,
+    max_activaciones: data.max_activaciones,
+    fecha_creacion: data.fecha_creacion,
+    fecha_expiracion: data.fecha_expiracion,
+  };
+
+  return NextResponse.json({ licencia });
 }

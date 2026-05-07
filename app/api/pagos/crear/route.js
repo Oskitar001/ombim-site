@@ -1,4 +1,5 @@
 // /app/api/pagos/crear/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; // ✅ CAMBIO
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
@@ -13,17 +14,17 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-
   const { plugin_id, cantidad, tipo } = body;
 
   if (!plugin_id || !cantidad || !tipo) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
-  // ✅ CAMBIO: ahora pedimos también permisos + precio trimestral
-  const { data: plugin, error: pluginError } = await supabase
+  // ✅ 🔥 USAR ADMIN AQUÍ
+  const { data: plugin, error: pluginError } = await supabaseAdmin
     .from("plugins")
     .select(`
+      id,
       precio_anual,
       precio_completa,
       precio_trimestral,
@@ -32,13 +33,14 @@ export async function POST(req) {
       permite_trimestral
     `)
     .eq("id", plugin_id)
-    .single();
+    .maybeSingle();
 
   if (pluginError || !plugin) {
+    console.error("Error plugin:", pluginError);
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // ✅ VALIDACIÓN DE TIPO PERMITIDO
+  // ✅ VALIDACIÓN DE TIPO
   if (
     (tipo === "anual" && !plugin.permite_anual) ||
     (tipo === "completa" && !plugin.permite_completa) ||
@@ -47,7 +49,6 @@ export async function POST(req) {
     return Response.json({ error: "tipo_no_permitido" }, { status: 400 });
   }
 
-  // ✅ PRECIO DINÁMICO
   let precioUnitario = 0;
 
   if (tipo === "trimestral") {
@@ -66,7 +67,6 @@ export async function POST(req) {
   const iva = subtotal * 0.21;
   const importe_total = subtotal + iva;
 
-  // Crear pago
   const { data: pago, error: pagoError } = await supabase
     .from("pagos")
     .insert({

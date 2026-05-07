@@ -8,17 +8,23 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("plugins")
     .select(`
-      id,
-      nombre,
-      descripcion,
-      precio,
-      precio_anual,
-      precio_completa,
-      archivo_url,
-      video_url,
-      imagen_url,
-      created_at
-    `)
+  id,
+  nombre,
+  descripcion,
+  precio,
+  precio_trimestral,
+  precio_anual,
+  precio_completa,
+  permite_trimestral,
+  permite_anual,
+  permite_completa,
+  archivo_url,
+  video_url,
+  imagen_url,
+  created_at
+`)
+
+
     .order("created_at", { ascending: false });
 
   if (error) {

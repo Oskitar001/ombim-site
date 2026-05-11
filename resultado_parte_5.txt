@@ -1,5 +1,55 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
+============================================================
+
+// /lib/email.js
+import { Resend } from "resend";
+
+export const resend = new Resend(process.env.RESEND_KEY);
+
+export async function sendEmail({ to, subject, html }) {
+  try {
+    return await resend.emails.send({
+      from: "OMBIM <noreply@updates.ombim.com>",   // 💥 DOMINIO VERIFICADO
+      reply_to: "o.martinez@ombim.com",            // 💥 RESPONDERÁN A TU EMAIL REAL
+      to,
+      subject,
+      html,
+    });
+  } catch (err) {
+    console.error("Error enviando email:", err);
+    return { error: true, err };
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
+============================================================
+
+// lib/logAdmin.js
+// Logging interno de acciones administrativas
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+export async function logAdminAction({ tipo, mensaje, user_id }) {
+  try {
+    await supabaseAdmin.from("admin_logs").insert([
+      {
+        tipo,
+        mensaje,
+        user_id,
+        fecha: new Date().toISOString(),
+      },
+    ]);
+  } catch (err) {
+    console.error("❌ Error guardando log admin:", err);
+  }
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\pdf2.js
 ============================================================
 

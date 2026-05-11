@@ -1,5 +1,156 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { FileText, Clock } from "lucide-react";
+
+export default function AdminLogsPage() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch("/api/admin/logs", {
+          credentials: "include",
+        });
+
+        const d = await r.json();
+        setLogs(Array.isArray(d.logs) ? d.logs : []);
+      } catch (err) {
+        console.error("Error cargando logs:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (loading) return <p className="p-4">Cargando logs...</p>;
+
+  return (
+    <div className="p-4 max-w-6xl mx-auto space-y-10">
+
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-3">
+        <FileText size={30} /> Registros del sistema
+      </h1>
+
+      {/* DESCRIPCIÓN */}
+      <p className="opacity-75">
+        Aquí se muestran las actividades importantes del sistema: activaciones, pagos, errores, etc.
+      </p>
+
+      {/* ============================
+            MÓVIL → CARDS PREMIUM
+      ============================ */}
+      <div className="grid gap-4 md:hidden">
+        {logs.map((l) => (
+          <div
+            key={l.id}
+            className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
+          >
+            <p className="font-semibold text-lg">{l.accion}</p>
+
+            <p className="text-sm opacity-80">{l.descripcion}</p>
+
+            <p className="flex items-center gap-2 text-sm opacity-70">
+              <Clock size={16} /> {new Date(l.fecha).toLocaleString()}
+            </p>
+
+            {l.extra && (
+              <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto">
+                {JSON.stringify(l.extra, null, 2)}
+              </pre>
+            )}
+          </div>
+        ))}
+
+        {logs.length === 0 && (
+          <p className="text-center opacity-70">No hay registros.</p>
+        )}
+      </div>
+
+      {/* ============================
+            DESKTOP → TABLA PREMIUM
+      ============================ */}
+      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+            <tr>
+              <th className="p-3">ID</th>
+              <th className="p-3">Acción</th>
+              <th className="p-3">Descripción</th>
+              <th className="p-3">Extra</th>
+              <th className="p-3">Fecha</th>
+            </tr>
+          </thead>
+
+          <tbody className="text-sm">
+            {logs.map((l) => (
+              <tr
+                key={l.id}
+                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+              >
+                <td className="p-3">{l.id}</td>
+
+                <td className="p-3 font-semibold">{l.accion}</td>
+
+                <td className="p-3">{l.descripcion}</td>
+
+                <td className="p-3">
+                  {l.extra ? (
+                    <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto max-w-xs">
+                      {JSON.stringify(l.extra, null, 2)}
+                    </pre>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+
+                <td className="p-3">
+                  {new Date(l.fecha).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+
+            {logs.length === 0 && (
+              <tr>
+                <td colSpan="5" className="p-4 text-center opacity-70">
+                  No hay registros disponibles.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\page.jsx
+============================================================
+
+// /app/panel/admin/page.jsx
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export default function AdminHome() {
+  redirect("/panel/admin/dashboard");
+}
+``
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
 ============================================================
 
@@ -214,7 +365,6 @@ export default function AdminPagoDetallePage() {
   const id = params.id;
 
   const [pago, setPago] = useState(null);
-  const [emails, setEmails] = useState([]);
   const [facturacion, setFacturacion] = useState(null);
   const [numeroFactura, setNumeroFactura] = useState("");
 
@@ -225,10 +375,6 @@ export default function AdminPagoDetallePage() {
   const [openRechazar, setOpenRechazar] = useState(false);
   const [openReenviar, setOpenReenviar] = useState(false);
   const [openBorrar, setOpenBorrar] = useState(false);
-
-  /* ===================================
-     CARGA INICIAL
-  ====================================== */
 
   useEffect(() => {
     async function load() {
@@ -247,7 +393,6 @@ export default function AdminPagoDetallePage() {
 
         setPago(data.pago);
         setNumeroFactura(data.pago.numero_factura ?? "");
-        setEmails(data.pago.emails ?? []);
         setFacturacion(data.facturacion ?? null);
 
       } catch {
@@ -259,10 +404,6 @@ export default function AdminPagoDetallePage() {
 
     load();
   }, [id]);
-
-  /* ===================================
-     ACCIONES
-  ====================================== */
 
   async function guardarNumeroFactura() {
     if (!numeroFactura.trim()) {
@@ -333,10 +474,6 @@ export default function AdminPagoDetallePage() {
     window.location.href = "/panel/admin/pagos?deleted=1";
   }
 
-  /* ===================================
-     RENDER
-  ====================================== */
-
   if (loading) return <p>Cargando…</p>;
   if (error) return <p>{error}</p>;
   if (!pago) return <p>Pago no encontrado.</p>;
@@ -345,18 +482,20 @@ export default function AdminPagoDetallePage() {
     <div className="max-w-3xl mx-auto space-y-10 p-4">
 
       {/* VOLVER */}
-      <Link href="/panel/admin/pagos" className="text-blue-600 hover:underline flex items-center gap-1">
+      <Link
+        href="/panel/admin/pagos"
+        className="text-blue-600 hover:underline flex items-center gap-1"
+      >
         <ArrowLeft size={18} /> Volver
       </Link>
 
-      {/* TÍTULO */}
+      {/* TITULO */}
       <h1 className="text-3xl font-bold">Pago #{pago.id}</h1>
 
-      {/* ======================= FACTURA ======================= */}
+      {/* FACTURA */}
       <Section title="Factura">
         <div className="space-y-3">
 
-          {/* BADGES */}
           {pago.numero_factura && (
             <Badge color="blue">
               <BadgeCheck size={14} /> Factura lista
@@ -373,25 +512,24 @@ export default function AdminPagoDetallePage() {
             <Badge color="gray">— No solicitada —</Badge>
           )}
 
-          {/* INPUT */}
           <label className="font-semibold block">Número de factura</label>
           <input
             type="text"
             value={numeroFactura}
             onChange={(e) => setNumeroFactura(e.target.value)}
-            placeholder="Ej: OMBIM-2026-000123"
             className="w-full border p-2 rounded dark:bg-gray-800"
           />
+
           <button
             onClick={guardarNumeroFactura}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Guardar número
           </button>
         </div>
       </Section>
 
-      {/* ======================= RESUMEN ECONÓMICO ======================= */}
+      {/* RESUMEN */}
       <Section title="Resumen económico">
         <Field label="Tipo" value={pago.tipo} />
         <Field label="Licencias" value={pago.cantidad_licencias} />
@@ -406,57 +544,7 @@ export default function AdminPagoDetallePage() {
         </div>
       </Section>
 
-      {/* ======================= EMAILS TEKLA ======================= */}
-      <Section title="Emails Tekla">
-        <div className="space-y-3">
-          {emails.map((email, i) => (
-            <input
-              key={i}
-              value={email}
-              onChange={(ev) => {
-                const copia = [...emails];
-                copia[i] = ev.target.value;
-                setEmails(copia);
-              }}
-              className="border p-2 rounded w-full dark:bg-gray-900"
-            />
-          ))}
-
-          <button
-            onClick={() => setEmails([...emails, ""])}
-            className="bg-gray-500 text-white py-1 rounded"
-          >
-            Añadir email
-          </button>
-
-          <button
-            onClick={async () => {
-              const vacios = emails.some((x) => !x.trim());
-              if (vacios) return alert("Todos los emails deben estar completos.");
-
-              const r = await fetch("/api/pagos/guardar-emails", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  pago_id: id,
-                  emails: emails.map((e) => ({
-                    email_tekla: e.trim(),
-                  })),
-                }),
-              });
-
-              if (!r.ok) return alert("Error guardando emails.");
-              window.location.reload();
-            }}
-            className="bg-blue-600 text-white py-2 rounded"
-          >
-            Guardar emails
-          </button>
-        </div>
-      </Section>
-
-      {/* ======================= FACTURACIÓN ======================= */}
+      {/* FACTURACIÓN */}
       <Section title="Datos de facturación">
         {!facturacion && (
           <p className="text-gray-500">No hay datos de facturación.</p>
@@ -475,7 +563,7 @@ export default function AdminPagoDetallePage() {
         )}
       </Section>
 
-      {/* ======================= ACCIONES ======================= */}
+      {/* ACCIONES */}
       <Section title="Acciones">
         <div className="space-y-3 max-w-sm">
 
@@ -497,7 +585,7 @@ export default function AdminPagoDetallePage() {
         </div>
       </Section>
 
-      {/* ======================= DIÁLOGOS ======================= */}
+      {/* DIALOGOS */}
       <ConfirmDialog
         open={openValidar}
         title="Validar pago"
@@ -541,16 +629,12 @@ export default function AdminPagoDetallePage() {
   );
 }
 
-/* -----------------------------------
-   COMPONENTES PREMIUM
--------------------------------------- */
+/* COMPONENTES */
 
 function Section({ title, children }) {
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow p-6 space-y-4">
-      <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
-        {title}
-      </h2>
+    <div className="bg-white dark:bg-gray-900 border rounded-xl p-6 space-y-4">
+      <h2 className="text-xl font-bold border-b pb-2">{title}</h2>
       {children}
     </div>
   );
@@ -558,9 +642,7 @@ function Section({ title, children }) {
 
 function Field({ label, value }) {
   return (
-    <p>
-      <strong>{label}:</strong> {value}
-    </p>
+    <p><strong>{label}:</strong> {value}</p>
   );
 }
 
@@ -572,7 +654,7 @@ function Badge({ children, color }) {
   };
 
   return (
-    <span className={`px-3 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${styles[color]}`}>
+    <span className={`px-3 py-1 rounded text-xs font-semibold ${styles[color]}`}>
       {children}
     </span>
   );
@@ -589,12 +671,13 @@ function ActionButton({ children, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`${styles[color]} text-white w-full py-2 rounded-lg flex items-center justify-center gap-2 shadow`}
+      className={`${styles[color]} text-white w-full py-2 rounded-lg flex items-center justify-center gap-2`}
     >
       {children}
     </button>
   );
 }
+
 
 
 ============================================================
@@ -3122,199 +3205,6 @@ function DownloadCard({ plugin }) {
         <Download size={18} /> Descargar
       </a>
     </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
-============================================================
-
-"use client";
-
-import Link from "next/link";
-import { useState } from "react";
-import {
-  Home,
-  KeyRound,
-  CreditCard,
-  Download,
-  User,
-  Menu,
-  X,
-  ArrowLeft
-} from "lucide-react";
-
-export default function UserLayout({ children }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="
-      flex h-screen overflow-hidden 
-      bg-gray-50 dark:bg-gray-800 
-      pt-[72px] md:pt-[72px]
-    ">
-
-      {/* ========== BOTÓN HAMBURGUESA (MÓVIL) ========== */}
-      <button
-        className="
-          md:hidden
-          fixed top-4 left-4 
-          z-[60]
-          bg-white dark:bg-gray-700 
-          p-2 rounded-lg shadow-lg 
-          border border-gray-300 dark:border-gray-600
-        "
-        onClick={() => setOpen(true)}
-      >
-        <Menu size={24} />
-      </button>
-
-      {/* ========== OVERLAY MÓVIL ========== */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[50] md:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* ========== SIDEBAR MÓVIL ========== */}
-      <aside
-        className={`
-          fixed top-[72px] left-0 
-          h-[calc(100vh-72px)] w-64 
-          p-4 z-[60]
-          bg-white dark:bg-gray-900
-          border-r border-gray-300 dark:border-gray-700
-          shadow-xl
-          transform transition-transform duration-300
-          ${open ? "translate-x-0" : "-translate-x-full"}
-          md:hidden
-        `}
-      >
-        <button
-          className="absolute top-4 right-4 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-          onClick={() => setOpen(false)}
-        >
-          <X size={24} />
-        </button>
-
-        <h2 className="text-2xl font-bold mb-6 mt-2 text-gray-900 dark:text-gray-100">
-          Panel Usuario
-        </h2>
-
-        <nav className="space-y-3 text-lg">
-          <PanelLink href="/panel/user" icon={<Home size={18} />} onClick={() => setOpen(false)}>
-            Inicio
-          </PanelLink>
-
-          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />} onClick={() => setOpen(false)}>
-            Mis licencias
-          </PanelLink>
-
-          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />} onClick={() => setOpen(false)}>
-            Mis pagos
-          </PanelLink>
-
-          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />} onClick={() => setOpen(false)}>
-            Mis datos
-          </PanelLink>
-
-          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />} onClick={() => setOpen(false)}>
-            Descargas
-          </PanelLink>
-
-          <PanelLink
-            href="/"
-            icon={<ArrowLeft size={18} />}
-            className="mt-4"
-            onClick={() => setOpen(false)}
-          >
-            Volver a ombim.site
-          </PanelLink>
-        </nav>
-      </aside>
-
-      {/* ========== SIDEBAR ESCRITORIO ========== */}
-      <aside
-        className="
-          hidden md:flex flex-col
-          w-64 
-          bg-white dark:bg-gray-900
-          border-r border-gray-300 dark:border-gray-700
-          shadow-xl
-          p-6 space-y-6
-          fixed top-[72px] left-0 bottom-0
-          z-20
-        "
-      >
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Panel Usuario
-        </h2>
-
-        <nav className="space-y-2 text-base">
-          <PanelLink href="/panel/user" icon={<Home size={18} />}>
-            Inicio
-          </PanelLink>
-
-          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />}>
-            Mis licencias
-          </PanelLink>
-
-          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />}>
-            Mis pagos
-          </PanelLink>
-
-          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />}>
-            Mis datos
-          </PanelLink>
-
-          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />}>
-            Descargas
-          </PanelLink>
-
-          <PanelLink href="/" icon={<ArrowLeft size={18} />} className="mt-4">
-            Volver a ombim.site
-          </PanelLink>
-        </nav>
-      </aside>
-
-      {/* ========== CONTENIDO PRINCIPAL ========== */}
-      <main
-        className="
-          flex-1 
-          overflow-y-auto 
-          p-6
-          md:ml-64
-          bg-gray-50 dark:bg-gray-800
-        "
-      >
-        {children}
-      </main>
-
-    </div>
-  );
-}
-
-/* ==========================================================
-   COMPONENTE PREMIUM PARA LINKS DEL SIDEBAR
-========================================================== */
-function PanelLink({ href, icon, children, onClick, className = "" }) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={`
-        flex items-center gap-3 p-2 rounded-lg
-        text-gray-800 dark:text-gray-200
-        hover:bg-gray-200 dark:hover:bg-gray-700
-        transition
-        ${className}
-      `}
-    >
-      {icon}
-      {children}
-    </Link>
   );
 }
 

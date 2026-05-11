@@ -11,9 +11,7 @@ export default function EditarPluginPage() {
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
-    precio: 0,
 
-    // ✅ NUEVOS
     precio_trimestral: 0,
     precio_anual: 0,
     precio_completa: 0,
@@ -33,9 +31,9 @@ export default function EditarPluginPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  /* ===========================
-     CARGAR DATOS DEL PLUGIN
-  ============================ */
+  // ===========================
+  // CARGAR PLUGIN
+  // ===========================
   useEffect(() => {
     async function load() {
       const r = await fetch(`/api/admin/plugins/${id}`, {
@@ -43,20 +41,12 @@ export default function EditarPluginPage() {
       });
 
       const d = await r.json();
-
-      if (!r.ok) {
-        alert(d.error ?? "Error cargando plugin");
-        return;
-      }
-
       const p = d.plugin;
 
       setForm({
         nombre: p.nombre ?? "",
         descripcion: p.descripcion ?? "",
-        precio: p.precio ?? 0,
 
-        // ✅ NUEVOS CAMPOS
         precio_trimestral: p.precio_trimestral ?? 0,
         precio_anual: p.precio_anual ?? 0,
         precio_completa: p.precio_completa ?? 0,
@@ -76,15 +66,14 @@ export default function EditarPluginPage() {
     load();
   }, [id]);
 
-  /* ===========================
-     SUBIR IMAGEN
-  ============================ */
+  // ===========================
+  // SUBIR IMAGEN
+  // ===========================
   async function subirImagen(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop();
-    const name = `${Date.now()}.${ext}`;
+    const name = `${Date.now()}.${file.name.split(".").pop()}`;
 
     const res = await fetch(`/api/admin/upload-image?name=${name}`, {
       method: "POST",
@@ -93,28 +82,17 @@ export default function EditarPluginPage() {
     });
 
     const json = await res.json();
-    if (!json?.url) {
-      alert("Error subiendo imagen");
-      return;
-    }
-
     update("imagen_url", json.url);
   }
 
-  /* ===========================
-     SUBIR TSEP
-  ============================ */
+  // ===========================
+  // SUBIR TSEP
+  // ===========================
   async function subirTsep(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop();
-    if (ext !== "tsep") {
-      alert("El archivo debe ser .tsep");
-      return;
-    }
-
-    const name = `${Date.now()}.${ext}`;
+    const name = `${Date.now()}.${file.name.split(".").pop()}`;
 
     const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
       method: "POST",
@@ -123,21 +101,27 @@ export default function EditarPluginPage() {
     });
 
     const json = await res.json();
-    if (!json?.url) {
-      alert("Error subiendo archivo TSEP");
-      return;
-    }
-
     update("archivo_url", json.url);
   }
 
-  /* ===========================
-     GUARDAR CAMBIOS
-  ============================ */
+  // ===========================
+  // VIDEO PREVIEW
+  // ===========================
+  function getYoutubeId(url) {
+    if (!url) return null;
+    const m1 = url.match(/v=([^&]+)/);
+    const m2 = url.match(/youtu\.be\/([^?]+)/);
+    return m1 ? m1[1] : m2 ? m2[1] : null;
+  }
+
+  const videoId = getYoutubeId(form.video_url);
+
+  // ===========================
+  // GUARDAR
+  // ===========================
   async function guardar() {
     const payload = {
       ...form,
-      precio: Number(form.precio) || 0,
       precio_trimestral: Number(form.precio_trimestral) || 0,
       precio_anual: Number(form.precio_anual) || 0,
       precio_completa: Number(form.precio_completa) || 0,
@@ -150,14 +134,7 @@ export default function EditarPluginPage() {
       body: JSON.stringify(payload),
     });
 
-    const d = await r.json();
-
-    if (!r.ok) {
-      alert(d.error ?? "Error guardando cambios");
-      return;
-    }
-
-    window.location.href = "/panel/admin/plugins";
+    if (r.ok) window.location.href = "/panel/admin/plugins";
   }
 
   if (loading) return <p className="p-4">Cargando plugin…</p>;
@@ -165,7 +142,7 @@ export default function EditarPluginPage() {
   return (
     <div className="space-y-8 p-4 max-w-2xl mx-auto">
 
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2 text-blue-600 hover:underline">
+      <Link href="/panel/admin/plugins" className="flex gap-2 text-blue-600">
         <ArrowLeft size={20} /> Volver
       </Link>
 
@@ -173,66 +150,67 @@ export default function EditarPluginPage() {
 
       <div className="bg-white dark:bg-gray-900 border shadow rounded-xl p-6 space-y-6">
 
+        {/* NOMBRE */}
         <Field label="Nombre">
           <input className="input-premium" value={form.nombre} onChange={(e) => update("nombre", e.target.value)} />
         </Field>
 
+        {/* DESCRIPCIÓN */}
         <Field label="Descripción">
           <textarea rows={4} className="input-premium" value={form.descripcion} onChange={(e) => update("descripcion", e.target.value)} />
         </Field>
 
-        {/* ✅ TIPOS DE LICENCIA */}
-        <div className="space-y-4">
-          <h3 className="font-semibold">Tipos de licencia</h3>
+        {/* IMAGEN */}
+        <Field label="Imagen">
+          <input type="file" onChange={subirImagen} />
+          {form.imagen_url && <img src={form.imagen_url} className="w-32 mt-2 rounded" />}
+        </Field>
 
-          {/* TRIMESTRAL */}
-          <div className="flex justify-between items-center border p-3 rounded">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.permite_trimestral} onChange={(e) => update("permite_trimestral", e.target.checked)} />
-              Trimestral
-            </label>
+        {/* ✅ ARCHIVO TSEP */}
+        <Field label="Archivo plugin (.tsep)">
+          <input type="file" onChange={subirTsep} />
+          {form.archivo_url && (
+            <a href={form.archivo_url} target="_blank" className="text-blue-600">
+              Ver archivo actual
+            </a>
+          )}
+        </Field>
 
-            <input
-              type="number"
-              className="input-premium w-32"
-              value={form.precio_trimestral}
-              disabled={!form.permite_trimestral}
-              onChange={(e) => update("precio_trimestral", e.target.value)}
+        {/* ✅ VIDEO */}
+        <Field label="Video YouTube">
+          <input
+            className="input-premium"
+            value={form.video_url}
+            onChange={(e) => update("video_url", e.target.value)}
+          />
+        </Field>
+
+        {/* ✅ PREVIEW VIDEO */}
+        {videoId && (
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              className="w-full h-full rounded"
+              allowFullScreen
             />
           </div>
+        )}
 
-          {/* ANUAL */}
-          <div className="flex justify-between items-center border p-3 rounded">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.permite_anual} onChange={(e) => update("permite_anual", e.target.checked)} />
-              Anual
-            </label>
+        {/* TIPOS */}
+        <Field label="Trimestral">
+          <input type="checkbox" checked={form.permite_trimestral} onChange={(e) => update("permite_trimestral", e.target.checked)} />
+          <input type="number" value={form.precio_trimestral} onChange={(e) => update("precio_trimestral", e.target.value)} />
+        </Field>
 
-            <input
-              type="number"
-              className="input-premium w-32"
-              value={form.precio_anual}
-              disabled={!form.permite_anual}
-              onChange={(e) => update("precio_anual", e.target.value)}
-            />
-          </div>
+        <Field label="Anual">
+          <input type="checkbox" checked={form.permite_anual} onChange={(e) => update("permite_anual", e.target.checked)} />
+          <input type="number" value={form.precio_anual} onChange={(e) => update("precio_anual", e.target.value)} />
+        </Field>
 
-          {/* COMPLETA */}
-          <div className="flex justify-between items-center border p-3 rounded">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.permite_completa} onChange={(e) => update("permite_completa", e.target.checked)} />
-              Completa
-            </label>
-
-            <input
-              type="number"
-              className="input-premium w-32"
-              value={form.precio_completa}
-              disabled={!form.permite_completa}
-              onChange={(e) => update("precio_completa", e.target.value)}
-            />
-          </div>
-        </div>
+        <Field label="Completa">
+          <input type="checkbox" checked={form.permite_completa} onChange={(e) => update("permite_completa", e.target.checked)} />
+          <input type="number" value={form.precio_completa} onChange={(e) => update("precio_completa", e.target.value)} />
+        </Field>
 
         <button onClick={guardar} className="w-full bg-blue-600 text-white py-3 rounded-lg">
           Guardar Cambios

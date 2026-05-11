@@ -691,7 +691,8 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [tipo, setTipo] = useState("completa");
+  // ✅ nunca vacío
+  const [tipo, setTipo] = useState("");
 
   useEffect(() => {
     if (!plugin_id) return;
@@ -707,7 +708,6 @@ export default function Page() {
 
         setPlugin(dPlugin?.error ? null : dPlugin);
 
-        // ✅ 🔥 BLOQUE IMPORTANTE (tipo seguro)
         const plan = searchParams.get("plan");
 
         if (dPlugin && !dPlugin.error) {
@@ -725,11 +725,12 @@ export default function Page() {
             tipoValido = "completa";
           }
 
-          // ✅ fallback automático
+          // ✅ fallback SIEMPRE a algo válido
           if (!tipoValido) {
             if (dPlugin.permite_trimestral) tipoValido = "trimestral";
             else if (dPlugin.permite_anual) tipoValido = "anual";
             else if (dPlugin.permite_completa) tipoValido = "completa";
+            else tipoValido = "completa"; // 🔥 seguridad total
           }
 
           setTipo(tipoValido);
@@ -743,7 +744,7 @@ export default function Page() {
     }
 
     load();
-  }, [plugin_id]);
+  }, [plugin_id, searchParams]);
 
   async function crearPago() {
     if (!user) {
@@ -780,7 +781,6 @@ export default function Page() {
   if (loading) return <p>Cargando...</p>;
   if (!plugin) return <p>Plugin no encontrado.</p>;
 
-  // ✅ precios dinámicos según tipo
   let precioUnitario = 0;
 
   if (tipo === "trimestral") {
@@ -799,6 +799,8 @@ export default function Page() {
   const iva = subtotal * 0.21;
   const total = subtotal + iva;
 
+  const vieneConPlan = !!searchParams.get("plan");
+
   return (
     <div className="p-4 max-w-xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">Comprar licencias</h1>
@@ -807,36 +809,37 @@ export default function Page() {
         Plugin: <strong>{plugin.nombre}</strong>
       </p>
 
-      {/* SELECTOR DE PLAN */}
-      <div>
-        <label className="font-semibold">Tipo de licencia:</label>
+      {/* ✅ ocultar selector si viene con plan */}
+      {!vieneConPlan && (
+        <div>
+          <label className="font-semibold">Tipo de licencia:</label>
 
-        <select
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value)}
-          className="border p-2 rounded w-full dark:bg-gray-900"
-        >
-          {plugin.permite_trimestral && (
-            <option value="trimestral">
-              Trimestral – {(Number(plugin.precio_trimestral) || 0).toFixed(2)} €
-            </option>
-          )}
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className="border p-2 rounded w-full dark:bg-gray-900"
+          >
+            {plugin.permite_trimestral && (
+              <option value="trimestral">
+                Trimestral – {(Number(plugin.precio_trimestral) || 0).toFixed(2)} €
+              </option>
+            )}
 
-          {plugin.permite_anual && (
-            <option value="anual">
-              Anual – {(Number(plugin.precio_anual) || 0).toFixed(2)} €
-            </option>
-          )}
+            {plugin.permite_anual && (
+              <option value="anual">
+                Anual – {(Number(plugin.precio_anual) || 0).toFixed(2)} €
+              </option>
+            )}
 
-          {plugin.permite_completa && (
-            <option value="completa">
-              Completa – {(Number(plugin.precio_completa) || 0).toFixed(2)} €
-            </option>
-          )}
-        </select>
-      </div>
+            {plugin.permite_completa && (
+              <option value="completa">
+                Completa – {(Number(plugin.precio_completa) || 0).toFixed(2)} €
+              </option>
+            )}
+          </select>
+        </div>
+      )}
 
-      {/* CANTIDAD */}
       <div>
         <h3 className="font-semibold mb-2">Cantidad de licencias:</h3>
 
@@ -849,7 +852,6 @@ export default function Page() {
         />
       </div>
 
-      {/* PRECIOS */}
       <div className="space-y-1 text-lg">
         <p>
           <strong>Subtotal:</strong> {subtotal.toFixed(2)} €
@@ -873,7 +875,6 @@ export default function Page() {
     </div>
   );
 }
-
 
 
 ============================================================
@@ -931,19 +932,6 @@ export default function PluginsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {plugins.map((p) => {
-          const precioNormal = Number(p.precio) || 0;
-          const precioCompleta = Number(p.precio_completa) || 0;
-          const precioAnual = Number(p.precio_anual) || 0;
-
-          const precioMostrar =
-            precioNormal > 0
-              ? precioNormal
-              : precioCompleta > 0
-              ? precioCompleta
-              : precioAnual > 0
-              ? precioAnual
-              : 0;
-
           return (
             <div
               key={p.id}
@@ -965,9 +953,62 @@ export default function PluginsPage() {
                 </p>
               )}
 
-              <p className="font-semibold mb-4">
-                {precioMostrar > 0 ? `${precioMostrar} €` : "Uso incluido en servicios"}
-              </p>
+              {/* ✅ PRECIOS SOLO DEPENDEN DE permite_* */}
+              <div className="font-semibold mb-4 space-y-1">
+                {p.permite_trimestral && (
+                  <p>
+                    Trimestral: {(Number(p.precio_trimestral) || 0).toFixed(2)} €
+                  </p>
+                )}
+
+                {p.permite_anual && (
+                  <p>
+                    Anual: {(Number(p.precio_anual) || 0).toFixed(2)} €
+                  </p>
+                )}
+
+                {p.permite_completa && (
+                  <p>
+                    Completa: {(Number(p.precio_completa) || 0).toFixed(2)} €
+                  </p>
+                )}
+
+                {!p.permite_trimestral &&
+                  !p.permite_anual &&
+                  !p.permite_completa && (
+                    <p>Uso incluido en servicios</p>
+                  )}
+              </div>
+
+              {/* ✅ BOTONES BASADOS EN permite_* */}
+              <div className="flex gap-2 flex-wrap mb-3">
+                {p.permite_trimestral && (
+                  <Link
+                    href={`/pago/${p.id}?plan=trimestral`}
+                    className="bg-gray-200 px-3 py-1 rounded"
+                  >
+                    Trimestral
+                  </Link>
+                )}
+
+                {p.permite_anual && (
+                  <Link
+                    href={`/pago/${p.id}?plan=anual`}
+                    className="bg-gray-200 px-3 py-1 rounded"
+                  >
+                    Anual
+                  </Link>
+                )}
+
+                {p.permite_completa && (
+                  <Link
+                    href={`/pago/${p.id}?plan=completa`}
+                    className="bg-blue-600 text-white px-3 py-1 rounded"
+                  >
+                    Completa
+                  </Link>
+                )}
+              </div>
 
               {user ? (
                 <a
@@ -2159,8 +2200,8 @@ export async function GET(req, ctx) {
 ============================================================
 
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/checkAdmin";       // ✔ IMPORTACIÓN CORRECTA
-import { supabaseAdmin } from "@/lib/supabaseAdmin";   // ✔ ADMIN CLIENT
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -2170,14 +2211,46 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from("pagos")
-    .select("id, user_id, plugin_id, cantidad_licencias, estado, fecha")
+    .select(`
+      id,
+      user_id,
+      plugin_id,
+      cantidad_licencias,
+      estado,
+      fecha,
+      importe,
+      importe_base,
+      iva
+    `)
     .order("fecha", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data ?? []);
+  const pagos = data ?? [];
+
+  // ✅ traer plugins
+  const pluginIds = pagos.map(p => p.plugin_id);
+
+  const { data: plugins } = await supabaseAdmin
+    .from("plugins")
+    .select("id, nombre")
+    .in("id", pluginIds);
+
+  // ✅ traer usuarios desde auth.users
+  const userIds = pagos.map(p => p.user_id);
+
+  const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+
+  // ✅ unir datos
+  const lista = pagos.map(p => ({
+    ...p,
+    plugin_nombre: plugins?.find(pl => pl.id === p.plugin_id)?.nombre ?? null,
+    user_email: users?.users?.find(u => u.id === p.user_id)?.email ?? null,
+  }));
+
+  return NextResponse.json(lista);
 }
 
 
@@ -2352,11 +2425,17 @@ export async function POST(req) {
     .insert(licenciasInsertar);
 
   if (licErr) {
-    return NextResponse.json(
-      { ok: false, error: "error_creando_licencias" },
-      { status: 500 }
-    );
-  }
+  console.error("ERROR LICENCIAS:", licErr);
+
+  return NextResponse.json(
+    {
+      ok: false,
+      error: licErr.message,
+      detail: licErr.details
+    },
+    { status: 500 }
+  );
+}
 
   await supabaseAdmin
     .from("pagos")
@@ -3291,73 +3370,4 @@ export async function POST(req) {
   });
 }
 ``
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset\route.js
-============================================================
-
-// /app/api/auth/reset/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export async function GET(req) {
-  const token = req.nextUrl.searchParams.get("token")?.trim();
-  const emailRaw = req.nextUrl.searchParams.get("email");
-
-  const email = emailRaw?.trim()?.toLowerCase();
-
-  if (!token || !email) {
-    return NextResponse.redirect("/login?error=missing_token");
-  }
-
-  // ✔ FIX: supabaseServer() es async
-  const supabase = await supabaseServer();
-
-  // ✔ FIX: tipo correcto en verifyOtp
-  const { error } = await supabase.auth.verifyOtp({
-    token,
-    email,
-    type: "recovery", // ← el valor correcto para reset de contraseña
-  });
-
-  if (error) {
-    console.error("Error verifyOtp:", error);
-    return NextResponse.redirect("/login?error=verify_failed");
-  }
-
-  return NextResponse.redirect("/panel");
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-password\route.js
-============================================================
-
-// /app/api/auth/reset/route.js
-import { NextResponse } from "next/server";
-import { supabaseRoute } from "@/lib/supabaseRoute";
-
-export async function POST(req) {
-  const body = await req.json();
-  const email = body?.email?.trim()?.toLowerCase();
-
-  if (!email) {
-    return NextResponse.json({ error: "email_requerido" }, { status: 400 });
-  }
-
-  // ✔ FIX: supabaseRoute es async en Next.js 16
-  const supabase = await supabaseRoute();
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
-  });
-
-  if (error) {
-    console.error("Error enviando reset password:", error);
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json({ ok: true });
-}
 

@@ -1,5 +1,74 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset\route.js
+============================================================
+
+// /app/api/auth/reset/route.js
+import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+
+export async function GET(req) {
+  const token = req.nextUrl.searchParams.get("token")?.trim();
+  const emailRaw = req.nextUrl.searchParams.get("email");
+
+  const email = emailRaw?.trim()?.toLowerCase();
+
+  if (!token || !email) {
+    return NextResponse.redirect("/login?error=missing_token");
+  }
+
+  // ✔ FIX: supabaseServer() es async
+  const supabase = await supabaseServer();
+
+  // ✔ FIX: tipo correcto en verifyOtp
+  const { error } = await supabase.auth.verifyOtp({
+    token,
+    email,
+    type: "recovery", // ← el valor correcto para reset de contraseña
+  });
+
+  if (error) {
+    console.error("Error verifyOtp:", error);
+    return NextResponse.redirect("/login?error=verify_failed");
+  }
+
+  return NextResponse.redirect("/panel");
+}
+
+
+============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-password\route.js
+============================================================
+
+// /app/api/auth/reset/route.js
+import { NextResponse } from "next/server";
+import { supabaseRoute } from "@/lib/supabaseRoute";
+
+export async function POST(req) {
+  const body = await req.json();
+  const email = body?.email?.trim()?.toLowerCase();
+
+  if (!email) {
+    return NextResponse.json({ error: "email_requerido" }, { status: 400 });
+  }
+
+  // ✔ FIX: supabaseRoute es async en Next.js 16
+  const supabase = await supabaseRoute();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+  });
+
+  if (error) {
+    console.error("Error enviando reset password:", error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-request\route.js
 ============================================================
 
@@ -1284,6 +1353,7 @@ export async function GET(req) {
 ============================================================
 
 // /app/api/pagos/crear/route.js
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; // ✅ CAMBIO
 import { supabaseRoute } from "@/lib/supabaseRoute";
 
 export async function POST(req) {
@@ -1298,17 +1368,17 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-
   const { plugin_id, cantidad, tipo } = body;
 
   if (!plugin_id || !cantidad || !tipo) {
     return Response.json({ error: "faltan_datos" }, { status: 400 });
   }
 
-  // ✅ CAMBIO: ahora pedimos también permisos + precio trimestral
-  const { data: plugin, error: pluginError } = await supabase
+  // ✅ 🔥 USAR ADMIN AQUÍ
+  const { data: plugin, error: pluginError } = await supabaseAdmin
     .from("plugins")
     .select(`
+      id,
       precio_anual,
       precio_completa,
       precio_trimestral,
@@ -1317,13 +1387,14 @@ export async function POST(req) {
       permite_trimestral
     `)
     .eq("id", plugin_id)
-    .single();
+    .maybeSingle();
 
   if (pluginError || !plugin) {
+    console.error("Error plugin:", pluginError);
     return Response.json({ error: "plugin_no_encontrado" }, { status: 404 });
   }
 
-  // ✅ VALIDACIÓN DE TIPO PERMITIDO
+  // ✅ VALIDACIÓN DE TIPO
   if (
     (tipo === "anual" && !plugin.permite_anual) ||
     (tipo === "completa" && !plugin.permite_completa) ||
@@ -1332,7 +1403,6 @@ export async function POST(req) {
     return Response.json({ error: "tipo_no_permitido" }, { status: 400 });
   }
 
-  // ✅ PRECIO DINÁMICO
   let precioUnitario = 0;
 
   if (tipo === "trimestral") {
@@ -1351,7 +1421,6 @@ export async function POST(req) {
   const iva = subtotal * 0.21;
   const importe_total = subtotal + iva;
 
-  // Crear pago
   const { data: pago, error: pagoError } = await supabase
     .from("pagos")
     .insert({
@@ -1381,6 +1450,7 @@ export async function POST(req) {
     total: importe_total,
   });
 }
+
 
 
 ============================================================
@@ -1909,36 +1979,39 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET(req, context) {
-  // 🔥 FIX CRÍTICO PARA NEXT 16
   const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json({ error: "id_faltante" }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("plugins")
-    .select(
-      `
-      id,
-      nombre,
-      descripcion,
-      precio,
-      precio_anual,
-      precio_completa,
-      archivo_url,
-      video_url,
-      imagen_url,
-      version
-      `
-    )
-    .eq("id", id)
-    .maybeSingle();
+ const { data, error } = await supabaseAdmin
+  .from("plugins")
+  .select(`
+    id,
+    nombre,
+    descripcion,
+    precio,
+    precio_trimestral,
+    precio_anual,
+    precio_completa,
+    permite_trimestral,
+    permite_anual,
+    permite_completa,
+    archivo_url,
+    video_url,
+    imagen_url,
+    version
+  `)
+  .eq("id", id)
+  .maybeSingle();
 
-  if (error) {
-    console.error("Supabase error plugins:", error);
-    return NextResponse.json({ error: "error_bd" }, { status: 500 });
-  }
+
+ if (error) {
+  console.error("❌ ERROR REAL:", error);
+  return NextResponse.json({ error: error.message }, { status: 500 });
+}
+
 
   if (!data) {
     return NextResponse.json({ error: "plugin_no_encontrado" }, { status: 404 });
@@ -1947,8 +2020,12 @@ export async function GET(req, context) {
   return NextResponse.json({
     ...data,
     precio: data.precio ?? 0,
+    precio_trimestral: data.precio_trimestral ?? 0,   // ✅ AÑADIDO
     precio_anual: data.precio_anual ?? 0,
     precio_completa: data.precio_completa ?? 0,
+    permite_trimestral: data.permite_trimestral ?? false, // ✅ AÑADIDO
+    permite_anual: data.permite_anual ?? false,           // ✅ AÑADIDO
+    permite_completa: data.permite_completa ?? false,     // ✅ AÑADIDO
     archivo_url: data.archivo_url ?? "",
     video_url: data.video_url ?? "",
     imagen_url: data.imagen_url ?? "",
@@ -1956,6 +2033,7 @@ export async function GET(req, context) {
     version: data.version ?? "1.0",
   });
 }
+
 
 
 ============================================================
@@ -1972,17 +2050,23 @@ export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("plugins")
     .select(`
-      id,
-      nombre,
-      descripcion,
-      precio,
-      precio_anual,
-      precio_completa,
-      archivo_url,
-      video_url,
-      imagen_url,
-      created_at
-    `)
+  id,
+  nombre,
+  descripcion,
+  precio,
+  precio_trimestral,
+  precio_anual,
+  precio_completa,
+  permite_trimestral,
+  permite_anual,
+  permite_completa,
+  archivo_url,
+  video_url,
+  imagen_url,
+  created_at
+`)
+
+
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -2047,10 +2131,8 @@ import { supabaseRoute } from "@/lib/supabaseRoute";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
-  // ✔ FIX: supabaseRoute es async
   const supabase = await supabaseRoute();
 
-  // Normalizar id
   const id = req.nextUrl.searchParams.get("id")?.trim();
 
   const {
@@ -2063,20 +2145,41 @@ export async function GET(req) {
 
   const { data, error } = await supabase
     .from("licencias")
-    .select(
-      "id, email_tekla, plugin_id, estado, activaciones_usadas, max_activaciones, fecha_creacion, plugins(nombre)"
-    )
+    .select(`
+      id,
+      plugin_id,
+      tipo,
+      estado,
+      activaciones_usadas,
+      max_activaciones,
+      fecha_creacion,
+      fecha_expiracion,
+      license_key,
+      plugins (nombre)
+    `)
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
-  // ✔ FIX: controlar error real
   if (error || !data) {
     console.error("Error obteniendo licencia:", error);
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return NextResponse.json({ licencia: data });
+  const licencia = {
+    id: data.id,
+    plugin_id: data.plugin_id,
+    plugin_nombre: data.plugins?.nombre ?? data.plugin_id,
+    tipo: data.tipo,
+    estado: data.estado,
+    license_key: data.license_key,
+    activaciones_usadas: data.activaciones_usadas,
+    max_activaciones: data.max_activaciones,
+    fecha_creacion: data.fecha_creacion,
+    fecha_expiracion: data.fecha_expiracion,
+  };
+
+  return NextResponse.json({ licencia });
 }
 
 
@@ -2089,7 +2192,6 @@ import { supabaseRoute } from "@/lib/supabaseRoute";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  // ✔ FIX: supabaseRoute es async
   const supabase = await supabaseRoute();
 
   const {
@@ -2100,25 +2202,46 @@ export async function GET() {
     return NextResponse.json({ licencias: [] }, { status: 401 });
   }
 
+  // ✅ 1. Licencias SIN join
   const { data, error } = await supabase
     .from("licencias")
-    .select("*, plugins(nombre)")
+    .select(`
+      id,
+      plugin_id,
+      tipo,
+      estado,
+      activaciones_usadas,
+      max_activaciones,
+      fecha_creacion,
+      fecha_expiracion,
+      license_key
+    `)
     .eq("user_id", user.id)
     .order("fecha_creacion", { ascending: false });
 
-  // ✔ Manejo de error correcto
   if (error || !data) {
     console.error("Error obteniendo licencias:", error);
     return NextResponse.json({ licencias: [] });
   }
 
+  // ✅ 2. IDs únicos de plugins
+  const pluginIds = [...new Set(data.map(l => l.plugin_id))];
+
+  // ✅ 3. Obtener nombres de plugins
+  const { data: plugins } = await supabase
+    .from("plugins")
+    .select("id, nombre")
+    .in("id", pluginIds);
+
+  // ✅ 4. Unir manualmente
   const licencias = data.map((l) => ({
     id: l.id,
-    email_tekla: l.email_tekla,
     plugin_id: l.plugin_id,
-    plugin_nombre: l.plugins?.nombre ?? "",
-    estado: l.estado,
+    plugin_nombre:
+      plugins?.find(p => p.id === l.plugin_id)?.nombre ?? l.plugin_id,
     tipo: l.tipo,
+    estado: l.estado,
+    license_key: l.license_key,
     activaciones_usadas: l.activaciones_usadas,
     max_activaciones: l.max_activaciones,
     fecha_creacion: l.fecha_creacion,
@@ -2127,6 +2250,7 @@ export async function GET() {
 
   return NextResponse.json({ licencias });
 }
+
 
 
 ============================================================
@@ -2996,8 +3120,6 @@ export default function AdminLicenciaDetallePage({ params }) {
 
   const [licencia, setLicencia] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // ✅ NUEVO
   const [maquinas, setMaquinas] = useState([]);
 
   useEffect(() => {
@@ -3011,7 +3133,6 @@ export default function AdminLicenciaDetallePage({ params }) {
       const d = await r.json();
       setLicencia(d.licencia ?? null);
 
-      // ✅ NUEVO
       const rM = await fetch(`/api/admin/licencias/maquinas?id=${id}`, {
         credentials: "include",
       });
@@ -3020,6 +3141,7 @@ export default function AdminLicenciaDetallePage({ params }) {
 
       setLoading(false);
     }
+
     load();
   }, [id]);
 
@@ -3037,7 +3159,6 @@ export default function AdminLicenciaDetallePage({ params }) {
     location.reload();
   }
 
-  // ✅ NUEVO
   async function borrarMaquina(maquinaId) {
     await fetch("/api/admin/licencias/maquinas", {
       method: "DELETE",
@@ -3065,44 +3186,72 @@ export default function AdminLicenciaDetallePage({ params }) {
         <KeyRound size={30} /> Licencia #{licencia.id}
       </h1>
 
-      {/* CARD PREMIUM DATOS */}
+      {/* CARD DATOS */}
       <div className="
         p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
         bg-white dark:bg-gray-900 space-y-4
       ">
+
+        {/* ✅ Plugin */}
         <Row label="Plugin">
-          {licencia.plugins?.nombre ?? licencia.plugin_id}
+          {licencia.plugins?.nombre || licencia.plugin_nombre || licencia.plugin_id}
         </Row>
 
-        <Row label="Email Tekla">
-          {licencia.email_tekla}
-        </Row>
+        {/* ✅ LICENSE KEY */}
+        <div className="flex flex-col gap-1">
+          <p className="font-semibold text-gray-700 dark:text-gray-300">
+            License Key:
+          </p>
 
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={licencia.license_key || ""}
+              readOnly
+              className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-800 text-sm"
+            />
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(licencia.license_key);
+                alert("License key copiada");
+              }}
+              className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        {/* ✅ Tipo */}
         <Row label="Tipo">
           <TipoBadge tipo={licencia.tipo} />
         </Row>
 
+        {/* ✅ Estado */}
         <Row label="Estado">
           <EstadoBadge estado={licencia.estado} />
         </Row>
 
+        {/* ✅ Activaciones */}
         <Row label="Activaciones">
-          {/* ✅ sigue igual visualmente */}
           {licencia.activaciones_usadas}/{licencia.max_activaciones}
         </Row>
 
+        {/* ✅ Expira */}
         <Row label="Expira">
           {licencia.fecha_expiracion
             ? new Date(licencia.fecha_expiracion).toLocaleString()
             : "—"}
         </Row>
 
+        {/* ✅ Creada */}
         <Row label="Creada">
           {new Date(licencia.fecha_creacion).toLocaleString()}
         </Row>
       </div>
 
-      {/* ✅ NUEVO: MÁQUINAS */}
+      {/* MÁQUINAS */}
       <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
         <h3 className="font-semibold">Máquinas activas</h3>
 
@@ -3168,45 +3317,28 @@ export default function AdminLicenciaDetallePage({ params }) {
   );
 }
 
-
-/* ================= COMPONENTES PREMIUM ================= */
+/* COMPONENTES */
 
 function Row({ label, children }) {
   return (
-    <div className="flex justify-between items-start">
-      <p className="font-semibold text-gray-700 dark:text-gray-300">
-        {label}:
-      </p>
-      <p className="text-right">{children}</p>
+    <div className="flex justify-between">
+      <p className="font-semibold">{label}:</p>
+      <p>{children}</p>
     </div>
   );
 }
 
 function TipoBadge({ tipo }) {
   const map = {
-    anual: {
-      color: "bg-yellow-200 text-yellow-800",
-      icon: <Calendar size={14} />,
-      label: "Anual",
-    },
-    completa: {
-      color: "bg-purple-200 text-purple-800",
-      icon: <Star size={14} />,
-      label: "Completa",
-    },
-    trial: {
-      color: "bg-blue-200 text-blue-800",
-      icon: <KeyRound size={14} />,
-      label: "Trial",
-    },
+    anual: { color: "bg-yellow-200 text-yellow-800", icon: <Calendar size={14} />, label: "Anual" },
+    completa: { color: "bg-purple-200 text-purple-800", icon: <Star size={14} />, label: "Completa" },
+    trial: { color: "bg-blue-200 text-blue-800", icon: <KeyRound size={14} />, label: "Trial" },
   };
 
   const t = map[tipo];
 
   return (
-    <span
-      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}
-    >
+    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}>
       {t.icon} {t.label}
     </span>
   );
@@ -3214,34 +3346,15 @@ function TipoBadge({ tipo }) {
 
 function EstadoBadge({ estado }) {
   const map = {
-    activa: {
-      color: "bg-green-200 text-green-800",
-      icon: <CheckCircle size={14} />,
-      label: "Activa",
-    },
-    bloqueada: {
-      color: "bg-red-200 text-red-800",
-      icon: <Ban size={14} />,
-      label: "Bloqueada",
-    },
-    trial: {
-      color: "bg-blue-200 text-blue-800",
-      icon: <KeyRound size={14} />,
-      label: "Trial",
-    },
-    expirada: {
-      color: "bg-orange-200 text-orange-800",
-      icon: <Calendar size={14} />,
-      label: "Expirada",
-    },
+    activa: { color: "bg-green-200 text-green-800", icon: <CheckCircle size={14} />, label: "Activa" },
+    bloqueada: { color: "bg-red-200 text-red-800", icon: <Ban size={14} />, label: "Bloqueada" },
+    expirada: { color: "bg-orange-200 text-orange-800", icon: <Calendar size={14} />, label: "Expirada" },
   };
 
   const e = map[estado];
 
   return (
-    <span
-      className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}
-    >
+    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}>
       {e.icon} {e.label}
     </span>
   );
@@ -3259,7 +3372,7 @@ function ActionButton({ color, icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition`}
+      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md`}
     >
       {icon} {label}
     </button>
@@ -3297,155 +3410,4 @@ export default async function AdminLicenciasTiposPage() {
     </div>
   );
 }
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import { FileText, Clock } from "lucide-react";
-
-export default function AdminLogsPage() {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const r = await fetch("/api/admin/logs", {
-          credentials: "include",
-        });
-
-        const d = await r.json();
-        setLogs(Array.isArray(d.logs) ? d.logs : []);
-      } catch (err) {
-        console.error("Error cargando logs:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, []);
-
-  if (loading) return <p className="p-4">Cargando logs...</p>;
-
-  return (
-    <div className="p-4 max-w-6xl mx-auto space-y-10">
-
-      {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-3">
-        <FileText size={30} /> Registros del sistema
-      </h1>
-
-      {/* DESCRIPCIÓN */}
-      <p className="opacity-75">
-        Aquí se muestran las actividades importantes del sistema: activaciones, pagos, errores, etc.
-      </p>
-
-      {/* ============================
-            MÓVIL → CARDS PREMIUM
-      ============================ */}
-      <div className="grid gap-4 md:hidden">
-        {logs.map((l) => (
-          <div
-            key={l.id}
-            className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
-          >
-            <p className="font-semibold text-lg">{l.accion}</p>
-
-            <p className="text-sm opacity-80">{l.descripcion}</p>
-
-            <p className="flex items-center gap-2 text-sm opacity-70">
-              <Clock size={16} /> {new Date(l.fecha).toLocaleString()}
-            </p>
-
-            {l.extra && (
-              <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto">
-                {JSON.stringify(l.extra, null, 2)}
-              </pre>
-            )}
-          </div>
-        ))}
-
-        {logs.length === 0 && (
-          <p className="text-center opacity-70">No hay registros.</p>
-        )}
-      </div>
-
-      {/* ============================
-            DESKTOP → TABLA PREMIUM
-      ============================ */}
-      <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
-            <tr>
-              <th className="p-3">ID</th>
-              <th className="p-3">Acción</th>
-              <th className="p-3">Descripción</th>
-              <th className="p-3">Extra</th>
-              <th className="p-3">Fecha</th>
-            </tr>
-          </thead>
-
-          <tbody className="text-sm">
-            {logs.map((l) => (
-              <tr
-                key={l.id}
-                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
-              >
-                <td className="p-3">{l.id}</td>
-
-                <td className="p-3 font-semibold">{l.accion}</td>
-
-                <td className="p-3">{l.descripcion}</td>
-
-                <td className="p-3">
-                  {l.extra ? (
-                    <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto max-w-xs">
-                      {JSON.stringify(l.extra, null, 2)}
-                    </pre>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-
-                <td className="p-3">
-                  {new Date(l.fecha).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-
-            {logs.length === 0 && (
-              <tr>
-                <td colSpan="5" className="p-4 text-center opacity-70">
-                  No hay registros disponibles.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\page.jsx
-============================================================
-
-// /app/panel/admin/page.jsx
-import { redirect } from "next/navigation";
-
-export const dynamic = "force-dynamic";
-
-export default function AdminHome() {
-  redirect("/panel/admin/dashboard");
-}
-``
 

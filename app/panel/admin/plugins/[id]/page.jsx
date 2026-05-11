@@ -19,50 +19,40 @@ export default function DetallePluginPage() {
   const [descargas, setDescargas] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  /* ============================
-      CARGAR DATOS DEL PLUGIN
-  ============================ */
   useEffect(() => {
     if (!id) return;
 
     async function load() {
-      try {
-        // 🔥 CORRECTO: ruta admin creada y validada
-        const r1 = await fetch(`/api/admin/plugins/${id}`, {
-          credentials: "include",
-        });
-        const d1 = await r1.json();
+      const r1 = await fetch(`/api/admin/plugins/${id}`, {
+        credentials: "include",
+      });
+      const d1 = await r1.json();
+      setPlugin(d1.plugin);
 
-        if (!r1.ok) {
-          alert(d1.error ?? "Error cargando plugin");
-          return;
-        }
+      const r2 = await fetch("/api/admin/dashboard");
+      const d2 = await r2.json();
+      setDescargas(d2.descargasPorPlugin?.[id] ?? 0);
 
-        // 🔥 FIX: el backend devuelve { plugin: {...} }
-        setPlugin(d1.plugin);
-
-        // Obtener descargas
-        const r2 = await fetch("/api/admin/dashboard", {
-          credentials: "include",
-        });
-        const d2 = await r2.json();
-
-        setDescargas(d2.descargasPorPlugin?.[id] ?? 0);
-      } catch (e) {
-        alert("Error conectando con el servidor.");
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     }
 
     load();
   }, [id]);
 
+  function getYoutubeId(url) {
+    if (!url) return null;
+    const m1 = url.match(/v=([^&]+)/);
+    const m2 = url.match(/youtu\.be\/([^?]+)/);
+    return m1 ? m1[1] : m2 ? m2[1] : null;
+  }
+
   if (loading) return <p className="p-4">Cargando plugin…</p>;
   if (!plugin) return <p className="p-4">Plugin no encontrado.</p>;
 
+  const videoId = getYoutubeId(plugin.video_url);
+
   return (
-    <div className="p-4 max-w-3xl mx-auto space-y-8">
+    <div className="p-4 max-w-4xl mx-auto space-y-8">
 
       {/* VOLVER */}
       <Link
@@ -73,95 +63,100 @@ export default function DetallePluginPage() {
       </Link>
 
       {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-3">
-        {plugin.nombre}
-      </h1>
+     <h1 className="text-3xl font-bold flex items-center gap-3">
+  {plugin.nombre}
 
-      {/* CARD PRINCIPAL */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 shadow p-6 space-y-6">
+  {plugin.version && (
+    <span className="bg-blue-600 text-white px-2 py-1 text-sm rounded">
+      v{plugin.version}
+    </span>
+  )}
+</h1>
 
-        {/* IMAGEN + INFO */}
-        <div className="flex gap-6 items-start flex-col sm:flex-row">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border shadow p-6 space-y-6">
 
-          {/* Imagen */}
+        {/* HEADER */}
+        <div className="flex gap-6 flex-col sm:flex-row">
+
           {plugin.imagen_url ? (
             <img
               src={plugin.imagen_url}
-              alt={plugin.nombre}
-              className="w-40 h-40 object-cover rounded-lg shadow"
+              className="w-40 h-40 rounded-lg object-cover shadow"
             />
           ) : (
             <div className="w-40 h-40 bg-gray-400 rounded-lg" />
           )}
 
           <div className="space-y-3 flex-1">
-
-            {/* Descripción */}
             <p className="opacity-80">{plugin.descripcion}</p>
 
-            {/* Descargas */}
-            <p className="flex items-center gap-2 text-sm">
-              <Download size={18} />
-              <strong>{descargas}</strong> descargas
+            <p className="text-sm flex items-center gap-2">
+              <Download size={16} />
+              {descargas} descargas
             </p>
           </div>
         </div>
 
-        {/* PRECIOS */}
+        {/* ✅ PRECIOS PREMIUM */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <CardPrice label="Estándar" value={plugin.precio} color="blue" />
-          <CardPrice label="Anual" value={plugin.precio_anual} color="green" />
-          <CardPrice label="Completa" value={plugin.precio_completa} color="purple" />
+
+          {plugin.permite_trimestral && (
+            <PriceCard title="Trimestral" price={plugin.precio_trimestral} />
+          )}
+
+          {plugin.permite_anual && (
+            <PriceCard title="Anual" price={plugin.precio_anual} />
+          )}
+
+          {plugin.permite_completa && (
+            <PriceCard title="Completa" price={plugin.precio_completa} />
+          )}
+
         </div>
 
-        {/* ARCHIVO Y VIDEO */}
-        <div className="space-y-3 border-t pt-4 dark:border-gray-700">
-
-          <div>
-            <strong>Archivo TSEP:</strong>
-            {plugin.archivo_url ? (
-              <a
-                href={plugin.archivo_url}
-                target="_blank"
-                className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
-              >
-                Descargar <ExternalLink size={14} />
-              </a>
-            ) : (
-              <span className="opacity-60">No disponible</span>
-            )}
+        {/* ✅ VIDEO EMBEBIDO */}
+        {videoId && (
+          <div className="aspect-video rounded-lg overflow-hidden shadow">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              className="w-full h-full"
+              allowFullScreen
+            />
           </div>
+        )}
 
-          <div>
-            <strong>Video (YouTube):</strong>
-            {plugin.video_url ? (
-              <a
-                href={plugin.video_url}
-                target="_blank"
-                className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
-              >
-                Ver video <ExternalLink size={14} />
-              </a>
-            ) : (
-              <span className="opacity-60">No disponible</span>
-            )}
-          </div>
+        {/* ✅ ARCHIVO */}
+        <div className="space-y-2 border-t pt-4">
+
+          {plugin.archivo_url ? (
+            <a
+              href={plugin.archivo_url}
+              target="_blank"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Descargar plugin <ExternalLink size={16} />
+            </a>
+          ) : (
+            <p className="opacity-60">Sin archivo disponible</p>
+          )}
+
         </div>
 
-        {/* ACCIONES */}
-        <div className="flex gap-4 justify-end pt-4 border-t dark:border-gray-700">
+        {/* ✅ ACCIONES */}
+        <div className="flex justify-end gap-4 pt-4 border-t">
 
           <Link href={`/panel/admin/plugins/editar/${id}`}>
-            <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg flex items-center gap-2 shadow">
-              <Edit3 size={18} /> Editar
+            <button className="px-4 py-2 bg-yellow-400 rounded flex items-center gap-2">
+              <Edit3 size={16} /> Editar
             </button>
           </Link>
 
           <Link href={`/panel/admin/plugins/borrar/${id}`}>
-            <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 shadow">
-              <Trash2 size={18} /> Borrar
+            <button className="px-4 py-2 bg-red-600 text-white rounded flex items-center gap-2">
+              <Trash2 size={16} /> Borrar
             </button>
           </Link>
+
         </div>
 
       </div>
@@ -169,21 +164,13 @@ export default function DetallePluginPage() {
   );
 }
 
-/* ============================================
-   COMPONENTE CARD DE PRECIO
-=============================================== */
-function CardPrice({ label, value, color }) {
-  const colors = {
-    blue: "text-blue-600 dark:text-blue-400",
-    green: "text-green-600 dark:text-green-400",
-    purple: "text-purple-600 dark:text-purple-400",
-  };
-
+/* ✅ CARD PRECIO */
+function PriceCard({ title, price }) {
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm border dark:border-gray-700">
-      <p className="font-semibold">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${colors[color]}`}>
-        {value > 0 ? `${value} €` : "—"}
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border shadow-sm text-center">
+      <p className="text-sm font-semibold">{title}</p>
+      <p className="text-2xl font-bold mt-1 text-blue-600">
+        {price > 0 ? `${Number(price).toFixed(2)} €` : "—"}
       </p>
     </div>
   );

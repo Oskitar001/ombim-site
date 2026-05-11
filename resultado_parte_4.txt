@@ -1,5 +1,198 @@
 
 ============================================================
+📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
+============================================================
+
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import {
+  Home,
+  KeyRound,
+  CreditCard,
+  Download,
+  User,
+  Menu,
+  X,
+  ArrowLeft
+} from "lucide-react";
+
+export default function UserLayout({ children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="
+      flex h-screen overflow-hidden 
+      bg-gray-50 dark:bg-gray-800 
+      pt-[72px] md:pt-[72px]
+    ">
+
+      {/* ========== BOTÓN HAMBURGUESA (MÓVIL) ========== */}
+      <button
+        className="
+          md:hidden
+          fixed top-4 left-4 
+          z-[60]
+          bg-white dark:bg-gray-700 
+          p-2 rounded-lg shadow-lg 
+          border border-gray-300 dark:border-gray-600
+        "
+        onClick={() => setOpen(true)}
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* ========== OVERLAY MÓVIL ========== */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[50] md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* ========== SIDEBAR MÓVIL ========== */}
+      <aside
+        className={`
+          fixed top-[72px] left-0 
+          h-[calc(100vh-72px)] w-64 
+          p-4 z-[60]
+          bg-white dark:bg-gray-900
+          border-r border-gray-300 dark:border-gray-700
+          shadow-xl
+          transform transition-transform duration-300
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:hidden
+        `}
+      >
+        <button
+          className="absolute top-4 right-4 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+          onClick={() => setOpen(false)}
+        >
+          <X size={24} />
+        </button>
+
+        <h2 className="text-2xl font-bold mb-6 mt-2 text-gray-900 dark:text-gray-100">
+          Panel Usuario
+        </h2>
+
+        <nav className="space-y-3 text-lg">
+          <PanelLink href="/panel/user" icon={<Home size={18} />} onClick={() => setOpen(false)}>
+            Inicio
+          </PanelLink>
+
+          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />} onClick={() => setOpen(false)}>
+            Mis licencias
+          </PanelLink>
+
+          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />} onClick={() => setOpen(false)}>
+            Mis pagos
+          </PanelLink>
+
+          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />} onClick={() => setOpen(false)}>
+            Mis datos
+          </PanelLink>
+
+          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />} onClick={() => setOpen(false)}>
+            Descargas
+          </PanelLink>
+
+          <PanelLink
+            href="/"
+            icon={<ArrowLeft size={18} />}
+            className="mt-4"
+            onClick={() => setOpen(false)}
+          >
+            Volver a ombim.site
+          </PanelLink>
+        </nav>
+      </aside>
+
+      {/* ========== SIDEBAR ESCRITORIO ========== */}
+      <aside
+        className="
+          hidden md:flex flex-col
+          w-64 
+          bg-white dark:bg-gray-900
+          border-r border-gray-300 dark:border-gray-700
+          shadow-xl
+          p-6 space-y-6
+          fixed top-[72px] left-0 bottom-0
+          z-20
+        "
+      >
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Panel Usuario
+        </h2>
+
+        <nav className="space-y-2 text-base">
+          <PanelLink href="/panel/user" icon={<Home size={18} />}>
+            Inicio
+          </PanelLink>
+
+          <PanelLink href="/panel/user/licencias" icon={<KeyRound size={18} />}>
+            Mis licencias
+          </PanelLink>
+
+          <PanelLink href="/panel/user/pagos" icon={<CreditCard size={18} />}>
+            Mis pagos
+          </PanelLink>
+
+          <PanelLink href="/panel/user/mis-datos" icon={<User size={18} />}>
+            Mis datos
+          </PanelLink>
+
+          <PanelLink href="/panel/user/descargas" icon={<Download size={18} />}>
+            Descargas
+          </PanelLink>
+
+          <PanelLink href="/" icon={<ArrowLeft size={18} />} className="mt-4">
+            Volver a ombim.site
+          </PanelLink>
+        </nav>
+      </aside>
+
+      {/* ========== CONTENIDO PRINCIPAL ========== */}
+      <main
+        className="
+          flex-1 
+          overflow-y-auto 
+          p-6
+          md:ml-64
+          bg-gray-50 dark:bg-gray-800
+        "
+      >
+        {children}
+      </main>
+
+    </div>
+  );
+}
+
+/* ==========================================================
+   COMPONENTE PREMIUM PARA LINKS DEL SIDEBAR
+========================================================== */
+function PanelLink({ href, icon, children, onClick, className = "" }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`
+        flex items-center gap-3 p-2 rounded-lg
+        text-gray-800 dark:text-gray-200
+        hover:bg-gray-200 dark:hover:bg-gray-700
+        transition
+        ${className}
+      `}
+    >
+      {icon}
+      {children}
+    </Link>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\page.jsx
 ============================================================
 
@@ -7,11 +200,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { KeyRound, Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
-
-/* -----------------------------------------------------
-   LICENCIAS USER — ESTÉTICA PREMIUM TOTAL
------------------------------------------------------ */
+import { Clock, Star, Calendar, Ban, Eye, CheckCircle } from "lucide-react";
 
 export default function UserLicenciasPage() {
   const [licencias, setLicencias] = useState(null);
@@ -38,7 +227,9 @@ export default function UserLicenciasPage() {
 
       <UserSection title="Listado de licencias">
         {licencias.length === 0 && (
-          <p className="text-gray-600 dark:text-gray-400">Todavía no tienes licencias.</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Todavía no tienes licencias.
+          </p>
         )}
 
         {licencias.length > 0 && (
@@ -47,7 +238,6 @@ export default function UserLicenciasPage() {
               <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
                 <tr>
                   <th className="p-3">Plugin</th>
-                  <th className="p-3">Email Tekla</th>
                   <th className="p-3">Tipo</th>
                   <th className="p-3">Estado</th>
                   <th className="p-3">Activaciones</th>
@@ -62,15 +252,12 @@ export default function UserLicenciasPage() {
                     key={l.id}
                     className="border-t border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
                   >
-                    {/* Plugin */}
+                    {/* ✅ Plugin */}
                     <td className="p-3 font-semibold">
-                      {l.plugin_nombre ?? l.plugin_id}
+                      {l.plugin_nombre || l.plugin_id}
                     </td>
 
-                    {/* Email */}
-                    <td className="p-3">{l.email_tekla}</td>
-
-                    {/* Tipo */}
+                    {/* ✅ Tipo */}
                     <td className="p-3">
                       {l.tipo === "trial" && (
                         <Badge color="blue" icon={<Clock size={14} />}>
@@ -91,24 +278,24 @@ export default function UserLicenciasPage() {
                       )}
                     </td>
 
-                    {/* Estado */}
+                    {/* ✅ Estado */}
                     <td className="p-3">
                       <EstadoBadge estado={l.estado} />
                     </td>
 
-                    {/* Activaciones */}
+                    {/* ✅ Activaciones */}
                     <td className="p-3">
                       {l.activaciones_usadas}/{l.max_activaciones}
                     </td>
 
-                    {/* Fecha expiración */}
+                    {/* ✅ Expiración */}
                     <td className="p-3">
-                      {l.tipo === "anual" && l.fecha_expiracion
+                      {l.fecha_expiracion
                         ? new Date(l.fecha_expiracion).toLocaleDateString()
                         : "—"}
                     </td>
 
-                    {/* Acción */}
+                    {/* ✅ Ver */}
                     <td className="p-3 text-right">
                       <Link
                         href={`/panel/user/licencias/${l.id}`}
@@ -128,26 +315,16 @@ export default function UserLicenciasPage() {
   );
 }
 
-/* -----------------------------------------------------
-   COMPONENTES PREMIUM (reutilizables)
------------------------------------------------------ */
+/* COMPONENTES */
 
 function UserSection({ title, children }) {
   return (
-    <div
-      className="
-        bg-white dark:bg-gray-900 
-        rounded-xl shadow 
-        border border-gray-300 dark:border-gray-700
-        p-6 space-y-4
-      "
-    >
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-300 dark:border-gray-700 p-6 space-y-4">
       {title && (
         <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
           {title}
         </h3>
       )}
-
       {children}
     </div>
   );
@@ -161,18 +338,12 @@ function Badge({ color, icon, children }) {
   };
 
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded 
-        ${colors[color]}
-      `}
-    >
+    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded ${colors[color]}`}>
       {icon} {children}
     </span>
   );
 }
 
-/* Estado (versión premium unificada con detalle de licencia) */
 function EstadoBadge({ estado }) {
   const styles = {
     activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -191,12 +362,7 @@ function EstadoBadge({ estado }) {
   };
 
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold 
-        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-700"}
-      `}
-    >
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${styles[estado] ?? "bg-gray-200"}`}>
       {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
     </span>
   );
@@ -213,27 +379,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Clock, Star, Calendar, Ban, CheckCircle } from "lucide-react";
 
-/* Tooltip PREMIUM */
-function Tooltip({ label, children }) {
-  return (
-    <span className="relative group">
-      {children}
-      <span
-        className="
-          absolute hidden group-hover:block 
-          bg-black text-white text-xs px-2 py-1 rounded 
-          -top-6 left-1/2 -translate-x-1/2 
-          whitespace-nowrap
-        "
-      >
-        {label}
-      </span>
-    </span>
-  );
-}
-
 export default function UserLicenciaDetallePage({ params }) {
   const [id, setId] = useState(null);
+  const [licencia, setLicencia] = useState(null);
 
   useEffect(() => {
     async function resolver() {
@@ -242,8 +390,6 @@ export default function UserLicenciaDetallePage({ params }) {
     }
     resolver();
   }, [params]);
-
-  const [licencia, setLicencia] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -258,7 +404,7 @@ export default function UserLicenciaDetallePage({ params }) {
   }, [id]);
 
   if (!licencia)
-    return <p className="p-4 text-gray-600 dark:text-gray-300">Cargando licencia...</p>;
+    return <p className="p-4 text-gray-600">Cargando licencia...</p>;
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -274,27 +420,57 @@ export default function UserLicenciaDetallePage({ params }) {
       {/* Título */}
       <h2 className="text-3xl font-bold">Licencia #{licencia.id}</h2>
 
-      {/* Caja premium */}
       <UserSection>
 
+        {/* ✅ Plugin */}
         <Field label="Plugin">
-          {licencia.plugin_nombre}
+          {licencia.plugin_nombre || licencia.plugin_id}
         </Field>
 
-        <Field label="Email Tekla">
-          {licencia.email_tekla}
-        </Field>
+        {/* ✅ LICENSE KEY (LO MÁS IMPORTANTE) */}
+        <div className="space-y-1">
+          <p className="font-semibold text-gray-800">License Key</p>
 
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={licencia.license_key}
+              readOnly
+              className="w-full border p-2 rounded bg-gray-100"
+            />
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(licencia.license_key);
+                alert("Clave copiada");
+              }}
+              className="bg-gray-600 text-white px-3 py-2 rounded"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        {/* ✅ Estado */}
         <Field label="Estado">
           <EstadoBadge estado={licencia.estado} />
         </Field>
 
+        {/* ✅ Activaciones */}
         <Field label="Activaciones">
           {licencia.activaciones_usadas} / {licencia.max_activaciones}
         </Field>
 
+        {/* ✅ Creación */}
         <Field label="Creada">
           {new Date(licencia.fecha_creacion).toLocaleString()}
+        </Field>
+
+        {/* ✅ Expiración */}
+        <Field label="Expira">
+          {licencia.fecha_expiracion
+            ? new Date(licencia.fecha_expiracion).toLocaleDateString()
+            : "—"}
         </Field>
 
       </UserSection>
@@ -302,19 +478,11 @@ export default function UserLicenciaDetallePage({ params }) {
   );
 }
 
-/* -----------------------------------------------------
-   COMPONENTES PREMIUM
------------------------------------------------------ */
+/* ---------- COMPONENTES ---------- */
 
 function UserSection({ children }) {
   return (
-    <section
-      className="
-        bg-white dark:bg-gray-900 
-        border border-gray-300 dark:border-gray-700 
-        rounded-xl shadow p-6 space-y-4
-      "
-    >
+    <section className="bg-white border rounded-xl shadow p-6 space-y-4">
       {children}
     </section>
   );
@@ -323,20 +491,19 @@ function UserSection({ children }) {
 function Field({ label, children }) {
   return (
     <div className="space-y-1">
-      <p className="font-semibold text-gray-800 dark:text-gray-200">{label}</p>
-      <div className="text-gray-700 dark:text-gray-300">{children}</div>
+      <p className="font-semibold text-gray-800">{label}</p>
+      <div className="text-gray-700">{children}</div>
     </div>
   );
 }
 
-/* Badge Premium según estado */
 function EstadoBadge({ estado }) {
   const styles = {
-    activa: "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200",
-    pendiente: "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    trial: "bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    bloqueada: "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200",
-    expirada: "bg-orange-200 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+    activa: "bg-green-200 text-green-800",
+    pendiente: "bg-yellow-200 text-yellow-800",
+    trial: "bg-blue-200 text-blue-800",
+    bloqueada: "bg-red-200 text-red-800",
+    expirada: "bg-orange-200 text-orange-800",
   };
 
   const icons = {
@@ -348,13 +515,8 @@ function EstadoBadge({ estado }) {
   };
 
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold
-        ${styles[estado] ?? "bg-gray-200 dark:bg-gray-800"}
-      `}
-    >
-      {icons[estado]} {estado.charAt(0).toUpperCase() + estado.slice(1)}
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${styles[estado]}`}>
+      {icons[estado]} {estado}
     </span>
   );
 }
@@ -3145,55 +3307,5 @@ export async function requireAdmin() {
   }
 
   return { ok: true, user: data.user };
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
-============================================================
-
-// /lib/email.js
-import { Resend } from "resend";
-
-export const resend = new Resend(process.env.RESEND_KEY);
-
-export async function sendEmail({ to, subject, html }) {
-  try {
-    return await resend.emails.send({
-      from: "OMBIM <noreply@updates.ombim.com>",   // 💥 DOMINIO VERIFICADO
-      reply_to: "o.martinez@ombim.com",            // 💥 RESPONDERÁN A TU EMAIL REAL
-      to,
-      subject,
-      html,
-    });
-  } catch (err) {
-    console.error("Error enviando email:", err);
-    return { error: true, err };
-  }
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
-============================================================
-
-// lib/logAdmin.js
-// Logging interno de acciones administrativas
-
-import { supabaseAdmin } from "./supabaseAdmin";
-
-export async function logAdminAction({ tipo, mensaje, user_id }) {
-  try {
-    await supabaseAdmin.from("admin_logs").insert([
-      {
-        tipo,
-        mensaje,
-        user_id,
-        fecha: new Date().toISOString(),
-      },
-    ]);
-  } catch (err) {
-    console.error("❌ Error guardando log admin:", err);
-  }
 }
 

@@ -24,27 +24,28 @@
     "html-pdf-node": "^1.0.7",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.6.0",
-    "next": "^16.2.0",
+    "next": "^16.2.6",
     "next-intl": "^4.11.2",
     "nodemailer": "^8.0.2",
     "pdfkit": "^0.18.0",
     "puppeteer-core": "^24.40.0",
     "qrcode": "^1.5.4",
-    "react": "latest",
+    "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "latest",
+    "react-dom": "^19.2.6",
     "react-hot-toast": "^2.6.0",
     "resend": "^6.9.3",
-    "stripe": "^20.4.1"
+    "stripe": "^20.4.1",
+    "tailwindcss": "^3.4.17",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
-    "autoprefixer": "latest",
+    "autoprefixer": "^10.5.0",
     "eslint": "latest",
     "eslint-plugin-next": "latest",
     "postcss": "^8.5.14",
     "prettier": "latest",
     "prettier-plugin-tailwindcss": "latest",
-    "rimraf": "latest",
-    "tailwindcss": "latest"
+    "rimraf": "latest"
   }
 }

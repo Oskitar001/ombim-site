@@ -1,6 +1,321 @@
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  KeyRound,
+  CheckCircle,
+  Ban,
+  RefreshCw,
+  Calendar,
+  Star,
+} from "lucide-react";
+
+export default function AdminLicenciaDetallePage({ params }) {
+  const { id } = use(params);
+
+  const [licencia, setLicencia] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [maquinas, setMaquinas] = useState([]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function load() {
+      const r = await fetch(`/api/admin/licencias/${id}`, {
+        credentials: "include",
+      });
+
+      const d = await r.json();
+      setLicencia(d.licencia ?? null);
+
+      const rM = await fetch(`/api/admin/licencias/maquinas?id=${id}`, {
+        credentials: "include",
+      });
+      const dM = await rM.json();
+      setMaquinas(dM.maquinas ?? []);
+
+      setLoading(false);
+    }
+
+    load();
+  }, [id]);
+
+  if (!id) return <p>ID inválido</p>;
+  if (loading) return <p>Cargando licencia…</p>;
+  if (!licencia) return <p>Licencia no encontrada</p>;
+
+  async function accion(endpoint) {
+    await fetch(`/api/admin/licencias/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: licencia.id }),
+    });
+
+    location.reload();
+  }
+
+  async function borrarMaquina(maquinaId) {
+    await fetch("/api/admin/licencias/maquinas", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: maquinaId }),
+    });
+
+    location.reload();
+  }
+
+  return (
+    <div className="space-y-8 max-w-3xl mx-auto p-4">
+
+      {/* VOLVER */}
+      <Link
+        href="/panel/admin/licencias"
+        className="text-blue-600 hover:underline flex items-center gap-1"
+      >
+        <ArrowLeft size={20} /> Volver
+      </Link>
+
+      {/* TÍTULO */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <KeyRound size={30} /> Licencia #{licencia.id}
+      </h1>
+
+      {/* CARD DATOS */}
+      <div className="
+        p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
+        bg-white dark:bg-gray-900 space-y-4
+      ">
+
+        {/* ✅ Plugin */}
+        <Row label="Plugin">
+          {licencia.plugins?.nombre || licencia.plugin_nombre || licencia.plugin_id}
+        </Row>
+
+        {/* ✅ LICENSE KEY */}
+        <div className="flex flex-col gap-1">
+          <p className="font-semibold text-gray-700 dark:text-gray-300">
+            License Key:
+          </p>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={licencia.license_key || ""}
+              readOnly
+              className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-800 text-sm"
+            />
+
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(licencia.license_key);
+                alert("License key copiada");
+              }}
+              className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        {/* ✅ Tipo */}
+        <Row label="Tipo">
+          <TipoBadge tipo={licencia.tipo} />
+        </Row>
+
+        {/* ✅ Estado */}
+        <Row label="Estado">
+          <EstadoBadge estado={licencia.estado} />
+        </Row>
+
+        {/* ✅ Activaciones */}
+        <Row label="Activaciones">
+          {licencia.activaciones_usadas}/{licencia.max_activaciones}
+        </Row>
+
+        {/* ✅ Expira */}
+        <Row label="Expira">
+          {licencia.fecha_expiracion
+            ? new Date(licencia.fecha_expiracion).toLocaleString()
+            : "—"}
+        </Row>
+
+        {/* ✅ Creada */}
+        <Row label="Creada">
+          {new Date(licencia.fecha_creacion).toLocaleString()}
+        </Row>
+      </div>
+
+      {/* MÁQUINAS */}
+      <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
+        <h3 className="font-semibold">Máquinas activas</h3>
+
+        {maquinas.length === 0 && (
+          <p className="text-sm opacity-70">No hay máquinas registradas</p>
+        )}
+
+        {maquinas.map((m) => (
+          <div
+            key={m.id}
+            className="flex justify-between items-center border p-2 rounded bg-white dark:bg-gray-900"
+          >
+            <span>{m.maquina_id}</span>
+
+            <button
+              onClick={() => borrarMaquina(m.id)}
+              className="text-red-600 text-sm"
+            >
+              Eliminar
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* ACCIONES */}
+      <div className="space-y-3">
+        <ActionButton
+          color="green"
+          icon={<CheckCircle size={18} />}
+          label="Activar"
+          onClick={() => accion("activar")}
+        />
+
+        <ActionButton
+          color="red"
+          icon={<Ban size={18} />}
+          label="Bloquear"
+          onClick={() => accion("bloquear")}
+        />
+
+        <ActionButton
+          color="purple"
+          icon={<RefreshCw size={18} />}
+          label="Reset activaciones"
+          onClick={() => accion("reset-activaciones")}
+        />
+
+        <ActionButton
+          color="yellow"
+          icon={<Calendar size={18} />}
+          label="Hacer anual"
+          onClick={() => accion("hacer-anual")}
+        />
+
+        <ActionButton
+          color="indigo"
+          icon={<Star size={18} />}
+          label="Hacer completa"
+          onClick={() => accion("hacer-completa")}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* COMPONENTES */
+
+function Row({ label, children }) {
+  return (
+    <div className="flex justify-between">
+      <p className="font-semibold">{label}:</p>
+      <p>{children}</p>
+    </div>
+  );
+}
+
+function TipoBadge({ tipo }) {
+  const map = {
+    anual: { color: "bg-yellow-200 text-yellow-800", icon: <Calendar size={14} />, label: "Anual" },
+    completa: { color: "bg-purple-200 text-purple-800", icon: <Star size={14} />, label: "Completa" },
+    trial: { color: "bg-blue-200 text-blue-800", icon: <KeyRound size={14} />, label: "Trial" },
+  };
+
+  const t = map[tipo];
+
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}>
+      {t.icon} {t.label}
+    </span>
+  );
+}
+
+function EstadoBadge({ estado }) {
+  const map = {
+    activa: { color: "bg-green-200 text-green-800", icon: <CheckCircle size={14} />, label: "Activa" },
+    bloqueada: { color: "bg-red-200 text-red-800", icon: <Ban size={14} />, label: "Bloqueada" },
+    expirada: { color: "bg-orange-200 text-orange-800", icon: <Calendar size={14} />, label: "Expirada" },
+  };
+
+  const e = map[estado];
+
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}>
+      {e.icon} {e.label}
+    </span>
+  );
+}
+
+function ActionButton({ color, icon, label, onClick }) {
+  const bg = {
+    green: "bg-green-600 hover:bg-green-700",
+    red: "bg-red-600 hover:bg-red-700",
+    purple: "bg-purple-600 hover:bg-purple-700",
+    yellow: "bg-yellow-600 hover:bg-yellow-700",
+    indigo: "bg-indigo-600 hover:bg-indigo-700",
+  }[color];
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md`}
+    >
+      {icon} {label}
+    </button>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias-tipos\page.jsx
+============================================================
+
+import { requireAdmin } from "@/lib/checkAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminLicenciasTiposPage() {
+  const auth = await requireAdmin();
+  if (!auth.ok) return null;
+
+  const { data: tipos } = await supabaseAdmin
+    .from("licencias_tipos")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return (
+    <div>
+      <h1 className="text-xl mb-4 font-bold">Tipos de licencia</h1>
+
+      {!tipos?.length && <p>No hay tipos de licencia.</p>}
+
+      <table>
+        {/* ... */}
+      </table>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\logs\page.jsx
 ============================================================
 
 "use client";
@@ -136,7 +451,7 @@ export default function AdminLogsPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\page.jsx
 ============================================================
 
 // /app/panel/admin/page.jsx
@@ -151,7 +466,7 @@ export default function AdminHome() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\page.jsx
 ============================================================
 
 "use client";
@@ -341,7 +656,7 @@ export default function AdminPagosPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\pagos\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -681,7 +996,7 @@ function ActionButton({ children, color, onClick }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\borrar\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\borrar\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -835,7 +1150,7 @@ export default function BorrarPluginPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\editar\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\editar\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -851,9 +1166,7 @@ export default function EditarPluginPage() {
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
-    precio: 0,
 
-    // ✅ NUEVOS
     precio_trimestral: 0,
     precio_anual: 0,
     precio_completa: 0,
@@ -873,9 +1186,9 @@ export default function EditarPluginPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  /* ===========================
-     CARGAR DATOS DEL PLUGIN
-  ============================ */
+  // ===========================
+  // CARGAR PLUGIN
+  // ===========================
   useEffect(() => {
     async function load() {
       const r = await fetch(`/api/admin/plugins/${id}`, {
@@ -883,20 +1196,12 @@ export default function EditarPluginPage() {
       });
 
       const d = await r.json();
-
-      if (!r.ok) {
-        alert(d.error ?? "Error cargando plugin");
-        return;
-      }
-
       const p = d.plugin;
 
       setForm({
         nombre: p.nombre ?? "",
         descripcion: p.descripcion ?? "",
-        precio: p.precio ?? 0,
 
-        // ✅ NUEVOS CAMPOS
         precio_trimestral: p.precio_trimestral ?? 0,
         precio_anual: p.precio_anual ?? 0,
         precio_completa: p.precio_completa ?? 0,
@@ -916,15 +1221,14 @@ export default function EditarPluginPage() {
     load();
   }, [id]);
 
-  /* ===========================
-     SUBIR IMAGEN
-  ============================ */
+  // ===========================
+  // SUBIR IMAGEN
+  // ===========================
   async function subirImagen(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop();
-    const name = `${Date.now()}.${ext}`;
+    const name = `${Date.now()}.${file.name.split(".").pop()}`;
 
     const res = await fetch(`/api/admin/upload-image?name=${name}`, {
       method: "POST",
@@ -933,28 +1237,17 @@ export default function EditarPluginPage() {
     });
 
     const json = await res.json();
-    if (!json?.url) {
-      alert("Error subiendo imagen");
-      return;
-    }
-
     update("imagen_url", json.url);
   }
 
-  /* ===========================
-     SUBIR TSEP
-  ============================ */
+  // ===========================
+  // SUBIR TSEP
+  // ===========================
   async function subirTsep(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split(".").pop();
-    if (ext !== "tsep") {
-      alert("El archivo debe ser .tsep");
-      return;
-    }
-
-    const name = `${Date.now()}.${ext}`;
+    const name = `${Date.now()}.${file.name.split(".").pop()}`;
 
     const res = await fetch(`/api/admin/upload-tsep?name=${name}`, {
       method: "POST",
@@ -963,21 +1256,27 @@ export default function EditarPluginPage() {
     });
 
     const json = await res.json();
-    if (!json?.url) {
-      alert("Error subiendo archivo TSEP");
-      return;
-    }
-
     update("archivo_url", json.url);
   }
 
-  /* ===========================
-     GUARDAR CAMBIOS
-  ============================ */
+  // ===========================
+  // VIDEO PREVIEW
+  // ===========================
+  function getYoutubeId(url) {
+    if (!url) return null;
+    const m1 = url.match(/v=([^&]+)/);
+    const m2 = url.match(/youtu\.be\/([^?]+)/);
+    return m1 ? m1[1] : m2 ? m2[1] : null;
+  }
+
+  const videoId = getYoutubeId(form.video_url);
+
+  // ===========================
+  // GUARDAR
+  // ===========================
   async function guardar() {
     const payload = {
       ...form,
-      precio: Number(form.precio) || 0,
       precio_trimestral: Number(form.precio_trimestral) || 0,
       precio_anual: Number(form.precio_anual) || 0,
       precio_completa: Number(form.precio_completa) || 0,
@@ -990,14 +1289,7 @@ export default function EditarPluginPage() {
       body: JSON.stringify(payload),
     });
 
-    const d = await r.json();
-
-    if (!r.ok) {
-      alert(d.error ?? "Error guardando cambios");
-      return;
-    }
-
-    window.location.href = "/panel/admin/plugins";
+    if (r.ok) window.location.href = "/panel/admin/plugins";
   }
 
   if (loading) return <p className="p-4">Cargando plugin…</p>;
@@ -1005,7 +1297,7 @@ export default function EditarPluginPage() {
   return (
     <div className="space-y-8 p-4 max-w-2xl mx-auto">
 
-      <Link href="/panel/admin/plugins" className="flex items-center gap-2 text-blue-600 hover:underline">
+      <Link href="/panel/admin/plugins" className="flex gap-2 text-blue-600">
         <ArrowLeft size={20} /> Volver
       </Link>
 
@@ -1013,66 +1305,67 @@ export default function EditarPluginPage() {
 
       <div className="bg-white dark:bg-gray-900 border shadow rounded-xl p-6 space-y-6">
 
+        {/* NOMBRE */}
         <Field label="Nombre">
           <input className="input-premium" value={form.nombre} onChange={(e) => update("nombre", e.target.value)} />
         </Field>
 
+        {/* DESCRIPCIÓN */}
         <Field label="Descripción">
           <textarea rows={4} className="input-premium" value={form.descripcion} onChange={(e) => update("descripcion", e.target.value)} />
         </Field>
 
-        {/* ✅ TIPOS DE LICENCIA */}
-        <div className="space-y-4">
-          <h3 className="font-semibold">Tipos de licencia</h3>
+        {/* IMAGEN */}
+        <Field label="Imagen">
+          <input type="file" onChange={subirImagen} />
+          {form.imagen_url && <img src={form.imagen_url} className="w-32 mt-2 rounded" />}
+        </Field>
 
-          {/* TRIMESTRAL */}
-          <div className="flex justify-between items-center border p-3 rounded">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.permite_trimestral} onChange={(e) => update("permite_trimestral", e.target.checked)} />
-              Trimestral
-            </label>
+        {/* ✅ ARCHIVO TSEP */}
+        <Field label="Archivo plugin (.tsep)">
+          <input type="file" onChange={subirTsep} />
+          {form.archivo_url && (
+            <a href={form.archivo_url} target="_blank" className="text-blue-600">
+              Ver archivo actual
+            </a>
+          )}
+        </Field>
 
-            <input
-              type="number"
-              className="input-premium w-32"
-              value={form.precio_trimestral}
-              disabled={!form.permite_trimestral}
-              onChange={(e) => update("precio_trimestral", e.target.value)}
+        {/* ✅ VIDEO */}
+        <Field label="Video YouTube">
+          <input
+            className="input-premium"
+            value={form.video_url}
+            onChange={(e) => update("video_url", e.target.value)}
+          />
+        </Field>
+
+        {/* ✅ PREVIEW VIDEO */}
+        {videoId && (
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              className="w-full h-full rounded"
+              allowFullScreen
             />
           </div>
+        )}
 
-          {/* ANUAL */}
-          <div className="flex justify-between items-center border p-3 rounded">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.permite_anual} onChange={(e) => update("permite_anual", e.target.checked)} />
-              Anual
-            </label>
+        {/* TIPOS */}
+        <Field label="Trimestral">
+          <input type="checkbox" checked={form.permite_trimestral} onChange={(e) => update("permite_trimestral", e.target.checked)} />
+          <input type="number" value={form.precio_trimestral} onChange={(e) => update("precio_trimestral", e.target.value)} />
+        </Field>
 
-            <input
-              type="number"
-              className="input-premium w-32"
-              value={form.precio_anual}
-              disabled={!form.permite_anual}
-              onChange={(e) => update("precio_anual", e.target.value)}
-            />
-          </div>
+        <Field label="Anual">
+          <input type="checkbox" checked={form.permite_anual} onChange={(e) => update("permite_anual", e.target.checked)} />
+          <input type="number" value={form.precio_anual} onChange={(e) => update("precio_anual", e.target.value)} />
+        </Field>
 
-          {/* COMPLETA */}
-          <div className="flex justify-between items-center border p-3 rounded">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.permite_completa} onChange={(e) => update("permite_completa", e.target.checked)} />
-              Completa
-            </label>
-
-            <input
-              type="number"
-              className="input-premium w-32"
-              value={form.precio_completa}
-              disabled={!form.permite_completa}
-              onChange={(e) => update("precio_completa", e.target.value)}
-            />
-          </div>
-        </div>
+        <Field label="Completa">
+          <input type="checkbox" checked={form.permite_completa} onChange={(e) => update("permite_completa", e.target.checked)} />
+          <input type="number" value={form.precio_completa} onChange={(e) => update("precio_completa", e.target.value)} />
+        </Field>
 
         <button onClick={guardar} className="w-full bg-blue-600 text-white py-3 rounded-lg">
           Guardar Cambios
@@ -1094,7 +1387,7 @@ function Field({ label, children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\nuevo\page.jsx
 ============================================================
 
 "use client";
@@ -1333,14 +1626,14 @@ function Field({ label, children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\page.jsx
 ============================================================
 
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, Trash2, Eye, Edit3, Download } from "lucide-react";
+import { Package, Trash2, Eye, Edit3 } from "lucide-react";
 
 export default function AdminPluginsPage() {
   const [plugins, setPlugins] = useState([]);
@@ -1350,12 +1643,10 @@ export default function AdminPluginsPage() {
 
   useEffect(() => {
     async function load() {
-      // Obtener plugins
       const r1 = await fetch("/api/admin/plugins", { credentials: "include" });
       const d1 = await r1.json();
       setPlugins(Array.isArray(d1.plugins) ? d1.plugins : []);
 
-      // Obtener descargas por plugin
       const r2 = await fetch("/api/admin/dashboard");
       const d2 = await r2.json();
       setDescargas(d2.descargasPorPlugin ?? {});
@@ -1400,21 +1691,17 @@ export default function AdminPluginsPage() {
         </Link>
       </div>
 
-      {/* ============================
-          MÓVIL → CARDS PREMIUM
-      ============================ */}
+      {/* ================= MÓVIL ================= */}
       <div className="grid gap-4 md:hidden">
         {plugins.map((p) => (
           <div
             key={p.id}
-            className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow p-4 space-y-3"
+            className="bg-white dark:bg-gray-900 border rounded-xl shadow p-4 space-y-3"
           >
-            {/* Imagen */}
             <div className="flex items-center gap-4">
               {p.imagen_url ? (
                 <img
                   src={p.imagen_url}
-                  alt={p.nombre}
                   className="w-20 h-20 object-cover rounded-xl"
                 />
               ) : (
@@ -1429,50 +1716,41 @@ export default function AdminPluginsPage() {
               </div>
             </div>
 
-            {/* Precios */}
+            {/* ✅ PRECIOS CORRECTOS */}
             <div className="text-sm space-y-1">
-              <p>
-                <strong>Estándar:</strong>{" "}
-                {p.precio > 0 ? `${p.precio} €` : "—"}
-              </p>
-              <p>
-                <strong>Anual:</strong>{" "}
-                {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
-              </p>
-              <p>
-                <strong>Completa:</strong>{" "}
-                {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
-              </p>
+              {p.permite_trimestral && (
+                <div>💶 Trimestral: {Number(p.precio_trimestral).toFixed(2)} €</div>
+              )}
+              {p.permite_anual && (
+                <div>📅 Anual: {Number(p.precio_anual).toFixed(2)} €</div>
+              )}
+              {p.permite_completa && (
+                <div>⭐ Completa: {Number(p.precio_completa).toFixed(2)} €</div>
+              )}
             </div>
 
-            {/* Acciones */}
+            {/* ACCIONES */}
             <div className="flex gap-4 justify-end">
               <Link href={`/panel/admin/plugins/${p.id}`}>
-                <Eye className="text-blue-600 hover:text-blue-800" />
+                <Eye className="text-blue-600" />
               </Link>
 
               <Link href={`/panel/admin/plugins/editar/${p.id}`}>
-                <Edit3 className="text-yellow-500 hover:text-yellow-600" />
+                <Edit3 className="text-yellow-500" />
               </Link>
 
               <button onClick={() => confirmarBorrar(p)}>
-                <Trash2 className="text-red-600 hover:text-red-800" />
+                <Trash2 className="text-red-600" />
               </button>
             </div>
           </div>
         ))}
-
-        {!plugins.length && (
-          <p className="text-center opacity-70">No hay plugins creados.</p>
-        )}
       </div>
 
-      {/* ============================
-          ESCRITORIO → TABLA PREMIUM
-      ============================ */}
-      <div className="hidden md:block rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow">
+      {/* ================= ESCRITORIO ================= */}
+      <div className="hidden md:block border rounded-xl shadow overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-200 dark:bg-gray-800 text-left text-sm uppercase tracking-wide">
+          <thead className="bg-gray-200 dark:bg-gray-800 text-left text-sm">
             <tr>
               <th className="p-3">Imagen</th>
               <th className="p-3">Nombre</th>
@@ -1482,17 +1760,14 @@ export default function AdminPluginsPage() {
             </tr>
           </thead>
 
-          <tbody className="text-sm">
+          <tbody>
             {plugins.map((p) => (
-              <tr
-                key={p.id}
-                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
-              >
+              <tr key={p.id} className="border-t hover:bg-gray-50">
+
                 <td className="p-3 text-center">
                   {p.imagen_url ? (
                     <img
                       src={p.imagen_url}
-                      alt={p.nombre}
                       className="w-16 h-16 object-cover rounded"
                     />
                   ) : (
@@ -1502,19 +1777,17 @@ export default function AdminPluginsPage() {
 
                 <td className="p-3 font-semibold">{p.nombre}</td>
 
+                {/* ✅ PRECIOS CORREGIDOS */}
                 <td className="p-3 space-y-1">
-                  <div>
-                    <strong>Estándar:</strong>{" "}
-                    {p.precio > 0 ? `${p.precio} €` : "—"}
-                  </div>
-                  <div>
-                    <strong>Anual:</strong>{" "}
-                    {p.precio_anual > 0 ? `${p.precio_anual} €` : "—"}
-                  </div>
-                  <div>
-                    <strong>Completa:</strong>{" "}
-                    {p.precio_completa > 0 ? `${p.precio_completa} €` : "—"}
-                  </div>
+                  {p.permite_trimestral && (
+                    <div>💶 Trimestral: {Number(p.precio_trimestral).toFixed(2)} €</div>
+                  )}
+                  {p.permite_anual && (
+                    <div>📅 Anual: {Number(p.precio_anual).toFixed(2)} €</div>
+                  )}
+                  {p.permite_completa && (
+                    <div>⭐ Completa: {Number(p.precio_completa).toFixed(2)} €</div>
+                  )}
                 </td>
 
                 <td className="p-3 text-center font-semibold">
@@ -1522,55 +1795,37 @@ export default function AdminPluginsPage() {
                 </td>
 
                 <td className="p-3">
-                  <div className="flex gap-4 justify-center">
+                  <div className="flex justify-center gap-4">
                     <Link href={`/panel/admin/plugins/${p.id}`}>
-                      <Eye className="text-blue-600 hover:text-blue-800" />
+                      <Eye className="text-blue-600" />
                     </Link>
 
                     <Link href={`/panel/admin/plugins/editar/${p.id}`}>
-                      <Edit3 className="text-yellow-500 hover:text-yellow-600" />
+                      <Edit3 className="text-yellow-500" />
                     </Link>
 
                     <button onClick={() => confirmarBorrar(p)}>
-                      <Trash2 className="text-red-600 hover:text-red-800" />
+                      <Trash2 className="text-red-600" />
                     </button>
                   </div>
                 </td>
+
               </tr>
             ))}
-
-            {!plugins.length && (
-              <tr>
-                <td colSpan="5" className="text-center p-4 opacity-70">
-                  No hay plugins creados.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
 
-      {/* ============================
-          MODAL BORRADO PREMIUM
-      ============================ */}
+      {/* MODAL */}
       {open && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl max-w-md w-full space-y-4 border border-gray-300 dark:border-gray-700">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl shadow-xl space-y-4">
             <h3 className="font-bold text-xl">¿Eliminar plugin?</h3>
-            <p className="opacity-80">Esta acción no se puede deshacer.</p>
+            <p>Esta acción no se puede deshacer.</p>
 
             <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setOpen(false)}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400"
-              >
-                Cancelar
-              </button>
-
-              <button
-                onClick={borrar}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 shadow"
-              >
+              <button onClick={() => setOpen(false)}>Cancelar</button>
+              <button onClick={borrar} className="bg-red-600 text-white px-4 py-2 rounded">
                 Eliminar
               </button>
             </div>
@@ -1583,8 +1838,9 @@ export default function AdminPluginsPage() {
 }
 
 
+
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\plugins\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -1608,50 +1864,40 @@ export default function DetallePluginPage() {
   const [descargas, setDescargas] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  /* ============================
-      CARGAR DATOS DEL PLUGIN
-  ============================ */
   useEffect(() => {
     if (!id) return;
 
     async function load() {
-      try {
-        // 🔥 CORRECTO: ruta admin creada y validada
-        const r1 = await fetch(`/api/admin/plugins/${id}`, {
-          credentials: "include",
-        });
-        const d1 = await r1.json();
+      const r1 = await fetch(`/api/admin/plugins/${id}`, {
+        credentials: "include",
+      });
+      const d1 = await r1.json();
+      setPlugin(d1.plugin);
 
-        if (!r1.ok) {
-          alert(d1.error ?? "Error cargando plugin");
-          return;
-        }
+      const r2 = await fetch("/api/admin/dashboard");
+      const d2 = await r2.json();
+      setDescargas(d2.descargasPorPlugin?.[id] ?? 0);
 
-        // 🔥 FIX: el backend devuelve { plugin: {...} }
-        setPlugin(d1.plugin);
-
-        // Obtener descargas
-        const r2 = await fetch("/api/admin/dashboard", {
-          credentials: "include",
-        });
-        const d2 = await r2.json();
-
-        setDescargas(d2.descargasPorPlugin?.[id] ?? 0);
-      } catch (e) {
-        alert("Error conectando con el servidor.");
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     }
 
     load();
   }, [id]);
 
+  function getYoutubeId(url) {
+    if (!url) return null;
+    const m1 = url.match(/v=([^&]+)/);
+    const m2 = url.match(/youtu\.be\/([^?]+)/);
+    return m1 ? m1[1] : m2 ? m2[1] : null;
+  }
+
   if (loading) return <p className="p-4">Cargando plugin…</p>;
   if (!plugin) return <p className="p-4">Plugin no encontrado.</p>;
 
+  const videoId = getYoutubeId(plugin.video_url);
+
   return (
-    <div className="p-4 max-w-3xl mx-auto space-y-8">
+    <div className="p-4 max-w-4xl mx-auto space-y-8">
 
       {/* VOLVER */}
       <Link
@@ -1662,95 +1908,100 @@ export default function DetallePluginPage() {
       </Link>
 
       {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-3">
-        {plugin.nombre}
-      </h1>
+     <h1 className="text-3xl font-bold flex items-center gap-3">
+  {plugin.nombre}
 
-      {/* CARD PRINCIPAL */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 shadow p-6 space-y-6">
+  {plugin.version && (
+    <span className="bg-blue-600 text-white px-2 py-1 text-sm rounded">
+      v{plugin.version}
+    </span>
+  )}
+</h1>
 
-        {/* IMAGEN + INFO */}
-        <div className="flex gap-6 items-start flex-col sm:flex-row">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border shadow p-6 space-y-6">
 
-          {/* Imagen */}
+        {/* HEADER */}
+        <div className="flex gap-6 flex-col sm:flex-row">
+
           {plugin.imagen_url ? (
             <img
               src={plugin.imagen_url}
-              alt={plugin.nombre}
-              className="w-40 h-40 object-cover rounded-lg shadow"
+              className="w-40 h-40 rounded-lg object-cover shadow"
             />
           ) : (
             <div className="w-40 h-40 bg-gray-400 rounded-lg" />
           )}
 
           <div className="space-y-3 flex-1">
-
-            {/* Descripción */}
             <p className="opacity-80">{plugin.descripcion}</p>
 
-            {/* Descargas */}
-            <p className="flex items-center gap-2 text-sm">
-              <Download size={18} />
-              <strong>{descargas}</strong> descargas
+            <p className="text-sm flex items-center gap-2">
+              <Download size={16} />
+              {descargas} descargas
             </p>
           </div>
         </div>
 
-        {/* PRECIOS */}
+        {/* ✅ PRECIOS PREMIUM */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <CardPrice label="Estándar" value={plugin.precio} color="blue" />
-          <CardPrice label="Anual" value={plugin.precio_anual} color="green" />
-          <CardPrice label="Completa" value={plugin.precio_completa} color="purple" />
+
+          {plugin.permite_trimestral && (
+            <PriceCard title="Trimestral" price={plugin.precio_trimestral} />
+          )}
+
+          {plugin.permite_anual && (
+            <PriceCard title="Anual" price={plugin.precio_anual} />
+          )}
+
+          {plugin.permite_completa && (
+            <PriceCard title="Completa" price={plugin.precio_completa} />
+          )}
+
         </div>
 
-        {/* ARCHIVO Y VIDEO */}
-        <div className="space-y-3 border-t pt-4 dark:border-gray-700">
-
-          <div>
-            <strong>Archivo TSEP:</strong>
-            {plugin.archivo_url ? (
-              <a
-                href={plugin.archivo_url}
-                target="_blank"
-                className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
-              >
-                Descargar <ExternalLink size={14} />
-              </a>
-            ) : (
-              <span className="opacity-60">No disponible</span>
-            )}
+        {/* ✅ VIDEO EMBEBIDO */}
+        {videoId && (
+          <div className="aspect-video rounded-lg overflow-hidden shadow">
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}`}
+              className="w-full h-full"
+              allowFullScreen
+            />
           </div>
+        )}
 
-          <div>
-            <strong>Video (YouTube):</strong>
-            {plugin.video_url ? (
-              <a
-                href={plugin.video_url}
-                target="_blank"
-                className="text-blue-600 dark:text-blue-400 flex items-center gap-1"
-              >
-                Ver video <ExternalLink size={14} />
-              </a>
-            ) : (
-              <span className="opacity-60">No disponible</span>
-            )}
-          </div>
+        {/* ✅ ARCHIVO */}
+        <div className="space-y-2 border-t pt-4">
+
+          {plugin.archivo_url ? (
+            <a
+              href={plugin.archivo_url}
+              target="_blank"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Descargar plugin <ExternalLink size={16} />
+            </a>
+          ) : (
+            <p className="opacity-60">Sin archivo disponible</p>
+          )}
+
         </div>
 
-        {/* ACCIONES */}
-        <div className="flex gap-4 justify-end pt-4 border-t dark:border-gray-700">
+        {/* ✅ ACCIONES */}
+        <div className="flex justify-end gap-4 pt-4 border-t">
 
           <Link href={`/panel/admin/plugins/editar/${id}`}>
-            <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg flex items-center gap-2 shadow">
-              <Edit3 size={18} /> Editar
+            <button className="px-4 py-2 bg-yellow-400 rounded flex items-center gap-2">
+              <Edit3 size={16} /> Editar
             </button>
           </Link>
 
           <Link href={`/panel/admin/plugins/borrar/${id}`}>
-            <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-2 shadow">
-              <Trash2 size={18} /> Borrar
+            <button className="px-4 py-2 bg-red-600 text-white rounded flex items-center gap-2">
+              <Trash2 size={16} /> Borrar
             </button>
           </Link>
+
         </div>
 
       </div>
@@ -1758,21 +2009,13 @@ export default function DetallePluginPage() {
   );
 }
 
-/* ============================================
-   COMPONENTE CARD DE PRECIO
-=============================================== */
-function CardPrice({ label, value, color }) {
-  const colors = {
-    blue: "text-blue-600 dark:text-blue-400",
-    green: "text-green-600 dark:text-green-400",
-    purple: "text-purple-600 dark:text-purple-400",
-  };
-
+/* ✅ CARD PRECIO */
+function PriceCard({ title, price }) {
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm border dark:border-gray-700">
-      <p className="font-semibold">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${colors[color]}`}>
-        {value > 0 ? `${value} €` : "—"}
+    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border shadow-sm text-center">
+      <p className="text-sm font-semibold">{title}</p>
+      <p className="text-2xl font-bold mt-1 text-blue-600">
+        {price > 0 ? `${Number(price).toFixed(2)} €` : "—"}
       </p>
     </div>
   );
@@ -1780,7 +2023,7 @@ function CardPrice({ label, value, color }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\page.jsx
 ============================================================
 
 "use client";
@@ -1915,7 +2158,7 @@ export default function AdminUsuariosPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -2178,7 +2421,7 @@ export default function AdminUsuarioDetallePage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\FacturacionClient.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\FacturacionClient.jsx
 ============================================================
 
 // /app/panel/facturacion/FacturacionClient.jsx
@@ -2258,7 +2501,7 @@ export default function FacturacionClient({ user_id, datosIniciales }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
 ============================================================
 
 // /app/panel/facturacion/page.jsx
@@ -2292,7 +2535,7 @@ export default async function Page() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\solicitar\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\solicitar\route.js
 ============================================================
 
 // /app/api/facturacion/solicitar/route.js
@@ -2355,7 +2598,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-descargas\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-descargas\page.jsx
 ============================================================
 
 // /app/panel/mis-descargas/page.jsx
@@ -2402,7 +2645,7 @@ export default function MisDescargas() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-facturas\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-facturas\page.jsx
 ============================================================
 
 // /app/panel/mis-facturas/page.jsx
@@ -2452,7 +2695,7 @@ export default async function MisFacturasPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-licencias\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-licencias\page.jsx
 ============================================================
 
 // /app/panel/mis-licencias/page.jsx
@@ -2532,7 +2775,7 @@ export default function MisLicenciasPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\page.jsx
 ============================================================
 
 // /app/panel/mis-pagos/page.jsx
@@ -2564,7 +2807,7 @@ export default async function MisPagosPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\PagosClient.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\PagosClient.jsx
 ============================================================
 
 // /app/panel/mis-pagos/PagosClient.jsx
@@ -2597,7 +2840,7 @@ export default function PagosClient({ pagos }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -2624,7 +2867,7 @@ export default function PagoPage({ params }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\PagoClient.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\PagoClient.jsx
 ============================================================
 
 // /app/panel/mis-pagos/[id]/PagoClient.jsx
@@ -2706,7 +2949,7 @@ export default function PagoClient({ pagoId }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\mis-plugins\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-plugins\page.jsx
 ============================================================
 
 // /app/panel/mis-plugins/page.jsx
@@ -2779,7 +3022,7 @@ export default async function MisPluginsPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\page.jsx
 ============================================================
 
 export const dynamic = "force-dynamic";
@@ -2796,7 +3039,7 @@ export default function PanelHome() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\panel-auth.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\panel-auth.jsx
 ============================================================
 
 // app/panel/panel-auth.jsx ✔️ corregido
@@ -2820,7 +3063,7 @@ export default async function PanelAuth({ children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\comprar\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\comprar\page.jsx
 ============================================================
 
 "use client";
@@ -3076,134 +3319,6 @@ export default function ComprarPage({ params }) {
       >
         Comprar
       </ButtonPremium>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\descargas\page.jsx
-============================================================
-
-// app/panel/user/descargas/page.jsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { Download, Box } from "lucide-react";
-
-/* -----------------------------------------------------
-   DESCARGAS USER — ESTILO PREMIUM
------------------------------------------------------ */
-
-export default function DescargasUserPage() {
-  const [plugins, setPlugins] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/user/plugins", {
-          credentials: "include",
-        });
-
-        const data = await res.json();
-        setPlugins(data.plugins ?? []);
-      } catch (err) {
-        console.error("Error cargando descargas:", err);
-        setPlugins([]);
-      }
-    }
-
-    load();
-  }, []);
-
-  if (plugins === null) return <p>Cargando descargas...</p>;
-
-  return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-
-      {/* Título */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Download size={30} /> Descargas disponibles
-      </h1>
-
-      {/* Contenedor premium */}
-      <UserSection>
-        {plugins.length === 0 && (
-          <p className="text-gray-500 dark:text-gray-400">
-            No tienes plugins disponibles para descargar.
-          </p>
-        )}
-
-        <div className="space-y-4">
-          {plugins.map((p) => (
-            <DownloadCard key={p.id} plugin={p} />
-          ))}
-        </div>
-      </UserSection>
-
-    </div>
-  );
-}
-
-/* -----------------------------------------------------
-   COMPONENTES PREMIUM
------------------------------------------------------ */
-
-/* Contenedor premium reutilizable */
-function UserSection({ children }) {
-  return (
-    <div
-      className="
-        bg-white dark:bg-gray-900 
-        rounded-xl shadow 
-        border border-gray-300 dark:border-gray-700
-        p-6 space-y-4
-      "
-    >
-      {children}
-    </div>
-  );
-}
-
-/* Tarjeta premium de descarga */
-function DownloadCard({ plugin }) {
-  return (
-    <div
-      className="
-        p-6 
-        bg-gray-100 dark:bg-gray-800 
-        border border-gray-300 dark:border-gray-700
-        rounded-xl shadow 
-        flex justify-between items-center
-      "
-    >
-      {/* Información plugin */}
-      <div className="flex items-center gap-4">
-        <Box size={30} className="text-gray-700 dark:text-gray-300" />
-
-        <div>
-          <p className="font-semibold text-lg">{plugin.nombre}</p>
-
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Versión: {plugin.version ?? "1.0"}
-          </p>
-        </div>
-      </div>
-
-      {/* Botón descarga */}
-      <a
-        href={`/api/plugin/download?plugin_id=${plugin.id}`}
-        className="
-          bg-blue-600 text-white 
-          px-4 py-2 rounded-lg 
-          flex items-center gap-2 
-          hover:bg-blue-700
-          shadow 
-          transition
-        "
-      >
-        <Download size={18} /> Descargar
-      </a>
     </div>
   );
 }

@@ -1,6 +1,124 @@
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\email.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ui\Select.jsx
+============================================================
+
+export default function Select({ children, className = "", ...props }) {
+  return (
+    <select
+      {...props}
+      className={`
+        w-full px-4 py-2.5 rounded-xl
+        bg-[#f3f4f6] dark:bg-[#242424]
+        text-[#1f2937] dark:text-[#e6e6e6]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
+        shadow-sm
+        hover:border-brand
+        focus:outline-none focus:ring-2 focus:ring-brand
+        transition-all
+        ${className}
+      `}
+    >
+      {children}
+    </select>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\hooks\useAccionesLicencia.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\hooks\useCrearLicencia.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\hooks\useLicencias.js
+============================================================
+
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\hooks\useUser.js
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function useUser() {
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchUser() {
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include", // ⭐ NECESARIO PARA LEER LA COOKIE
+      });
+
+      const data = await res.json();
+
+      if (data?.user) {
+        setUser(data.user);
+        setRole(data.role);
+      } else {
+        setUser(null);
+        setRole(null);
+      }
+    } catch (err) {
+      setUser(null);
+      setRole(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  return { user, role, loading, refresh: fetchUser };
+}
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\checkAdmin.js
+============================================================
+
+// lib/checkAdmin.js
+import { supabaseServer } from "./supabaseServer";
+
+export async function requireAdmin() {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    return { ok: false, redirect: "/login" };
+  }
+
+  const role = data.user.user_metadata?.role;
+
+  if (role !== "admin") {
+    return { ok: false, redirect: "/panel/user" };
+  }
+
+  return { ok: true, user: data.user };
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\email.js
 ============================================================
 
 // /lib/email.js
@@ -25,7 +143,7 @@ export async function sendEmail({ to, subject, html }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
 ============================================================
 
 // lib/logAdmin.js
@@ -50,7 +168,7 @@ export async function logAdminAction({ tipo, mensaje, user_id }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\pdf2.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\pdf2.js
 ============================================================
 
 // /lib/pdf2.js — FACTURA OMBIM (alineada + tabla premium + totales premium)
@@ -353,7 +471,7 @@ export async function generateInvoicePdf(datos) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\requireUser.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\requireUser.js
 ============================================================
 
 import { supabaseServer } from "./supabaseServer";
@@ -371,7 +489,7 @@ export async function requireUser() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseAdmin.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\supabaseAdmin.js
 ============================================================
 
 // lib/supabaseAdmin.js
@@ -390,7 +508,7 @@ export const supabaseAdmin = createClient(
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseRoute.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\supabaseRoute.js
 ============================================================
 
 import { cookies } from "next/headers";
@@ -423,7 +541,7 @@ export function supabaseRoute() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\supabaseServer.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\supabaseServer.js
 ============================================================
 
 // lib/supabaseServer.js — Next.js 16 compatible

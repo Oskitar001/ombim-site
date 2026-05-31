@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
 import {
-  LayoutDashboard,
-  Ticket,
-  CreditCard,
-  Scroll,
-  Users,
-  Package,
   ArrowLeft,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
   Menu,
+  Package,
+  Scroll,
+  Ticket,
+  Users,
   X
 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,15 @@ export default function AdminLayout({ children }) {
 
           <Link href="/panel/admin/pagos" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
             <CreditCard size={18} /> Pagos
+          </Link>
+
+          {/* ✅ NUEVO */}
+          <Link href="/panel/admin/facturas/nueva" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Crear factura
+          </Link>
+
+          <Link href="/panel/admin/facturas" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Facturas
           </Link>
 
           <Link href="/panel/admin/plugins" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
@@ -120,10 +130,19 @@ export default function AdminLayout({ children }) {
             <CreditCard size={18} /> Pagos
           </Link>
 
+          {/* ✅ NUEVO */}
+          <Link href="/panel/admin/facturas/nueva" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Crear factura
+          </Link>
+
+            <Link href="/panel/admin/facturas" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Facturas
+          </Link>
+
           <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
             <Package size={18} /> Plugins
           </Link>
-
+     
           <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
             <Scroll size={18} /> Logs
           </Link>
@@ -131,6 +150,8 @@ export default function AdminLayout({ children }) {
           <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
             <Users size={18} /> Usuarios
           </Link>
+          
+          
 
           <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
             <ArrowLeft size={18} /> Volver
@@ -139,13 +160,7 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* ---------- CONTENIDO PRINCIPAL ---------- */}
-      <main
-        className="
-          flex-1 overflow-y-auto
-          md:ml-64
-          p-6 pt-4
-        "
-      >
+      <main className="flex-1 overflow-y-auto md:ml-64 p-6 pt-4">
         {children}
       </main>
     </div>

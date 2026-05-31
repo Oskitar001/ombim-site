@@ -1,6 +1,79 @@
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\register\route.js
+============================================================
+
+// /app/api/auth/signup/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendEmail } from "@/lib/email";
+
+export async function POST(req) {
+  const body = await req.json();
+
+  // Normalización segura
+  const nombre = body?.nombre?.trim();
+  const email = body?.email?.trim()?.toLowerCase();
+  const password = body?.password;
+  const empresa = body?.empresa ?? null;
+  const telefono = body?.telefono ?? null;
+  const pais = body?.pais ?? null;
+  const idioma = body?.idioma ?? "es";
+
+  if (!nombre || !email || !password) {
+    return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+  }
+
+  // 1. Crear usuario sin confirmar
+  const { data: newUser, error: createErr } =
+    await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false, // obsoleto pero mantenido por compatibilidad
+      user_metadata: { nombre, empresa, telefono, pais, idioma, role: "user" }
+    });
+
+  if (createErr) {
+    return NextResponse.json({ error: createErr.message }, { status: 400 });
+  }
+
+  // 2. Generar link de confirmación
+  const { data: linkData, error: linkErr } =
+    await supabaseAdmin.auth.admin.generateLink({
+      type: "signup",
+      email
+    });
+
+  if (linkErr || !linkData?.properties?.action_link) {
+    console.error("Error generando link de confirmación:", linkErr);
+    return NextResponse.json({ error: "error_generando_link" }, { status: 500 });
+  }
+
+  const confirmUrl = linkData.properties.action_link;
+
+  // 3. Enviar email con HTML REAL
+  await sendEmail({
+    to: email,
+    subject: "Confirma tu cuenta – OMBIM",
+    html: `
+      <p>Hola ${nombre},</p>
+      <p>Gracias por registrarte en OMBIM.</p>
+      <p>Para activar tu cuenta, haz clic en este enlace:</p>
+      <p><a href="${confirmUrl}" style="color:#1a73e8; font-weight:bold;">Confirmar cuenta</a></p>
+      <p>Si no has creado esta cuenta, ignora este mensaje.</p>
+    `
+  });
+
+  return NextResponse.json({
+    ok: true,
+    message: "Registro completado. Revisa tu email para confirmar tu cuenta."
+  });
+}
+``
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset\route.js
 ============================================================
 
 // /app/api/auth/reset/route.js
@@ -37,7 +110,7 @@ export async function GET(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-password\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-password\route.js
 ============================================================
 
 // /app/api/auth/reset/route.js
@@ -69,7 +142,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-request\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\reset-request\route.js
 ============================================================
 
 // /app/api/auth/reset-request/route.js
@@ -101,7 +174,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\download\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\download\route.js
 ============================================================
 
 // app/api/download/route.js
@@ -140,7 +213,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\email\compra\route.js
 ============================================================
 
 // /app/api/email/compra/route.js
@@ -233,7 +306,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\email\licencias\activadas\route.js
 ============================================================
 
 import { PLANTILLA_ACTIVADAS } from "@/app/api/email/plantillas/activadas";
@@ -257,7 +330,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\activadas.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\activadas.js
 ============================================================
 
 // /app/api/email/plantillas/activadas.js
@@ -299,7 +372,7 @@ export const PLANTILLA_ACTIVADAS = `
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\compra.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\email\plantillas\compra.js
 ============================================================
 
 // /app/api/email/plantillas/compra.js
@@ -355,7 +428,7 @@ export const PLANTILLA_COMPRA = `
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\empresa\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\empresa\route.js
 ============================================================
 
 import { NextResponse } from "next/server";
@@ -377,7 +450,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar\route.js
 ============================================================
 
 // /app/api/facturacion/guardar/route.js
@@ -450,7 +523,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\guardar-numero\route.js
 ============================================================
 
 // /app/api/facturacion/guardar-numero/route.js
@@ -501,7 +574,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\pdf\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\pdf\route.js
 ============================================================
 
 // /app/api/facturacion/pdf/route.js
@@ -631,7 +704,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar-factura\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\facturacion\solicitar-factura\route.js
 ============================================================
 
 // /app/api/facturacion/solicitar/route.js
@@ -795,7 +868,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\facturas\verify\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\facturas\verify\route.js
 ============================================================
 
 // /app/api/facturas/verify/route.js
@@ -884,7 +957,7 @@ export async function GET(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\activar\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\activar\route.js
 ============================================================
 
 import { NextResponse } from "next/server";
@@ -928,7 +1001,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\bloquear\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\bloquear\route.js
 ============================================================
 
 import { NextResponse } from "next/server";
@@ -976,7 +1049,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\mias\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\mias\route.js
 ============================================================
 
 // app/api/licencias/mias/route.js
@@ -1020,7 +1093,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\reset-activaciones\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\reset-activaciones\route.js
 ============================================================
 
 // app/api/licencias/reset-activaciones/route.js
@@ -1067,7 +1140,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\todas\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\todas\route.js
 ============================================================
 
 // app/api/licencias/todas/route.js
@@ -1105,7 +1178,7 @@ export async function GET(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\trial\route.js
 ============================================================
 
 import { NextResponse } from "next/server";
@@ -1151,7 +1224,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\validar\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\validar\route.js
 ============================================================
 
 // /app/api/licencias/validar/route.js
@@ -1249,7 +1322,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\licencias\verificar\route.js
 ============================================================
 
 // app/api/licencias/verificar/route.js
@@ -1349,7 +1422,7 @@ export async function GET(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\pagos\crear\route.js
 ============================================================
 
 // /app/api/pagos/crear/route.js
@@ -1454,7 +1527,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\detalle\[pago_id]\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\pagos\detalle\[pago_id]\route.js
 ============================================================
 
 // /app/api/pagos/detalle/[pago_id]/route.js
@@ -1540,7 +1613,7 @@ export async function GET(req, ctx) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\pagos\guardar-emails\route.js
 ============================================================
 
 // app/api/pagos/guardar-emails/route.js
@@ -1608,7 +1681,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\pagos\notificar-transferencia\route.js
 ============================================================
 
 // app/api/pagos/notificar-transferencia/route.js
@@ -1682,7 +1755,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\pagos\validar\route.js
 ============================================================
 
 // /app/api/pagos/validar/route.js
@@ -1764,7 +1837,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\plugin\download\route.js
 ============================================================
 
 // /app/api/plugin/download/route.js
@@ -1867,7 +1940,7 @@ export async function GET(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\plugin\validate-license\route.js
 ============================================================
 
 // /app/api/plugin/validate-license/route.js
@@ -1970,7 +2043,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugin\[id]\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\plugin\[id]\route.js
 ============================================================
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -2037,7 +2110,7 @@ export async function GET(req, context) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\plugins\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\plugins\route.js
 ============================================================
 
 // /app/api/plugins/route.js
@@ -2081,7 +2154,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\facturacion\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\facturacion\route.js
 ============================================================
 
 // /app/api/user/facturacion/route.js
@@ -2123,7 +2196,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencia\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\licencia\route.js
 ============================================================
 
 // /app/api/user/licencia/route.js
@@ -2184,7 +2257,7 @@ export async function GET(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\licencias\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\licencias\route.js
 ============================================================
 
 // /app/api/user/licencias/route.js
@@ -2254,7 +2327,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\pagos\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\pagos\route.js
 ============================================================
 
 // /app/api/user/pagos/route.js
@@ -2299,7 +2372,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\perfil\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\perfil\route.js
 ============================================================
 
 // /app/api/user/perfil/route.js
@@ -2362,7 +2435,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\plugins\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\plugins\route.js
 ============================================================
 
 // /app/api/user/plugins/route.js
@@ -2437,7 +2510,7 @@ export async function GET() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\api\user\update\route.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\user\update\route.js
 ============================================================
 
 // /app/api/user/update/route.js
@@ -2481,7 +2554,7 @@ export async function POST(req) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\layout.jsx
 ============================================================
 
 import "./globals.css";
@@ -2504,7 +2577,7 @@ export default function RootLayout({ children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\middleware.js
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\middleware.js
 ============================================================
 
 // middleware.js
@@ -2581,7 +2654,7 @@ export const config = {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\dashboard\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\dashboard\page.jsx
 ============================================================
 
 "use client";
@@ -2783,7 +2856,7 @@ function CardRow({ children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
 ============================================================
 
 "use client";
@@ -2942,7 +3015,7 @@ export default function AdminLayout({ children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
 ============================================================
 
 "use client";
@@ -3092,321 +3165,6 @@ export default function AdminLicenciasPage() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { use, useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  KeyRound,
-  CheckCircle,
-  Ban,
-  RefreshCw,
-  Calendar,
-  Star,
-} from "lucide-react";
-
-export default function AdminLicenciaDetallePage({ params }) {
-  const { id } = use(params);
-
-  const [licencia, setLicencia] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [maquinas, setMaquinas] = useState([]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    async function load() {
-      const r = await fetch(`/api/admin/licencias/${id}`, {
-        credentials: "include",
-      });
-
-      const d = await r.json();
-      setLicencia(d.licencia ?? null);
-
-      const rM = await fetch(`/api/admin/licencias/maquinas?id=${id}`, {
-        credentials: "include",
-      });
-      const dM = await rM.json();
-      setMaquinas(dM.maquinas ?? []);
-
-      setLoading(false);
-    }
-
-    load();
-  }, [id]);
-
-  if (!id) return <p>ID inválido</p>;
-  if (loading) return <p>Cargando licencia…</p>;
-  if (!licencia) return <p>Licencia no encontrada</p>;
-
-  async function accion(endpoint) {
-    await fetch(`/api/admin/licencias/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: licencia.id }),
-    });
-
-    location.reload();
-  }
-
-  async function borrarMaquina(maquinaId) {
-    await fetch("/api/admin/licencias/maquinas", {
-      method: "DELETE",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: maquinaId }),
-    });
-
-    location.reload();
-  }
-
-  return (
-    <div className="space-y-8 max-w-3xl mx-auto p-4">
-
-      {/* VOLVER */}
-      <Link
-        href="/panel/admin/licencias"
-        className="text-blue-600 hover:underline flex items-center gap-1"
-      >
-        <ArrowLeft size={20} /> Volver
-      </Link>
-
-      {/* TÍTULO */}
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <KeyRound size={30} /> Licencia #{licencia.id}
-      </h1>
-
-      {/* CARD DATOS */}
-      <div className="
-        p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
-        bg-white dark:bg-gray-900 space-y-4
-      ">
-
-        {/* ✅ Plugin */}
-        <Row label="Plugin">
-          {licencia.plugins?.nombre || licencia.plugin_nombre || licencia.plugin_id}
-        </Row>
-
-        {/* ✅ LICENSE KEY */}
-        <div className="flex flex-col gap-1">
-          <p className="font-semibold text-gray-700 dark:text-gray-300">
-            License Key:
-          </p>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={licencia.license_key || ""}
-              readOnly
-              className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-800 text-sm"
-            />
-
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(licencia.license_key);
-                alert("License key copiada");
-              }}
-              className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
-            >
-              Copiar
-            </button>
-          </div>
-        </div>
-
-        {/* ✅ Tipo */}
-        <Row label="Tipo">
-          <TipoBadge tipo={licencia.tipo} />
-        </Row>
-
-        {/* ✅ Estado */}
-        <Row label="Estado">
-          <EstadoBadge estado={licencia.estado} />
-        </Row>
-
-        {/* ✅ Activaciones */}
-        <Row label="Activaciones">
-          {licencia.activaciones_usadas}/{licencia.max_activaciones}
-        </Row>
-
-        {/* ✅ Expira */}
-        <Row label="Expira">
-          {licencia.fecha_expiracion
-            ? new Date(licencia.fecha_expiracion).toLocaleString()
-            : "—"}
-        </Row>
-
-        {/* ✅ Creada */}
-        <Row label="Creada">
-          {new Date(licencia.fecha_creacion).toLocaleString()}
-        </Row>
-      </div>
-
-      {/* MÁQUINAS */}
-      <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
-        <h3 className="font-semibold">Máquinas activas</h3>
-
-        {maquinas.length === 0 && (
-          <p className="text-sm opacity-70">No hay máquinas registradas</p>
-        )}
-
-        {maquinas.map((m) => (
-          <div
-            key={m.id}
-            className="flex justify-between items-center border p-2 rounded bg-white dark:bg-gray-900"
-          >
-            <span>{m.maquina_id}</span>
-
-            <button
-              onClick={() => borrarMaquina(m.id)}
-              className="text-red-600 text-sm"
-            >
-              Eliminar
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* ACCIONES */}
-      <div className="space-y-3">
-        <ActionButton
-          color="green"
-          icon={<CheckCircle size={18} />}
-          label="Activar"
-          onClick={() => accion("activar")}
-        />
-
-        <ActionButton
-          color="red"
-          icon={<Ban size={18} />}
-          label="Bloquear"
-          onClick={() => accion("bloquear")}
-        />
-
-        <ActionButton
-          color="purple"
-          icon={<RefreshCw size={18} />}
-          label="Reset activaciones"
-          onClick={() => accion("reset-activaciones")}
-        />
-
-        <ActionButton
-          color="yellow"
-          icon={<Calendar size={18} />}
-          label="Hacer anual"
-          onClick={() => accion("hacer-anual")}
-        />
-
-        <ActionButton
-          color="indigo"
-          icon={<Star size={18} />}
-          label="Hacer completa"
-          onClick={() => accion("hacer-completa")}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* COMPONENTES */
-
-function Row({ label, children }) {
-  return (
-    <div className="flex justify-between">
-      <p className="font-semibold">{label}:</p>
-      <p>{children}</p>
-    </div>
-  );
-}
-
-function TipoBadge({ tipo }) {
-  const map = {
-    anual: { color: "bg-yellow-200 text-yellow-800", icon: <Calendar size={14} />, label: "Anual" },
-    completa: { color: "bg-purple-200 text-purple-800", icon: <Star size={14} />, label: "Completa" },
-    trial: { color: "bg-blue-200 text-blue-800", icon: <KeyRound size={14} />, label: "Trial" },
-  };
-
-  const t = map[tipo];
-
-  return (
-    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${t.color}`}>
-      {t.icon} {t.label}
-    </span>
-  );
-}
-
-function EstadoBadge({ estado }) {
-  const map = {
-    activa: { color: "bg-green-200 text-green-800", icon: <CheckCircle size={14} />, label: "Activa" },
-    bloqueada: { color: "bg-red-200 text-red-800", icon: <Ban size={14} />, label: "Bloqueada" },
-    expirada: { color: "bg-orange-200 text-orange-800", icon: <Calendar size={14} />, label: "Expirada" },
-  };
-
-  const e = map[estado];
-
-  return (
-    <span className={`px-2 py-1 rounded text-xs font-semibold inline-flex items-center gap-1 ${e.color}`}>
-      {e.icon} {e.label}
-    </span>
-  );
-}
-
-function ActionButton({ color, icon, label, onClick }) {
-  const bg = {
-    green: "bg-green-600 hover:bg-green-700",
-    red: "bg-red-600 hover:bg-red-700",
-    purple: "bg-purple-600 hover:bg-purple-700",
-    yellow: "bg-yellow-600 hover:bg-yellow-700",
-    indigo: "bg-indigo-600 hover:bg-indigo-700",
-  }[color];
-
-  return (
-    <button
-      onClick={onClick}
-      className={`${bg} text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md`}
-    >
-      {icon} {label}
-    </button>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias-tipos\page.jsx
-============================================================
-
-import { requireAdmin } from "@/lib/checkAdmin";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-export const dynamic = "force-dynamic";
-
-export default async function AdminLicenciasTiposPage() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return null;
-
-  const { data: tipos } = await supabaseAdmin
-    .from("licencias_tipos")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  return (
-    <div>
-      <h1 className="text-xl mb-4 font-bold">Tipos de licencia</h1>
-
-      {!tipos?.length && <p>No hay tipos de licencia.</p>}
-
-      <table>
-        {/* ... */}
-      </table>
     </div>
   );
 }

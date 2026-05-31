@@ -1,6 +1,134 @@
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\descargas\page.jsx
+============================================================
+
+// app/panel/user/descargas/page.jsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { Download, Box } from "lucide-react";
+
+/* -----------------------------------------------------
+   DESCARGAS USER — ESTILO PREMIUM
+----------------------------------------------------- */
+
+export default function DescargasUserPage() {
+  const [plugins, setPlugins] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/user/plugins", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        setPlugins(data.plugins ?? []);
+      } catch (err) {
+        console.error("Error cargando descargas:", err);
+        setPlugins([]);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (plugins === null) return <p>Cargando descargas...</p>;
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Download size={30} /> Descargas disponibles
+      </h1>
+
+      {/* Contenedor premium */}
+      <UserSection>
+        {plugins.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400">
+            No tienes plugins disponibles para descargar.
+          </p>
+        )}
+
+        <div className="space-y-4">
+          {plugins.map((p) => (
+            <DownloadCard key={p.id} plugin={p} />
+          ))}
+        </div>
+      </UserSection>
+
+    </div>
+  );
+}
+
+/* -----------------------------------------------------
+   COMPONENTES PREMIUM
+----------------------------------------------------- */
+
+/* Contenedor premium reutilizable */
+function UserSection({ children }) {
+  return (
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-xl shadow 
+        border border-gray-300 dark:border-gray-700
+        p-6 space-y-4
+      "
+    >
+      {children}
+    </div>
+  );
+}
+
+/* Tarjeta premium de descarga */
+function DownloadCard({ plugin }) {
+  return (
+    <div
+      className="
+        p-6 
+        bg-gray-100 dark:bg-gray-800 
+        border border-gray-300 dark:border-gray-700
+        rounded-xl shadow 
+        flex justify-between items-center
+      "
+    >
+      {/* Información plugin */}
+      <div className="flex items-center gap-4">
+        <Box size={30} className="text-gray-700 dark:text-gray-300" />
+
+        <div>
+          <p className="font-semibold text-lg">{plugin.nombre}</p>
+
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Versión: {plugin.version ?? "1.0"}
+          </p>
+        </div>
+      </div>
+
+      {/* Botón descarga */}
+      <a
+        href={`/api/plugin/download?plugin_id=${plugin.id}`}
+        className="
+          bg-blue-600 text-white 
+          px-4 py-2 rounded-lg 
+          flex items-center gap-2 
+          hover:bg-blue-700
+          shadow 
+          transition
+        "
+      >
+        <Download size={18} /> Descargar
+      </a>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\layout.jsx
 ============================================================
 
 "use client";
@@ -193,7 +321,7 @@ function PanelLink({ href, icon, children, onClick, className = "" }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\page.jsx
 ============================================================
 
 "use client";
@@ -370,7 +498,7 @@ function EstadoBadge({ estado }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\licencias\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -523,7 +651,7 @@ function EstadoBadge({ estado }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\MisDatosClient.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\MisDatosClient.jsx
 ============================================================
 
 "use client";
@@ -956,7 +1084,7 @@ globalThis["btn-premium"] = btnPremium;
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\mis-datos\page.jsx
 ============================================================
 
 // /app/panel/mis-datos/page.jsx
@@ -968,7 +1096,7 @@ export default function Page() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\page.jsx
 ============================================================
 
 "use client";
@@ -1168,7 +1296,7 @@ function UserRow({ children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\page.jsx
 ============================================================
 
 "use client";
@@ -1348,7 +1476,7 @@ function Badge({ children, color }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\[id]\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\pagos\[id]\page.jsx
 ============================================================
 
 "use client";
@@ -1646,7 +1774,7 @@ export default function UserPagoDetallePage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\app\panel\user\plugins\page.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\plugins\page.jsx
 ============================================================
 
 "use client";
@@ -1796,7 +1924,7 @@ export default function UserPluginsPage() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\AboutSection.jsx
 ============================================================
 
 "use client";
@@ -1838,7 +1966,7 @@ export default function AboutSection() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\CambiarTipo.jsx
 ============================================================
 
 "use client";
@@ -1899,7 +2027,7 @@ export default function CambiarTipo({ id, tipos, tipoActual, onUpdated }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\CrearLicenciaModal.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\CrearLicenciaModal.jsx
 ============================================================
 
 "use client";
@@ -1985,7 +2113,7 @@ export default function CrearLicenciaModal({ onClose, onCreated }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\EditarNotas.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\EditarNotas.jsx
 ============================================================
 
 "use client";
@@ -2040,7 +2168,7 @@ export default function EditarNotas({ id, notasIniciales, onUpdated }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaAcciones.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaAcciones.jsx
 ============================================================
 
 "use client";
@@ -2120,14 +2248,14 @@ export default function LicenciaAcciones({ id, onUpdated }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaDetalle.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciaDetalle.jsx
 ============================================================
 
 
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciasTable.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\LicenciasTable.jsx
 ============================================================
 
 export default function LicenciasTable({ licencias }) {
@@ -2165,7 +2293,7 @@ export default function LicenciasTable({ licencias }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\admin\StatsCard.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\StatsCard.jsx
 ============================================================
 
 export default function StatsCard({ title, value }) {
@@ -2179,7 +2307,7 @@ export default function StatsCard({ title, value }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ConfirmDialog.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ConfirmDialog.jsx
 ============================================================
 
 "use client";
@@ -2254,7 +2382,7 @@ export default function ConfirmDialog({
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Contact.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Contact.jsx
 ============================================================
 
 export default function Contact() {
@@ -2306,7 +2434,7 @@ export default function Contact() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Demos.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Demos.jsx
 ============================================================
 
 "use client";
@@ -2371,7 +2499,7 @@ export default function Demos() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Footer.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Footer.jsx
 ============================================================
 
 import Link from "next/link";
@@ -2477,7 +2605,7 @@ export default function Footer() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
 ============================================================
 
 <section
@@ -2549,7 +2677,7 @@ export default function Footer() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
 ============================================================
 
 "use client";
@@ -2820,7 +2948,7 @@ export default function Navbar({ className = "" }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\panel\UserCard.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\panel\UserCard.jsx
 ============================================================
 
 export default function UserCard({ title, value, icon }) {
@@ -2842,7 +2970,7 @@ export default function UserCard({ title, value, icon }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\panel\UserSection.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\panel\UserSection.jsx
 ============================================================
 
 export default function UserSection({ title, children }) {
@@ -2864,7 +2992,7 @@ export default function UserSection({ title, children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\PanelWrapper.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\PanelWrapper.jsx
 ============================================================
 
 // PanelWrapper.jsx
@@ -2908,7 +3036,7 @@ export default function PanelWrapper({ children }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Projects.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Projects.jsx
 ============================================================
 
 const items = [
@@ -2963,7 +3091,7 @@ export default function Projects() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\RevealObserver.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\RevealObserver.jsx
 ============================================================
 
 "use client";
@@ -3000,7 +3128,7 @@ export default function RevealObserver() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\Services.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Services.jsx
 ============================================================
 
 export default function Services() {
@@ -3078,7 +3206,7 @@ export default function Services() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
 ============================================================
 
 "use client";
@@ -3097,7 +3225,7 @@ export default function TestimonialsSection() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
 ============================================================
 
 "use client";
@@ -3147,7 +3275,7 @@ export default function TrustSection() {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Button.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ui\Button.jsx
 ============================================================
 
 export default function Button({ children, className = "", ...props }) {
@@ -3171,7 +3299,7 @@ export default function Button({ children, className = "", ...props }) {
 
 
 ============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Input.jsx
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ui\Input.jsx
 ============================================================
 
 export default function Input({ className = "", ...props }) {
@@ -3189,123 +3317,5 @@ export default function Input({ className = "", ...props }) {
       `}
     />
   );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\components\ui\Select.jsx
-============================================================
-
-export default function Select({ children, className = "", ...props }) {
-  return (
-    <select
-      {...props}
-      className={`
-        w-full px-4 py-2.5 rounded-xl
-        bg-[#f3f4f6] dark:bg-[#242424]
-        text-[#1f2937] dark:text-[#e6e6e6]
-        border border-[#d1d5db] dark:border-[#3a3a3a]
-        shadow-sm
-        hover:border-brand
-        focus:outline-none focus:ring-2 focus:ring-brand
-        transition-all
-        ${className}
-      `}
-    >
-      {children}
-    </select>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useAccionesLicencia.js
-============================================================
-
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useCrearLicencia.js
-============================================================
-
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useLicencias.js
-============================================================
-
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\hooks\useUser.js
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-
-export default function useUser() {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  async function fetchUser() {
-    try {
-      const res = await fetch("/api/auth/me", {
-        method: "GET",
-        credentials: "include", // ⭐ NECESARIO PARA LEER LA COOKIE
-      });
-
-      const data = await res.json();
-
-      if (data?.user) {
-        setUser(data.user);
-        setRole(data.role);
-      } else {
-        setUser(null);
-        setRole(null);
-      }
-    } catch (err) {
-      setUser(null);
-      setRole(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  return { user, role, loading, refresh: fetchUser };
-}
-
-
-
-============================================================
-📄 ARCHIVO: D:\OMBIM-PROYECTO\ombim-site\lib\checkAdmin.js
-============================================================
-
-// lib/checkAdmin.js
-import { supabaseServer } from "./supabaseServer";
-
-export async function requireAdmin() {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    return { ok: false, redirect: "/login" };
-  }
-
-  const role = data.user.user_metadata?.role;
-
-  if (role !== "admin") {
-    return { ok: false, redirect: "/panel/user" };
-  }
-
-  return { ok: true, user: data.user };
 }
 

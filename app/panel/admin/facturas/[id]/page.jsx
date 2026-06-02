@@ -95,7 +95,8 @@ async function guardarYGenerar() {
       <h1 className="text-2xl font-bold mb-6">Editar factura</h1>
 
       {/* ================= CLIENTE ================= */}
-      <div className="bg-white p-4 mb-6 rounded shadow">
+     <div className="bg-white dark:bg-gray-900 p-6 mb-6 rounded-xl border border-gray-200 dark:border-gray-700">
+
         <h2 className="font-semibold">Cliente</h2>
 
         <input value={cliente.nombre} onChange={e => setCliente({...cliente, nombre:e.target.value})} placeholder="Nombre" className="input-premium w-full mb-2" />
@@ -106,7 +107,8 @@ async function guardarYGenerar() {
       </div>
 
       {/* ================= LINEAS ================= */}
-      <div className="bg-white p-4 mb-6 rounded shadow">
+     <div className="bg-white dark:bg-gray-900 p-6 mb-6 rounded-xl border border-gray-200 dark:border-gray-700">
+
         <h2 className="font-semibold">Conceptos</h2>
 
         {lineas.map((l, i) => (
@@ -145,7 +147,7 @@ async function guardarYGenerar() {
       </div>
 
       {/* ================= PEDIDOS ================= */}
-      <div className="bg-white p-4 mb-6 rounded shadow">
+      <div className="bg-white dark:bg-gray-900 p-6 mb-6 rounded-xl border border-gray-200 dark:border-gray-700">
         <h2 className="font-semibold">Pedidos</h2>
 
         {pedidos.map((p, i) => (

@@ -1637,6 +1637,54 @@ export default function SobreMiPage() {
 
 
 ============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\clientes\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("facturas")
+    .select(`
+      cliente_nombre,
+      cliente_nif,
+      cliente_direccion,
+      cliente_ciudad,
+      cliente_cp,
+      cliente_telefono
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ clientes: [] });
+  }
+
+  const clientesUnicos = [];
+
+  (data || []).forEach((c) => {
+    if (
+      c.cliente_nombre &&
+      !clientesUnicos.find((x) => x.nombre === c.cliente_nombre)
+    ) {
+      clientesUnicos.push({
+        id: c.cliente_nombre,
+        nombre: c.cliente_nombre,
+        nif: c.cliente_nif,
+        direccion: c.cliente_direccion,
+        ciudad: c.cliente_ciudad,
+        cp: c.cliente_cp,
+        telefono: c.cliente_telefono,
+      });
+    }
+  });
+
+  return NextResponse.json({ clientes: clientesUnicos });
+}
+
+
+============================================================
 📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\dashboard\route.js
 ============================================================
 
@@ -1727,6 +1775,263 @@ export async function GET() {
     ingresosTotales,
     descargasPorPlugin: descPorPlugin,
   });
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\facturas\duplicar\route.js
+============================================================
+
+import { generarNumeroFactura } from "@/lib/generarNumeroFactura";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export async function POST(req) {
+  try {
+    const { id } = await req.json();
+
+    // 1️⃣ FACTURA ORIGINAL
+    const { data: factura, error: facturaErr } = await supabaseAdmin
+      .from("facturas")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (facturaErr || !factura) {
+      console.error("Factura original no encontrada", facturaErr);
+      return NextResponse.json({ error: "factura_no_encontrada" }, { status: 404 });
+    }
+
+    // 2️⃣ LINEAS
+    const { data: lineas, error: lineasErr } = await supabaseAdmin
+      .from("factura_lineas")
+      .select("*")
+      .eq("factura_id", id);
+
+    if (lineasErr) {
+      console.error("Error cargando líneas", lineasErr);
+      return NextResponse.json({ error: "error_lineas" }, { status: 500 });
+    }
+
+    // 3️⃣ NUEVO NUMERO
+    const numeroFactura = await generarNumeroFactura();
+
+    // 4️⃣ CREAR FACTURA NUEVA
+    const { data: nuevaFactura, error: nuevaErr } = await supabaseAdmin
+      .from("facturas")
+      .insert([
+        {
+          numero: numeroFactura,
+          fecha: new Date(),
+          cliente_nombre: factura.cliente_nombre,
+          cliente_nif: factura.cliente_nif,
+          cliente_direccion: factura.cliente_direccion,
+          cliente_ciudad: factura.cliente_ciudad,
+          cliente_cp: factura.cliente_cp,
+          cliente_telefono: factura.cliente_telefono,
+          subtotal: factura.subtotal,
+          iva: factura.iva,
+          retencion: factura.retencion,
+          total: factura.total,
+          pedidos: factura.pedidos, // ✅ IMPORTANTE
+        },
+      ])
+      .select()
+      .single();
+
+    if (nuevaErr || !nuevaFactura) {
+      console.error("Error creando factura nueva", nuevaErr);
+      return NextResponse.json({ error: "error_crear_factura" }, { status: 500 });
+    }
+
+    // 5️⃣ DUPLICAR LINEAS
+    const nuevasLineas = (lineas || []).map((l) => ({
+      factura_id: nuevaFactura.id,
+      concepto: l.concepto,
+      precio: l.precio,
+      cantidad: l.cantidad,
+      importe: l.importe,
+    }));
+
+    const { error: insertLinesErr } = await supabaseAdmin
+      .from("factura_lineas")
+      .insert(nuevasLineas);
+
+    if (insertLinesErr) {
+      console.error("Error insertando líneas", insertLinesErr);
+      return NextResponse.json({ error: "error_lineas_insert" }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("ERROR DUPLICAR:", err);
+    return NextResponse.json({ error: "error_interno" }, { status: 500 });
+  }
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\facturas\pdf\route.js
+============================================================
+
+import { generateInvoicePdf } from "@/lib/pdf2";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "id_missing" }, { status: 400 });
+  }
+
+  // ✅ 1. FACTURA
+  const { data: factura, error: facturaErr } = await supabaseAdmin
+    .from("facturas")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (facturaErr || !factura) {
+    console.error("Factura no encontrada", facturaErr);
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  // ✅ 2. LINEAS
+  const { data: lineas, error: lineasErr } = await supabaseAdmin
+    .from("factura_lineas")
+    .select("*")
+    .eq("factura_id", id);
+
+  if (lineasErr) {
+    console.error("Error cargando líneas", lineasErr);
+  }
+
+  // ✅ 3. FORMATO PARA PDF
+  const licencias = (lineas || []).map((l) => ({
+    nombrePlugin: l.concepto,
+    precioUnitario: l.precio,
+    cantidad: l.cantidad,
+  }));
+
+  const datosPdf = {
+    manual: true,
+    numeroFactura: factura.numero,
+    
+    fecha: new Intl.DateTimeFormat("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(factura.fecha))
+    ,
+    razonSocial: factura.cliente_nombre,
+    nif: factura.cliente_nif,
+    direccion: factura.cliente_direccion,
+    ciudad: factura.cliente_ciudad,
+    cp: factura.cliente_cp,
+    telefono: factura.cliente_telefono,
+    licencias,
+    usarRetencion: factura.retencion > 0,
+    pedidos: factura.pedidos
+      ? factura.pedidos.split(" ").filter(p => p)
+      : [],
+  };
+
+  // ✅ 4. GENERAR PDF
+  const pdfBuffer = await generateInvoicePdf(datosPdf);
+
+  return new Response(pdfBuffer, {
+    headers: {
+      "Content-Type": "application/pdf",
+    },
+  });
+}
+``
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\facturas\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("facturas")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: "error" }, { status: 500 });
+  }
+
+  return NextResponse.json({ facturas: data });
+}
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\facturas\[id]\route.js
+============================================================
+
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
+export async function GET(req, context) {
+  const { id } = await context.params;
+
+  const { data: factura } = await supabaseAdmin
+    .from("facturas")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  const { data: lineas } = await supabaseAdmin
+    .from("factura_lineas")
+    .select("*")
+    .eq("factura_id", id);
+
+  return NextResponse.json({ factura, lineas });
+}
+
+export async function PUT(req, context) {
+  const { id } = await context.params;
+
+  const { cliente, lineas, pedidos, usarRetencion } = await req.json();
+
+  // actualizar factura
+  await supabaseAdmin
+    .from("facturas")
+    .update({
+      cliente_nombre: cliente.nombre,
+      cliente_nif: cliente.nif,
+      cliente_direccion: cliente.direccion,
+      cliente_ciudad: cliente.ciudad,
+      cliente_cp: cliente.cp,
+      cliente_telefono: cliente.telefono,
+      pedidos: pedidos
+        .filter(p => p && p.trim() !== "")
+        .join(" "),
+
+    })
+    .eq("id", id);
+
+  // borrar líneas antiguas
+  await supabaseAdmin.from("factura_lineas").delete().eq("factura_id", id);
+
+  // insertar nuevas
+  const nuevas = lineas.map(l => ({
+    factura_id: id,
+    concepto: l.concepto,
+    precio: l.precio,
+    cantidad: l.cantidad
+  }));
+
+  await supabaseAdmin.from("factura_lineas").insert(nuevas);
+
+  return NextResponse.json({ ok: true });
 }
 
 
@@ -3072,279 +3377,5 @@ export async function GET() {
   }));
 
   return NextResponse.json({ users });
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\[id]\route.js
-============================================================
-
-// /app/api/admin/usuarios/[id]/route.js
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { requireAdmin } from "@/lib/checkAdmin";
-
-export const runtime = "nodejs";
-
-export async function GET(req, ctx) {
-  // 📌 FIX Next.js 15/16 → params es PROMISE
-  const { id } = await ctx.params;
-
-  // 1. Verificar admin
-  const admin = await requireAdmin();
-  if (!admin.ok) {
-    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
-  }
-
-  // 2. Obtener usuario desde AUTH
-  const authRes = await supabaseAdmin.auth.admin.getUserById(id);
-
-  if (!authRes?.data?.user) {
-    return NextResponse.json({ error: "usuario_no_encontrado" }, { status: 404 });
-  }
-
-  const user = authRes.data.user;
-
-  // 3. Obtener licencias del usuario
-  const { data: licencias, error: errLic } = await supabaseAdmin
-    .from("licencias")
-    .select("*, plugins(nombre)")
-    .eq("user_id", id);
-
-  // 4. Obtener pagos del usuario
-  const { data: pagos, error: errPagos } = await supabaseAdmin
-    .from("pagos")
-    .select("*, plugins(nombre)")
-    .eq("user_id", id);
-
-  return NextResponse.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      created_at: user.created_at,
-      last_sign_in_at: user.last_sign_in_at,
-      user_metadata: user.user_metadata ?? {},
-    },
-    licencias: licencias ?? [],
-    pagos: pagos ?? [],
-  });
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\_utils.js
-============================================================
-
-// app/api/admin/_utils.js (corregido)
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
-
-export async function requireAdmin() {
-  const cookieStore = await cookies();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set() {},
-        remove() {},
-      },
-    }
-  );
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return { error: "NO_AUTH", status: 401 };
-  }
-
-  if (user.user_metadata?.role !== "admin") {
-    return { error: "NO_ADMIN", status: 403 };
-  }
-
-  return { supabase, user };
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
-============================================================
-
-// /app/api/auth/login/route.js
-import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
-
-export async function POST(req) {
-  const { email, password } = await req.json();
-
-  const normalizedEmail = email?.trim()?.toLowerCase();
-  const cookieHeader = req.headers.get("cookie") ?? "";
-
-  // Siempre usamos ESTA respuesta para permitir que Supabase modifique cookies
-  const response = NextResponse.json({ ok: true });
-
-  // Supabase client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        // ✔ FIX: permitir "=" en valores de cookie
-        get(name) {
-          const raw = cookieHeader
-            .split("; ")
-            .find((c) => c.startsWith(name + "="));
-
-          if (!raw) return undefined;
-
-          return raw.slice(name.length + 1);
-        },
-
-        set(name, value, options) {
-          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
-            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
-          }`;
-
-          response.headers.append("Set-Cookie", cookie);
-        },
-
-        remove(name) {
-          response.headers.append(
-            "Set-Cookie",
-            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
-          );
-        }
-      }
-    }
-  );
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: normalizedEmail,
-    password
-  });
-
-  // ❗ FIX: devolver SIEMPRE usando el mismo response
-  if (error) {
-    response.body = JSON.stringify({ error: error.message });
-    response.status = 400;
-    return response;
-  }
-
-  const role = data.user.user_metadata?.role ?? "user";
-
-  // Cookie adicional para middleware
-  response.headers.append(
-    "Set-Cookie",
-    `sb-user-role=${role}; Path=/; SameSite=Lax`
-  );
-
-  return response;
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\logout\route.js
-============================================================
-
-import { NextResponse } from "next/server";
-
-export async function POST() {
-  // Respuesta JSON inicial
-  const res = NextResponse.json({ ok: true });
-
-  // Opciones unificadas para eliminar cookies de sesión
-  const baseOptions = {
-    maxAge: 0,
-    path: "/",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  };
-
-  // ✔ Borrar cookies oficiales de Supabase
-  res.cookies.set("sb-access-token", "", baseOptions);
-  res.cookies.set("sb-refresh-token", "", baseOptions);
-
-  // ❌ ESTA cookie no existe oficialmente → eliminada
-  // res.cookies.set("supabase-auth-token", "", baseOptions);
-
-  // ✔ Borrar cookie de rol con mismas opciones
-  res.cookies.set("sb-user-role", "", {
-    ...baseOptions,
-    httpOnly: false, // tu cookie de rol NO es httpOnly en login → lo mantengo.
-  });
-
-  return res;
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\me\route.js
-============================================================
-
-import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
-
-export async function GET(req) {
-  const cookieHeader = req.headers.get("cookie") ?? "";
-  
-  // Creamos un array temporal para acumular cookies
-  const cookieStore = [];
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          const raw = cookieHeader
-            .split("; ")
-            .find((c) => c.startsWith(name + "="));
-          return raw ? raw.slice(name.length + 1) : undefined;
-        },
-
-        // Guardamos cookies, NO las enviamos aún
-        set(name, value, options) {
-          let cookie = `${name}=${value}; Path=/; SameSite=Lax`;
-          if (options?.maxAge) cookie += `; Max-Age=${options.maxAge}`;
-          cookieStore.push(cookie);
-        },
-
-        remove(name) {
-          cookieStore.push(
-            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
-          );
-        }
-      },
-    }
-  );
-
-  const { data, error } = await supabase.auth.getUser();
-
-  // Creamos la respuesta FINAL desde cero
-  let res;
-
-  if (error || !data?.user) {
-    res = NextResponse.json({ user: null });
-  } else {
-    res = NextResponse.json({
-      user: data.user,
-      role: data.user.user_metadata?.role ?? "user",
-    });
-  }
-
-  // Ahora sí: agregamos todas las cookies *acumuladas*
-  cookieStore.forEach((c) => {
-    res.headers.append("Set-Cookie", c);
-  });
-
-  return res;
 }
 

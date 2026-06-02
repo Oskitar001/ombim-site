@@ -1,5 +1,1033 @@
 
 ============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\admin\StatsCard.jsx
+============================================================
+
+export default function StatsCard({ title, value }) {
+  return (
+    <div className="bg-[#f3f4f6] shadow rounded p-4">
+      <h4 className="text-[#1f2937] text-sm">{title}</h4>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ConfirmDialog.jsx
+============================================================
+
+"use client";
+
+import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+
+export default function ConfirmDialog({
+  open,
+  title = "¿Estás seguro?",
+  description = "",
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  onConfirm = () => {},
+  onCancel = () => {},
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+  if (!open) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-md animate-fadeIn">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">{title}</h2>
+          <button
+            type="button"
+            className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-300"
+            onClick={onCancel}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* DESCRIPTION */}
+        <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm">
+          {description}
+        </p>
+
+        {/* BUTTONS */}
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600"
+            onClick={onCancel}
+          >
+            {cancelText}
+          </button>
+
+          <button
+            type="button"
+            className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+            onClick={onConfirm}
+          >
+            {confirmText}
+          </button>
+        </div>
+
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Contact.jsx
+============================================================
+
+export default function Contact() {
+  return (
+    <>
+      {/* TÍTULO */}
+      <h3>Contacto</h3>
+
+      {/* DESCRIPCIÓN PRINCIPAL */}
+      <p>
+        Si necesitas <strong>reforzar tu equipo técnico</strong>, acelerar
+        el modelado en Tekla Structures o adaptar el software a los procesos
+        reales de tu empresa, puedo ayudarte.
+      </p>
+
+      <p>
+        Trabajo como <strong>colaborador externo</strong>, integrándome en
+        proyectos de forma puntual o continuada, siempre con un enfoque
+        práctico y orientado a producción.
+      </p>
+
+      {/* LISTA DE CASOS TÍPICOS */}
+      <p>Este contacto es adecuado si:</p>
+
+      <ul>
+        <li>Necesitas apoyo en un proyecto concreto</li>
+        <li>Tienes picos de trabajo en oficina técnica</li>
+        <li>Quieres mejorar la calidad y productividad en Tekla</li>
+        <li>Buscas automatizar tareas repetitivas</li>
+        <li>Te interesa adaptar plugins o herramientas a tu flujo interno</li>
+      </ul>
+
+      <p>
+        Puedes contactarme para colaboraciones{" "}
+        <strong>por proyecto, por horas o de forma continua</strong>.
+      </p>
+
+      {/* FORMULARIO */}
+      <p>
+        Rellena el formulario y cuéntame brevemente tu caso.
+        Te responderé lo antes posible.
+      </p>
+
+      {/* FORMULARIO PREMIUM */}
+      Enviar mensaje
+    </>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Demos.jsx
+============================================================
+
+"use client";
+
+import Link from "next/link";
+
+export default function Demos() {
+  const demos = [
+    { title: "Automatización #1", file: "/videos/demo1.mp4" },
+    { title: "Generador de Perfiles", file: "/videos/demo2.mp4" },
+    { title: "Plugin para Tekla Structures", file: "/videos/demo3.mp4" },
+  ];
+
+  return (
+    <section id="demos" className="py-20 bg-[#f8f9fb] dark:bg-[#1f1f1f]">
+      <div className="max-w-6xl mx-auto px-6">
+
+        {/* TITLE */}
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+          Demos de mis aplicaciones
+        </h2>
+
+        <p className="text-center text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-14 leading-relaxed">
+          Estas son algunas de las automatizaciones y herramientas desarrolladas para optimizar el uso de Tekla Structures.
+        </p>
+
+        {/* GRID PREMIUM */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          {demos.map((d, i) => (
+            <div
+              key={i}
+              className="
+                bg-white dark:bg-[#2a2a2a] 
+                rounded-2xl shadow-xl 
+                p-5 transition hover:shadow-2xl 
+                border border-gray-100 dark:border-gray-700
+              "
+            >
+              {/* VIDEO CARD */}
+              <div className="relative rounded-xl overflow-hidden mb-4 shadow-lg">
+                <video
+                  className="w-full h-auto"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                >
+                  <source src={d.file} type="video/mp4" />
+                </video>
+              </div>
+
+              <h3 className="text-lg font-semibold text-center text-gray-900 dark:text-white">
+                {d.title}
+              </h3>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Footer.jsx
+============================================================
+
+import Link from "next/link";
+
+export default function Footer() {
+  return (
+    <footer
+      className="
+        mt-28 md:mt-40
+        py-12 md:py-16
+        bg-[#f3f4f6] text-[#1f2937]
+        dark:bg-[#242424] dark:text-[#e6e6e6]
+        border-t border-[#d1d5db] dark:border-[#3a3a3a]
+      "
+    >
+      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+
+        {/* LOGO + DESCRIPCIÓN */}
+        <div>
+          <h3 className="text-xl md:text-2xl font-bold mb-3">
+            OMBIM
+          </h3>
+          <p className="text-sm md:text-base leading-relaxed opacity-90">
+            Modelado 3D, automatizaciones, plugins y software a medida para Tekla Structures.
+            Aceleramos tu flujo BIM con soluciones profesionales.
+          </p>
+        </div>
+
+        {/* ENLACES RÁPIDOS */}
+        <div>
+          <h4 className="text-lg font-semibold mb-4">
+            Navegación
+          </h4>
+
+          <ul className="space-y-3 text-sm md:text-base">
+            <li><Link href="/" className="hover:text-brand transition">Inicio</Link></li>
+            <li><Link href="/sobre-mi" className="hover:text-brand transition">Sobre mí</Link></li>
+            <li><Link href="/servicios" className="hover:text-brand transition">Servicios</Link></li>
+            <li><Link href="/plugins" className="hover:text-brand transition">Plugins</Link></li>
+            <li><Link href="/demos" className="hover:text-brand transition">Demos</Link></li>
+            <li><Link href="/contacto" className="hover:text-brand transition">Contacto</Link></li>
+          </ul>
+        </div>
+
+        {/* CONTACTO */}
+        <div>
+          <h4 className="text-lg font-semibold mb-4">
+            Contacto
+          </h4>
+
+          <ul className="space-y-3 text-sm md:text-base">
+            <li>
+              <a
+                href="mailto:o.martinez@ombim.com"
+                className="hover:text-brand transition block"
+              >
+                📧 o.martinez@ombim.com
+              </a>
+            </li>
+            <li className="opacity-90">📍 España</li>
+          </ul>
+
+          {/* REDES SOCIALES */}
+          <div className="flex gap-4 mt-5">
+
+            {/* LinkedIn */}
+            <a
+              href="https://www.linkedin.com/in/oscar-martinez-alonso-481065146"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="transition hover:opacity-80"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4V24h-4V8zm7.5 0h3.8v2.2h.1c.5-1 1.8-2.2 3.8-2.2 4 0 4.7 2.6 4.7 6V24h-4v-8.2c0-2 0-4.5-2.8-4.5s-3.2 2.2-3.2 4.3V24h-4V8z"/>
+              </svg>
+            </a>
+
+            {/* WhatsApp */}
+            <a
+              href="https://wa.me/34682288465"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              className="transition hover:opacity-80"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.52 3.48A11.86 11.86 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.17 1.6 5.98L0 24l6.2-1.63A12 12 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.19-1.24-6.19-3.48-8.52zM12 22c-1.8 0-3.55-.48-5.08-1.38l-.36-.21-3.68.97.98-3.59-.24-.37A9.94 9.94 0 0 1 2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm5.2-7.3c-.28-.14-1.65-.82-1.9-.91-.25-.1-.43-.14-.62.14-.18.28-.71.91-.87 1.1-.16.18-.32.2-.6.07-.28-.14-1.18-.43-2.25-1.38-.83-.74-1.38-1.65-1.54-1.93-.16-.28-.02-.43.12-.57.12-.12.28-.32.42-.48.14-.16.18-.28.28-.46.1-.18.05-.34-.02-.48-.07-.14-.62-1.5-.85-2.06-.22-.53-.45-.46-.62-.46h-.53c-.18 0-.48.07-.73.34-.25.28-.96.94-.96 2.28 0 1.34.98 2.63 1.12 2.81.14.18 1.93 2.95 4.68 4.14 2.75 1.18 2.75.79 3.25.74.5-.05 1.65-.67 1.88-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/>
+              </svg>
+            </a>
+
+          </div>
+        </div>
+      </div>
+
+      {/* COPYRIGHT */}
+      <div className="text-center text-gray-500 dark:text-gray-400 text-xs md:text-sm mt-12 border-t border-[#d1d5db] dark:border-[#3a3a3a] pt-6">
+        © {new Date().getFullYear()} OMBIM — Todos los derechos reservados.
+      </div>
+    </footer>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Hero.jsx
+============================================================
+
+<section
+  className="
+    relative w-full 
+    h-[60vh] md:h-[75vh] 
+    flex items-center justify-center 
+    text-center px-6 sm:px-10
+    overflow-hidden
+  "
+  
+>
+  {/* Overlay premium */}
+  <div className="absolute inset-0 bg-gradient-to-b
+  from-black/70 via-black/70 to-black/80 dark:from-black/50 dark:via-black/60 dark:to-black/70 backdrop-blur-[2px]" />
+
+  {/* Contenido */}
+  <div className="relative max-w-3xl mx-auto text-white">
+    <h1
+      className="
+        text-3xl sm:text-4xl md:text-5xl font-bold 
+        leading-tight md:leading-tight 
+        mb-5 drop-shadow-xl
+      "
+    >
+      Modelado Tekla orientado a producción
+      <br />
+      para prefabricado y estructuras metálicas
+    </h1>
+
+    <p
+      className="
+        text-base sm:text-lg md:text-xl 
+        opacity-95 leading-relaxed 
+        mb-8 drop-shadow-lg
+      "
+    >
+      Ayudo a empresas de prefabricado de hormigón y estructuras metálicas
+      a modelar estructuras listas para fabricar, reducir errores en taller
+      y optimizar tiempos de producción.
+      <br />
+      <br />
+      Más de 23 años de experiencia real en entorno industrial, combinando
+      modelado avanzado en Tekla con automatización y herramientas propias
+      desarrolladas para producción.
+    </p>
+
+    <Link
+      href="/contacto"
+      className="
+        inline-block 
+        bg-blue-600 hover:bg-blue-700 
+        text-white 
+        px-5 py-3 md:px-7 md:py-4 
+        rounded-lg 
+        text-base md:text-lg 
+        font-semibold 
+        shadow-xl 
+        transition
+      "
+    >
+      Hablemos de tu proyecto →
+    </Link>
+  </div>
+
+  {/* Fade inferior premium */}
+  <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-black/40 dark:from-black/50 to-transparent"></div>
+</section>
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Navbar.jsx
+============================================================
+
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+
+export default function Navbar({ className = "" }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [ready, setReady] = useState(false);
+  const [theme, setTheme] = useState("light");
+
+  const menuRef = useRef(null);
+
+  // Obtener usuario
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        setUser(data.user ?? null);
+        setReady(true);
+      })
+      .catch(() => setReady(true));
+  }, []);
+
+  // Cargar tema
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") || "light";
+    setTheme(saved);
+    document.documentElement.classList.toggle("dark", saved === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    localStorage.setItem("theme", newTheme);
+    setTheme(newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
+
+  // Cerrar menú usuario al clicar fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Cerrar menús al navegar
+  useEffect(() => {
+    setOpen(false);
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // Evitar scroll al abrir drawer
+  useEffect(() => {
+    document.body.classList.toggle("overflow-hidden", open);
+  }, [open]);
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    setUser(null);
+    router.push("/");
+  };
+
+  if (!ready) return null;
+
+  const role = user?.user_metadata?.role;
+  const panelUrl = role === "admin" ? "/panel/admin" : "/panel/user";
+
+  const nombre = user?.user_metadata?.nombre;
+  const avatar =
+    nombre?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase();
+
+  return (
+    <nav
+      className={`
+        fixed top-0 left-0 right-0 z-50
+        w-full py-3
+        bg-[#f3f4f6] dark:bg-[#242424]
+        border-b border-gray-300 dark:border-gray-700
+        shadow-sm
+        ${className}
+      `}
+    >
+      <div className="max-w-6xl mx-auto flex justify-between items-center px-4">
+        {/* LOGO */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <img
+            src="/logo-ombim.png"
+            alt="OMBIM Logo"
+            className="h-8 w-auto block dark:hidden"
+          />
+          <img
+            src="/logo-ombim-dark.png"
+            alt="OMBIM Logo Dark"
+            className="h-8 w-auto hidden dark:block"
+          />
+          <span className="text-lg md:text-2xl font-bold text-[#1f2937] dark:text-[#e6e6e6]">
+            OMBIM
+          </span>
+        </Link>
+
+        {/* HAMBURGUESA (móvil) */}
+        <button
+          className="md:hidden relative w-9 h-9 flex items-center justify-center z-[60]"
+          onClick={() => setOpen(!open)}
+          aria-label="Abrir menú"
+        >
+          <span
+            className={`absolute h-0.5 bg-black dark:bg-white rounded transition-all ${
+              open ? "w-6 rotate-45" : "w-7 -translate-y-2"
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 bg-black dark:bg-white rounded transition-all ${
+              open ? "opacity-0" : "opacity-100 w-7"
+            }`}
+          />
+          <span
+            className={`absolute h-0.5 bg-black dark:bg-white rounded transition-all ${
+              open ? "w-6 -rotate-45" : "w-7 translate-y-2"
+            }`}
+          />
+        </button>
+
+        {/* MENÚ DESKTOP */}
+        <div className="hidden md:flex gap-6 items-center text-lg text-[#1f2937] dark:text-[#e6e6e6]">
+          <Link href="/" className="hover:text-blue-600 transition">
+            Inicio
+          </Link>
+          <Link href="/servicios" className="hover:text-blue-600 transition">
+            Servicios
+          </Link>
+          <Link href="/sobre-mi" className="hover:text-blue-600 transition">
+            Sobre mí
+          </Link>
+          <Link href="/demos" className="hover:text-blue-600 transition">
+            Demos
+          </Link>
+          <Link href="/plugins" className="hover:text-blue-600 transition">
+            Plugins
+          </Link>
+          <Link href="/contacto" className="hover:text-blue-600 transition">
+            Contacto
+          </Link>
+
+          {/* CAMBIAR TEMA */}
+          <button
+            onClick={toggleTheme}
+            className="px-3 py-2 rounded-lg border bg-white dark:bg-[#2e2e2e] hover:bg-gray-200 dark:hover:bg-[#3a3a3a] transition"
+          >
+            {theme === "light" ? "🌙 Oscuro" : "☀️ Claro"}
+          </button>
+
+          {/* MENÚ USUARIO */}
+          {user ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2 hover:text-blue-600 transition"
+              >
+                <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                  {avatar}
+                </div>
+                <span>{nombre}</span>
+              </button>
+
+              <div
+                className={`absolute right-0 mt-2 w-56 bg-white dark:bg-[#2e2e2e]
+                  border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl
+                  p-3 transition-all origin-top-right z-[100]
+                  ${
+                    menuOpen
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-95 pointer-events-none"
+                  }`}
+              >
+                <Link
+                  href={panelUrl}
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a]"
+                >
+                  Panel de usuario
+                </Link>
+                <button
+                  onClick={logout}
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#3a3a3a]"
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="border px-4 py-2 rounded-lg bg-white dark:bg-[#2e2e2e] hover:bg-gray-100 dark:hover:bg-[#3a3a3a] transition"
+            >
+              Iniciar sesión
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* OVERLAY OSCURO MÓVIL */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-40"
+        />
+      )}
+
+      {/* DRAWER MÓVIL */}
+      <div
+        className={`fixed md:hidden top-0 right-0 h-full w-64
+          bg-[#f3f4f6] dark:bg-[#2e2e2e]
+          text-[#1f2937] dark:text-[#e6e6e6]
+          z-[60] shadow-xl pt-20 px-6 pb-8 flex flex-col gap-6
+          transform transition-transform
+          ${open ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
+        <Link href="/" onClick={() => setOpen(false)}>Inicio</Link>
+        <Link href="/servicios" onClick={() => setOpen(false)}>Servicios</Link>
+        <Link href="/sobre-mi" onClick={() => setOpen(false)}>Sobre mí</Link>
+        <Link href="/demos" onClick={() => setOpen(false)}>Demos</Link>
+        <Link href="/plugins" onClick={() => setOpen(false)}>Plugins</Link>
+        <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
+
+        <button
+          onClick={() => {
+            toggleTheme();
+            setOpen(false);
+          }}
+        >
+          {theme === "light" ? "🌙 Modo oscuro" : "☀️ Modo claro"}
+        </button>
+
+        {user ? (
+          <>
+            <Link href={panelUrl} onClick={() => setOpen(false)}>
+              Panel
+            </Link>
+            <button onClick={logout}>Cerrar sesión</button>
+          </>
+        ) : (
+          <Link href="/login" onClick={() => setOpen(false)}>
+            Iniciar sesión
+          </Link>
+        )}
+      </div>
+    </nav>
+  );
+}
+``
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\panel\UserCard.jsx
+============================================================
+
+export default function UserCard({ title, value, icon }) {
+  return (
+    <div className="
+      bg-gray-100 dark:bg-gray-800 
+      border border-gray-300 dark:border-gray-700
+      rounded-xl shadow p-5
+      flex flex-col gap-2
+    ">
+      <div className="flex items-center gap-3">
+        {icon}
+        <h3 className="font-bold text-lg">{title}</h3>
+      </div>
+      <p className="text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\panel\UserSection.jsx
+============================================================
+
+export default function UserSection({ title, children }) {
+  return (
+    <div className="
+      bg-white dark:bg-gray-900 
+      border border-gray-300 dark:border-gray-700
+      rounded-xl shadow p-6 space-y-4
+    ">
+      {title && (
+        <h2 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
+          {title}
+        </h2>
+      )}
+      {children}
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\PanelWrapper.jsx
+============================================================
+
+// PanelWrapper.jsx
+
+"use client";
+import { usePathname } from "next/navigation";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+
+export default function PanelWrapper({ children }) {
+  const pathname = usePathname();
+  const isPanel = pathname?.startsWith("/panel");
+
+  return (
+    <>
+      {/* NAVBAR:
+          - En panel: ocultar en móvil (md:block), mostrar sólo escritorio.
+          - Fuera del panel: mostrar siempre. */}
+      {isPanel ? (
+        <Navbar className="hidden md:block shadow-none border-b-0" />
+      ) : (
+        <Navbar />
+      )}
+
+      {/* Contenido principal.
+         Ajustado al navbar SOLO si está visible. */}
+      <div
+        className={
+          isPanel
+            ? "pt-4 md:pt-[72px] bg-[#f3f4f6] dark:bg-[#242424] min-h-screen"
+            : "pt-[72px] min-h-screen"
+        }
+      >
+        {children}
+      </div>
+
+      {!isPanel && <Footer />}
+    </>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Projects.jsx
+============================================================
+
+const items = [
+  { title: "Proyecto 1", desc: "Descripción breve del proyecto realizado." },
+  { title: "Proyecto 2", desc: "Descripción breve del proyecto realizado." },
+  { title: "Proyecto 3", desc: "Descripción breve del proyecto realizado." },
+];
+
+export default function Projects() {
+  return (
+    <section id="proyectos" className="bg-[#f8f9fb] dark:bg-[#1f1f1f] py-20">
+      <div className="max-w-6xl mx-auto px-6">
+
+        {/* TÍTULO */}
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+          Proyectos
+        </h2>
+
+        {/* DESCRIPCIÓN */}
+        <p className="text-center text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-14 leading-relaxed">
+          Ejemplos de trabajos y soluciones desarrolladas a medida para
+          empresas que utilizan Tekla Structures.
+        </p>
+
+        {/* GRID PREMIUM */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          {items.map((p, i) => (
+            <div
+              key={i}
+              className="
+                bg-white dark:bg-[#2a2a2a]
+                p-6 rounded-2xl 
+                border border-gray-200 dark:border-gray-700
+                shadow-lg hover:shadow-2xl 
+                transition 
+              "
+            >
+              <h4 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+                {p.title}
+              </h4>
+
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                {p.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\RevealObserver.jsx
+============================================================
+
+"use client";
+
+import { useEffect } from "react";
+
+export default function RevealObserver() {
+  useEffect(() => {
+    const revealElements = document.querySelectorAll(".reveal");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.15,       // % visible antes de activar
+        rootMargin: "0px 0px -50px 0px", // para que aparezca un poco antes
+      }
+    );
+
+    revealElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
+  return null;
+}
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\Services.jsx
+============================================================
+
+export default function Services() {
+  return (
+    <section id="servicios" className="py-20 bg-[#f8f9fb] dark:bg-[#1f1f1f]">
+      <div className="max-w-6xl mx-auto px-6">
+
+        {/* TÍTULO */}
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-900 dark:text-white">
+          Servicios
+        </h2>
+
+        <p className="text-center text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mb-14 leading-relaxed">
+          Soluciones especializadas en Tekla Structures para acelerar tu flujo BIM,
+          mejorar la precisión y optimizar procesos internos de tu empresa.
+        </p>
+
+        {/* GRID PREMIUM */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
+          {/* CARD */}
+          <div className="p-7 rounded-2xl bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition">
+            <h3 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Modelado BIM en Tekla Structures
+            </h3>
+            <ul className="space-y-2 text-gray-700 dark:text-gray-300 leading-relaxed">
+              <li>— Modelado de estructuras metálicas y de hormigón</li>
+              <li>— Detallado constructivo</li>
+              <li>— Gestión de revisiones</li>
+              <li>— Coordinación con ingeniería y obra</li>
+            </ul>
+          </div>
+
+          <div className="p-7 rounded-2xl bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition">
+            <h3 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Planos y documentación técnica
+            </h3>
+            <ul className="space-y-2 text-gray-700 dark:text-gray-300 leading-relaxed">
+              <li>— Planos de fabricación</li>
+              <li>— Planos de montaje</li>
+              <li>— Listados y planillas de producción</li>
+              <li>— Cuadros de materiales</li>
+            </ul>
+          </div>
+
+          <div className="p-7 rounded-2xl bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition">
+            <h3 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Automatizaciones y plugins para Tekla
+            </h3>
+            <ul className="space-y-2 text-gray-700 dark:text-gray-300 leading-relaxed">
+              <li>— Desarrollo de plugins a medida</li>
+              <li>— Automatización de tareas repetitivas</li>
+              <li>— Generación automática de planos y listados</li>
+              <li>— Herramientas internas para ingenierías y constructoras</li>
+            </ul>
+          </div>
+
+          <div className="p-7 rounded-2xl bg-white dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition">
+            <h3 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Colaboración externa
+            </h3>
+            <ul className="space-y-2 text-gray-700 dark:text-gray-300 leading-relaxed">
+              <li>— Refuerzo de equipos técnicos</li>
+              <li>— Soporte en picos de trabajo</li>
+              <li>— Trabajo por proyecto o por horas</li>
+              <li>— Comunicación directa y flexible</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\TestimonialsSection.jsx
+============================================================
+
+"use client";
+
+export default function TestimonialsSection() {
+  return (
+    <section className='reveal max-w-3xl mx-auto text-center mb-24 px-6'>
+      <h2 className='text-3xl font-bold mb-6'>Lo que dicen nuestros clientes</h2>
+      <blockquote className='bg-[#f3f4f6] dark:bg-[#1a1a1a] p-6 rounded-xl border'>
+        <p className='italic'>“Las automatizaciones de OMBIM nos han ahorrado decenas de horas…”</p>
+        <footer className='mt-4 text-gray-600 dark:text-gray-400'>— Responsable BIM</footer>
+      </blockquote>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\TrustSection.jsx
+============================================================
+
+"use client";
+
+export default function TrustSection() {
+  return (
+    <section className="py-16 max-w-6xl mx-auto px-6 reveal">
+      <div className="grid md:grid-cols-3 gap-10 text-center">
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">
+            Más de 23 años de experiencia real
+          </h4>
+          <p className="opacity-80">
+            Trabajando en proyectos reales de estructuras metálicas y
+            prefabricado de hormigón, desde la ingeniería hasta la fabricación
+            y el montaje.
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">
+            Tekla adaptado al trabajo real
+          </h4>
+          <p className="opacity-80">
+            No me adapto al software: adapto el software a la empresa, creando
+            flujos de trabajo ágiles y productivos ajustados a su forma real
+            de trabajar.
+          </p>
+        </div>
+
+        <div>
+          <h4 className="text-xl font-bold mb-2">
+            Herramientas usadas en producción diaria
+          </h4>
+          <p className="opacity-80">
+            Muchas empresas utilizan mis automatizaciones y herramientas
+            propias para acelerar su producción, reducir errores y mejorar
+            sus flujos internos.
+          </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ui\Button.jsx
+============================================================
+
+export default function Button({ children, className = "", ...props }) {
+  return (
+    <button
+      {...props}
+      className={`
+        px-4 py-2.5 rounded-xl font-medium
+        bg-brand text-white
+        hover:bg-brand-dark
+        shadow-soft hover:shadow-soft-hover
+        transition-all
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ui\Input.jsx
+============================================================
+
+export default function Input({ className = "", ...props }) {
+  return (
+    <input
+      {...props}
+      className={`
+        w-full px-3 py-2 rounded-lg
+        bg-[#f3f4f6] dark:bg-[#242424]
+        text-[#1f2937] dark:text-[#e6e6e6]
+        border border-[#d1d5db] dark:border-[#3a3a3a]
+        focus:outline-none focus:ring-2 focus:ring-brand
+        transition
+        ${className}
+      `}
+    />
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\components\ui\Select.jsx
 ============================================================
 
@@ -143,6 +1171,125 @@ export async function sendEmail({ to, subject, html }) {
 
 
 ============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\generarNumeroFactura.js
+============================================================
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+export async function generarNumeroFactura() {
+  // 1. Obtener valor actual
+  const { data, error } = await supabaseAdmin
+    .from("facturas_contador")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Error obteniendo contador");
+  }
+
+  const nuevoNumero = data.ultimo_numero + 1;
+
+  // 2. Guardar nuevo valor
+  const { error: updateError } = await supabaseAdmin
+    .from("facturas_contador")
+    .update({ ultimo_numero: nuevoNumero })
+    .eq("id", 1);
+
+  if (updateError) {
+    throw new Error("Error actualizando contador");
+  }
+
+  // 3. Formato F-000X
+  const numeroFormateado = `F-${String(nuevoNumero).padStart(4, "0")}`;
+
+  return numeroFormateado;
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\guardarFactura.js
+============================================================
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+export async function guardarFactura({
+  numeroFactura,
+  cliente,
+  lineas,
+  usarRetencion,
+  pedidos = [], // ✅ ARRAY
+}) {
+  const subtotal = lineas.reduce(
+    (acc, l) => acc + (Number(l.precio) || 0) * (Number(l.cantidad) || 0),
+    0
+  );
+
+  const iva = subtotal * 0.21;
+  const retencion = usarRetencion ? subtotal * 0.15 : 0;
+  const total = subtotal + iva - retencion;
+
+  // ✅ LIMPIAR PEDIDOS
+  const pedidosLimpios = pedidos
+    ?.map(p => p.trim())
+    .filter(p => p !== "")
+    .join(" ") || "";
+
+  // =========================
+  // INSERT FACTURA
+  // =========================
+  const { data: factura, error: facturaErr } = await supabaseAdmin
+    .from("facturas")
+    .insert([
+      {
+        pedidos: pedidosLimpios, // ✅ CAMBIO CLAVE
+        numero: numeroFactura,
+        fecha: new Date(),
+        cliente_nombre: cliente.nombre,
+        cliente_nif: cliente.nif,
+        cliente_direccion: cliente.direccion,
+        cliente_ciudad: cliente.ciudad,
+        cliente_cp: cliente.cp,
+        cliente_telefono: cliente.telefono,
+        subtotal,
+        iva,
+        retencion,
+        total,
+      },
+    ])
+    .select()
+    .single();
+
+  if (facturaErr) {
+    console.error(facturaErr);
+    throw new Error("Error guardando factura");
+  }
+
+  // =========================
+  // INSERT LINEAS
+  // =========================
+  const lineasDb = lineas.map((l) => ({
+    factura_id: factura.id,
+    concepto: l.concepto,
+    precio: l.precio,
+    cantidad: l.cantidad,
+    importe: (l.precio || 0) * (l.cantidad || 0),
+  }));
+
+  const { error: lineasErr } = await supabaseAdmin
+    .from("factura_lineas")
+    .insert(lineasDb);
+
+  if (lineasErr) {
+    console.error(lineasErr);
+    throw new Error("Error guardando líneas");
+  }
+
+  return factura;
+}
+
+
+============================================================
 📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\logAdmin.js
 ============================================================
 
@@ -171,12 +1318,12 @@ export async function logAdminAction({ tipo, mensaje, user_id }) {
 📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\lib\pdf2.js
 ============================================================
 
-// /lib/pdf2.js — FACTURA OMBIM (alineada + tabla premium + totales premium)
-import PDFDocument from "pdfkit";
+// /lib/pdf2.js — FACTURA OMBIM (AUTOMÁTICO + MANUAL PRO)
 import fs from "fs";
 import path from "path";
-import { Writable } from "stream";
+import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
+import { Writable } from "stream";
 
 class MemoryStream extends Writable {
   constructor() {
@@ -202,27 +1349,41 @@ export async function generateInvoicePdf(datos) {
     direccion,
     ciudad,
     cp,
-    pais,
     telefono,
-    email,
-    licencias = []
+    licencias = [],
+    usarRetencion = false,
+    manual = false,
+    pedidos = [],
   } = datos;
 
-  const subtotal = licencias.reduce((acc, l) => acc + (l.precioUnitario || 0), 0);
+  // =====================
+  // CALCULOS
+  // =====================
+  const subtotal = licencias.reduce(
+    (acc, l) => acc + (l.precioUnitario || 0) * (l.cantidad || 1),
+    0
+  );
+
   const iva = subtotal * 0.21;
-  const total = subtotal + iva;
+  const retencion = usarRetencion ? subtotal * 0.15 : 0;
+  const total = subtotal + iva - retencion;
 
   // =====================
   // QR
   // =====================
-  const qrUrl = `https://ombim.site/api/facturas/verify?pago_id=${pagoId}`;
-  const qrDataUrl = await QRCode.toDataURL(qrUrl);
-  const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
+  let qrBuffer = null;
+
+  if (pagoId) {
+    const qrUrl = `https://ombim.site/api/facturas/verify?pago_id=${pagoId}`;
+    const qrDataUrl = await QRCode.toDataURL(qrUrl);
+    qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
+  }
 
   // =====================
   // PDF
   // =====================
   const memory = new MemoryStream();
+
   const fontPath = path.join(
     process.cwd(),
     "public",
@@ -233,15 +1394,13 @@ export async function generateInvoicePdf(datos) {
   const doc = new PDFDocument({
     size: "A4",
     margin: 40,
-    font: fontPath
+    font: fontPath,
   });
 
   doc.pipe(memory);
 
-  const lightGray = "#E5E7EB";
-
   // =====================
-  // LOGO + TÍTULO
+  // LOGO + TITULO
   // =====================
   try {
     const logo = path.join(process.cwd(), "public", "logo-ombim.png");
@@ -251,43 +1410,53 @@ export async function generateInvoicePdf(datos) {
   } catch {}
 
   doc
-    .fontSize(28)
+    .fontSize(24) // ✅ reducido
     .fillColor("#000")
     .text("FACTURA", 0, 25, { align: "right" });
 
   doc
-    .fontSize(11)
+    .fontSize(9) // ✅ reducido
     .fillColor("#444")
     .text(`Fecha: ${fecha}`, { align: "right" })
     .text(`N.º de factura: ${numeroFactura}`, { align: "right" });
 
+  // ✅ PEDIDOS EN COLUMNA
+  if (pedidos.length > 0) {
+    doc.text("N.º de pedidos:", { align: "right" });
+
+    pedidos.forEach((p) => {
+      if (p && p.trim() !== "") {
+        doc.text(p, { align: "right" });
+      }
+    });
+  }
+
   doc.moveDown(2);
 
   // =====================
-  // BLOQUE IZQUIERDO: TUS DATOS
+  // DATOS
   // =====================
-  const topLeft = 110;
-  const topRight = 110;
+  const topLeft = 120;
+  const topRight = 120; // ✅ pequeño ajuste
 
+  // EMPRESA
   doc
-    .fontSize(12)
+    .fontSize(10)
     .fillColor("#000")
     .text("OMBIM — Modelado & API Tekla", 40, topLeft);
 
   doc
-    .fontSize(10)
+    .fontSize(9)
     .fillColor("#444")
     .text("Oscar Martínez Alonso", 40, topLeft + 15)
-    .text("C/D, 49-A", 40, topLeft + 30)
+    .text("C/ cid, 49-A", 40, topLeft + 30)
     .text("46360 Buñol Valencia", 40, topLeft + 45)
     .text("NIF 73768981T", 40, topLeft + 60)
     .text("Teléfono: 682288465", 40, topLeft + 75);
 
-  // =====================
-  // BLOQUE DERECHO: DATOS CLIENTE
-  // =====================
+  // CLIENTE
   doc
-    .fontSize(12)
+    .fontSize(11)
     .fillColor("#000")
     .text(razonSocial || "Cliente", 350, topRight, {
       width: 200,
@@ -295,18 +1464,23 @@ export async function generateInvoicePdf(datos) {
     });
 
   doc
-    .fontSize(10)
+    .fontSize(9)
     .fillColor("#444")
-    .text(direccion || "", 350, topRight + 15, { width: 200, align: "right" })
-    .text(`${cp || ""} ${ciudad || ""}`, 350, topRight + 30, {
+    .text(direccion || "", 350, topRight + 15, {
       width: 200,
       align: "right",
     })
-    .text(`NIF: ${nif || ""}`, 350, topRight + 45, {
+    .text(`${cp || ""} ${ciudad || ""}`, 350, topRight + 45, {
+      width: 200,
+      align: "right",
+      lineBreak: false,
+    })
+
+    .text(`NIF: ${nif || ""}`, 350, topRight + 60, {
       width: 200,
       align: "right",
     })
-    .text(`Teléfono: ${telefono || ""}`, 350, topRight + 60, {
+    .text(`Teléfono: ${telefono || ""}`, 350, topRight + 75, {
       width: 200,
       align: "right",
     });
@@ -314,150 +1488,119 @@ export async function generateInvoicePdf(datos) {
   doc.moveDown(4);
 
   // =====================
-  // TABLA PREMIUM (HEADER)
+  // TABLA
   // =====================
   const headerY = doc.y + 10;
   const rowHeight = 24;
 
-  doc
-    .rect(40, headerY, 520, rowHeight)
-    .fill("#F3F4F6");
+  doc.rect(40, headerY, 520, rowHeight).fill("#F3F4F6");
 
   doc
     .fillColor("#000")
-    .fontSize(11)
+    .fontSize(10)
     .text("DESCRIPCIÓN", 45, headerY + 7, { width: 230 })
     .text("PRECIO UD", 280, headerY + 7, { width: 80, align: "right" })
     .text("CANTIDAD", 360, headerY + 7, { width: 80, align: "right" })
     .text("IMPORTE", 450, headerY + 7, { width: 110, align: "right" });
 
-  const lineY = headerY + rowHeight;
-  doc
-    .moveTo(40, lineY)
-    .lineTo(560, lineY)
-    .strokeColor("#CCCCCC")
-    .lineWidth(1)
-    .stroke();
-
-  let y = lineY + 5;
-
-  doc.fontSize(10).fillColor("#111");
+  let y = headerY + rowHeight + 5;
 
   licencias.forEach((l, index) => {
-    const descripcion = l.nombrePlugin || l.tipo || "Licencia";
+    const descripcion = l.nombrePlugin || l.tipo || "Concepto";
+    const cantidad = l.cantidad || 1;
+    const importe = (l.precioUnitario || 0) * cantidad;
+
     const bg = index % 2 === 0 ? "#FFFFFF" : "#F9FAFB";
 
-    doc
-      .rect(40, y, 520, rowHeight)
-      .fill(bg);
+    doc.rect(40, y, 520, rowHeight).fill(bg);
 
     doc
       .fillColor("#222")
+      .fontSize(9)
       .text(descripcion, 45, y + 6, { width: 230 })
       .text(`${l.precioUnitario.toFixed(2)} €`, 280, y + 6, {
         width: 80,
         align: "right",
       })
-      .text("1", 360, y + 6, {
+      .text(cantidad.toString(), 360, y + 6, {
         width: 80,
         align: "right",
       })
-      .text(`${l.precioUnitario.toFixed(2)} €`, 450, y + 6, {
+      .text(`${importe.toFixed(2)} €`, 450, y + 6, {
         width: 110,
         align: "right",
       });
 
-    y += rowHeight;
-
-    doc
-      .moveTo(40, y)
-      .lineTo(560, y)
-      .strokeColor("#ECECEC")
-      .lineWidth(0.5)
-      .stroke();
-
-    y += 5;
+    y += rowHeight + 5;
   });
 
   // =====================
-  // TOTALES PREMIUM
+  // TOTALES
   // =====================
   doc.y = y + 30;
 
   const totalsX = 350;
   let totalsY = doc.y;
 
-  doc
-    .rect(totalsX - 10, totalsY - 8, 220, 70)
-    .fill("#F3F4F6");
+  doc.rect(totalsX - 10, totalsY - 8, 220, usarRetencion ? 90 : 70).fill("#F3F4F6");
 
   doc
-    .font(fontPath)
-    .fontSize(11)
+    .fontSize(10)
     .fillColor("#444")
-    .text("SUBTOTAL:", totalsX, totalsY, { width: 100 })
-    .text(`${subtotal.toFixed(2)} €`, totalsX + 100, totalsY, {
-      width: 100,
-      align: "right",
-    });
+    .text("SUBTOTAL:", totalsX, totalsY)
+    .text(`${subtotal.toFixed(2)} €`, totalsX + 100, totalsY, { align: "right" });
 
   totalsY += 18;
 
   doc
-    .text("IVA 21%:", totalsX, totalsY, { width: 100 })
-    .text(`${iva.toFixed(2)} €`, totalsX + 100, totalsY, {
-      width: 100,
-      align: "right",
-    });
+    .text("IVA 21%:", totalsX, totalsY)
+    .text(`${iva.toFixed(2)} €`, totalsX + 100, totalsY, { align: "right" });
 
   totalsY += 18;
 
-  doc
-    .moveTo(totalsX - 10, totalsY)
-    .lineTo(totalsX + 210, totalsY)
-    .strokeColor("#CCC")
-    .lineWidth(1)
-    .stroke();
+  if (usarRetencion) {
+    doc
+      .text("RET 15%:", totalsX, totalsY)
+      .text(`-${retencion.toFixed(2)} €`, totalsX + 100, totalsY, {
+        align: "right",
+      });
+
+    totalsY += 18;
+  }
+
+  doc.moveTo(totalsX - 10, totalsY).lineTo(totalsX + 210, totalsY).stroke();
 
   totalsY += 8;
 
   doc
-    .font(fontPath)
-    .fontSize(13)
+    .fontSize(12)
     .fillColor("#000")
-    .text("TOTAL:", totalsX, totalsY, { width: 100 })
+    .text("TOTAL:", totalsX, totalsY)
     .text(`${total.toFixed(2)} €`, totalsX + 100, totalsY, {
-      width: 100,
       align: "right",
     });
 
   doc.moveDown(4);
 
   // =====================
-  // PIE + QR
+  // PIE
   // =====================
   const pieTexto =
     "Forma de pago por transferencia bancaria a la cuenta\n" +
     "ES6000492851140274135574\n" +
     "Si tiene cualquier tipo de pregunta sobre esta factura, póngase en contacto.";
 
-  doc
-    .fontSize(10)
-    .fillColor("#444")
-    .text(pieTexto, 40, doc.y);
+  doc.fontSize(9).fillColor("#444").text(pieTexto, 40, doc.y);
 
-  doc
-    .rect(40, doc.y + 55, 110, 110)
-    .strokeColor("#888")
-    .lineWidth(1)
-    .stroke();
-
-  doc.image(qrBuffer, 45, doc.y + 60, { width: 100 });
+  if (qrBuffer && !manual) {
+    doc.rect(40, doc.y + 55, 110, 110).stroke();
+    doc.image(qrBuffer, 45, doc.y + 60, { width: 100 });
+  }
 
   doc.moveDown(12);
 
   doc
-    .fontSize(10)
+    .fontSize(9)
     .fillColor("#777")
     .text("GRACIAS POR SU CONFIANZA", { align: "center" });
 
@@ -467,7 +1610,6 @@ export async function generateInvoicePdf(datos) {
     memory.on("finish", () => resolve(memory.getBuffer()));
   });
 }
-
 
 
 ============================================================

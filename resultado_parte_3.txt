@@ -1,5 +1,933 @@
 
 ============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\facturas\nueva\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function NuevaFacturaPage() {
+  // =========================
+  // ESTADOS
+  // =========================
+  const [cliente, setCliente] = useState({
+    nombre: "",
+    nif: "",
+    direccion: "",
+    ciudad: "",
+    cp: "",
+    telefono: "",
+  });
+
+  const [lineas, setLineas] = useState([
+    { concepto: "", precio: 0, cantidad: 1 },
+  ]);
+
+  const [usarRetencion, setUsarRetencion] = useState(true);
+
+  const [clientesGuardados, setClientesGuardados] = useState([]);
+
+  // ✅ múltiples pedidos
+  const [pedidos, setPedidos] = useState([""]);
+
+  // =========================
+  // CARGAR CLIENTES
+  // =========================
+  useEffect(() => {
+    async function loadClientes() {
+      try {
+        const res = await fetch("/api/admin/clientes");
+        const data = await res.json();
+        setClientesGuardados(data.clientes || []);
+      } catch {
+        setClientesGuardados([]);
+      }
+    }
+    loadClientes();
+  }, []);
+
+  // =========================
+  // LINEAS
+  // =========================
+  function actualizarLinea(index, campo, valor) {
+    const nuevas = [...lineas];
+    nuevas[index][campo] = valor;
+    setLineas(nuevas);
+  }
+
+  function añadirLinea() {
+    setLineas([...lineas, { concepto: "", precio: 0, cantidad: 1 }]);
+  }
+
+  function eliminarLinea(index) {
+    setLineas(lineas.filter((_, i) => i !== index));
+  }
+
+  // =========================
+  // CALCULOS
+  // =========================
+  const subtotal = lineas.reduce(
+    (acc, l) => acc + (Number(l.precio) || 0) * (Number(l.cantidad) || 0),
+    0
+  );
+
+  const iva = subtotal * 0.21;
+  const retencion = usarRetencion ? subtotal * 0.15 : 0;
+  const total = subtotal + iva - retencion;
+
+  // =========================
+  // GENERAR PDF
+  // =========================
+  async function generarFactura() {
+    const res = await fetch("/api/facturacion/pdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        manual: true,
+        cliente,
+        lineas,
+        usarRetencion,
+        pedidos, // ✅ ahora array
+      }),
+    });
+
+    if (!res.ok) {
+      alert("Error generando factura");
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `factura.pdf`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+ return (
+  <div className="max-w-6xl mx-auto">
+    <h1 className="text-2xl font-bold mb-6">Nueva factura manual</h1>
+
+    {/* ================= CLIENTE ================= */}
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg mb-6 shadow">
+      <h2 className="font-semibold mb-4">Datos cliente</h2>
+
+      {/* SELECTOR */}
+      <select
+        onChange={(e) => {
+ const c = clientesGuardados.find(
+  x => x.id === e.target.value
+);
+          if (!c) return;
+
+          setCliente({
+            nombre: c.nombre,
+            nif: c.nif,
+            direccion: c.direccion,
+            ciudad: c.ciudad,
+            cp: c.cp,
+            telefono: c.telefono,
+          });
+        }}
+        className="input-premium mb-4 w-full"
+      >
+        <option value="">Seleccionar cliente guardado</option>
+        {clientesGuardados.map(c => (
+          <option key={c.id} value={c.id}>
+            {c.nombre}
+          </option>
+        ))}
+      </select>
+
+      {/* INPUTS CLIENTE */}
+      <div className="grid grid-cols-2 gap-4">
+        <input
+          placeholder="Nombre / Empresa"
+          value={cliente.nombre}
+          onChange={(e) => setCliente({ ...cliente, nombre: e.target.value })}
+          className="input-premium"
+        />
+
+        <input
+          placeholder="NIF / CIF"
+          value={cliente.nif}
+          onChange={(e) => setCliente({ ...cliente, nif: e.target.value })}
+          className="input-premium"
+        />
+
+        <input
+          placeholder="Dirección"
+          value={cliente.direccion}
+          onChange={(e) => setCliente({ ...cliente, direccion: e.target.value })}
+          className="input-premium col-span-2"
+        />
+
+        <input
+          placeholder="Ciudad"
+          value={cliente.ciudad}
+          onChange={(e) => setCliente({ ...cliente, ciudad: e.target.value })}
+          className="input-premium"
+        />
+
+        <input
+          placeholder="CP"
+          value={cliente.cp}
+          onChange={(e) => setCliente({ ...cliente, cp: e.target.value })}
+          className="input-premium"
+        />
+
+        <input
+          placeholder="Teléfono"
+          value={cliente.telefono}
+          onChange={(e) => setCliente({ ...cliente, telefono: e.target.value })}
+          className="input-premium col-span-2"
+        />
+      </div>
+
+      {/* ================= PEDIDOS ================= */}
+      <h3 className="mt-4 font-semibold">Números de pedido</h3>
+
+      {pedidos.map((p, i) => (
+        <div key={i} className="flex gap-2 mb-2">
+          <input
+            placeholder="Número de pedido"
+            value={p}
+            onChange={(e) => {
+              const nuevos = [...pedidos];
+              nuevos[i] = e.target.value;
+              setPedidos(nuevos);
+            }}
+            className="input-premium w-full"
+          />
+
+          <button
+            onClick={() =>
+              setPedidos(pedidos.filter((_, index) => index !== i))
+            }
+            className="bg-red-500 text-white px-2 rounded"
+          >
+            X
+          </button>
+        </div>
+      ))}
+
+      <button
+        onClick={() => setPedidos([...pedidos, ""])}
+        className="bg-blue-600 text-white px-3 py-2 rounded"
+      >
+        + Añadir pedido
+      </button>
+    </div>
+
+    {/* ================= LINEAS ================= */}
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg mb-6 shadow">
+      <h2 className="font-semibold mb-4">Conceptos</h2>
+
+      {lineas.map((l, i) => (
+        <div key={i} className="grid grid-cols-5 gap-3 mb-3">
+          <input
+            placeholder="Concepto"
+            value={l.concepto}
+            onChange={(e) =>
+              actualizarLinea(i, "concepto", e.target.value)
+            }
+            className="input-premium col-span-2"
+          />
+
+          <input
+            type="number"
+            placeholder="Precio"
+            value={l.precio}
+            onChange={(e) =>
+              actualizarLinea(i, "precio", e.target.value)
+            }
+            className="input-premium"
+          />
+
+          <input
+            type="number"
+            placeholder="Cantidad"
+            value={l.cantidad}
+            onChange={(e) =>
+              actualizarLinea(i, "cantidad", e.target.value)
+            }
+            className="input-premium"
+          />
+
+          <button
+            onClick={() => eliminarLinea(i)}
+            className="bg-red-500 text-white rounded px-2"
+          >
+            X
+          </button>
+        </div>
+      ))}
+
+      <button
+        onClick={añadirLinea}
+        className="bg-blue-600 text-white px-3 py-2 rounded mt-2"
+      >
+        + Añadir línea
+      </button>
+    </div>
+
+    {/* ================= TOTALES ================= */}
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg mb-6 shadow">
+      <h2 className="font-semibold mb-4">Totales</h2>
+
+      <div className="space-y-2">
+        <p>Subtotal: {subtotal.toFixed(2)} €</p>
+        <p>IVA (21%): {iva.toFixed(2)} €</p>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={usarRetencion}
+            onChange={(e) => setUsarRetencion(e.target.checked)}
+          />
+          Aplicar retención IRPF (15%)
+        </label>
+
+        {usarRetencion && (
+          <p>RET (15%): -{retencion.toFixed(2)} €</p>
+        )}
+
+        <p className="text-lg font-bold">
+          TOTAL: {total.toFixed(2)} €
+        </p>
+      </div>
+    </div>
+
+    {/* ================= BOTON ================= */}
+    <button
+      onClick={generarFactura}
+      className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold"
+    >
+      Generar factura PDF
+    </button>
+  </div>
+);
+
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\facturas\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function FacturasPage() {
+  const [facturas, setFacturas] = useState([]);
+
+  async function loadFacturas() {
+    const res = await fetch("/api/admin/facturas");
+    const data = await res.json();
+    setFacturas(data.facturas || []);
+  }
+
+  useEffect(() => {
+    loadFacturas();
+  }, []);
+
+  async function duplicarFactura(id) {
+    const res = await fetch("/api/admin/facturas/duplicar", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    });
+
+    if (res.ok) {
+      loadFacturas();
+      alert("Factura duplicada ✅");
+    } else {
+      alert("Error duplicando factura");
+    }
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Facturas</h1>
+
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-200 dark:bg-gray-800">
+            <tr>
+              <th className="p-3 text-left">Número</th>
+              <th className="p-3 text-left">Cliente</th>
+              <th className="p-3 text-left">Fecha</th>
+              <th className="p-3 text-left">Total</th>
+              <th className="p-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {facturas.map((f) => (
+              <tr key={f.id} className="border-t">
+                <td className="p-3">{f.numero}</td>
+                <td className="p-3">{f.cliente_nombre}</td>
+                <td className="p-3">
+                  {new Date(f.fecha).toLocaleDateString()}
+                </td>
+                <td className="p-3">{Number(f.total).toFixed(2)} €</td>
+
+                <td className="p-3 text-right space-x-2">
+                  {/* ✅ DESCARGAR */}
+                  <a
+                    href={`/api/admin/facturas/pdf?id=${f.id}`}
+                    target="_blank"
+                    className="bg-blue-600 text-white px-2 py-1 rounded"
+                  >
+                    PDF
+                  </a>
+
+                    <a
+                    href={`/panel/admin/facturas/${f.id}`}
+                    className="bg-blue-600 text-white px-2 py-1 rounded"
+                    >
+                    Editar
+                    </a>
+
+                  {/* ✅ DUPLICAR */}
+                  <button
+                    onClick={() => duplicarFactura(f.id)}
+                    className="bg-green-600 text-white px-2 py-1 rounded"
+                  >
+                    Duplicar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {facturas.length === 0 && (
+          <p className="p-4 text-gray-500">No hay facturas</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\facturas\[id]\page.jsx
+============================================================
+
+"use client";
+
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+export default function EditFacturaPage() {
+  const { id } = useParams();
+
+  const [cliente, setCliente] = useState({
+    nombre: "",
+    nif: "",
+    direccion: "",
+    ciudad: "",
+    cp: "",
+    telefono: "",
+  });
+
+  const [lineas, setLineas] = useState([]);
+  const [pedidos, setPedidos] = useState([""]);
+  const [usarRetencion, setUsarRetencion] = useState(true);
+
+  // =====================
+  // CARGAR FACTURA
+  // =====================
+  useEffect(() => {
+    async function loadFactura() {
+      const res = await fetch(`/api/admin/facturas/${id}`);
+      const data = await res.json();
+
+      const f = data.factura;
+
+      setCliente({
+        nombre: f.cliente_nombre,
+        nif: f.cliente_nif,
+        direccion: f.cliente_direccion,
+        ciudad: f.cliente_ciudad,
+        cp: f.cliente_cp,
+        telefono: f.cliente_telefono,
+      });
+
+     let pedidosArray = [""];
+
+        if (f?.pedidos && f.pedidos.trim() !== "") {
+        pedidosArray = f.pedidos
+            .split(" ")
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
+        }
+
+        if (pedidosArray.length === 0) pedidosArray = [""];
+
+        setPedidos(pedidosArray);
+
+      setLineas(
+        data.lineas.map(l => ({
+          concepto: l.concepto,
+          precio: l.precio,
+          cantidad: l.cantidad
+        }))
+      );
+
+      setUsarRetencion(f.retencion > 0);
+    }
+
+    loadFactura();
+  }, [id]);
+
+  // =====================
+  // GUARDAR + PDF
+  // =====================
+async function guardarYGenerar() {
+  // ✅ 1. guardar cambios
+  const res = await fetch(`/api/admin/facturas/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      cliente,
+      lineas,
+      pedidos,
+      usarRetencion,
+    }),
+  });
+
+  if (!res.ok) {
+    alert("Error guardando factura");
+    return;
+  }
+
+  // ✅ 2. abrir PDF de ESA factura (sin crear nueva)
+  window.open(`/api/admin/facturas/pdf?id=${id}`, "_blank");
+}
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Editar factura</h1>
+
+      {/* ================= CLIENTE ================= */}
+      <div className="bg-white p-4 mb-6 rounded shadow">
+        <h2 className="font-semibold">Cliente</h2>
+
+        <input value={cliente.nombre} onChange={e => setCliente({...cliente, nombre:e.target.value})} placeholder="Nombre" className="input-premium w-full mb-2" />
+        <input value={cliente.nif} onChange={e => setCliente({...cliente, nif:e.target.value})} placeholder="NIF" className="input-premium w-full mb-2" />
+        <input value={cliente.direccion} onChange={e => setCliente({...cliente, direccion:e.target.value})} placeholder="Dirección" className="input-premium w-full mb-2" />
+        <input value={cliente.ciudad} onChange={e => setCliente({...cliente, ciudad:e.target.value})} placeholder="Ciudad" className="input-premium w-full mb-2" />
+        <input value={cliente.cp} onChange={e => setCliente({...cliente, cp:e.target.value})} placeholder="CP" className="input-premium w-full mb-2" />
+      </div>
+
+      {/* ================= LINEAS ================= */}
+      <div className="bg-white p-4 mb-6 rounded shadow">
+        <h2 className="font-semibold">Conceptos</h2>
+
+        {lineas.map((l, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <input
+              value={l.concepto}
+              onChange={e => {
+                const nuevas = [...lineas];
+                nuevas[i].concepto = e.target.value;
+                setLineas(nuevas);
+              }}
+              className="input-premium flex-1"
+            />
+            <input
+              type="number"
+              value={l.precio}
+              onChange={e => {
+                const nuevas = [...lineas];
+                nuevas[i].precio = e.target.value;
+                setLineas(nuevas);
+              }}
+              className="input-premium w-24"
+            />
+            <input
+              type="number"
+              value={l.cantidad}
+              onChange={e => {
+                const nuevas = [...lineas];
+                nuevas[i].cantidad = e.target.value;
+                setLineas(nuevas);
+              }}
+              className="input-premium w-20"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* ================= PEDIDOS ================= */}
+      <div className="bg-white p-4 mb-6 rounded shadow">
+        <h2 className="font-semibold">Pedidos</h2>
+
+        {pedidos.map((p, i) => (
+          <input
+            key={i}
+            value={p}
+            onChange={e => {
+              const nuevos = [...pedidos];
+              nuevos[i] = e.target.value;
+              setPedidos(nuevos);
+            }}
+            className="input-premium w-full mb-2"
+          />
+        ))}
+      </div>
+
+      <button
+        onClick={guardarYGenerar}
+        className="bg-green-600 text-white px-6 py-3 rounded"
+      >
+        Guardar y generar PDF
+      </button>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
+============================================================
+
+"use client";
+
+import {
+  ArrowLeft,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  Menu,
+  Package,
+  Scroll,
+  Ticket,
+  Users,
+  X
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
+export const dynamic = "force-dynamic";
+
+export default function AdminLayout({ children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px] md:pt-[72px]">
+
+      {/* ---------- SIDEBAR ESCRITORIO ---------- */}
+      <aside
+        className="
+          hidden md:flex
+          flex-col
+          w-64
+          bg-gray-100 dark:bg-gray-900
+          p-4 space-y-4
+          border-r border-gray-300 dark:border-gray-700
+          fixed top-[72px] left-0 bottom-0
+          z-20
+        "
+      >
+        <h2 className="text-xl font-bold mb-4">Panel Admin</h2>
+
+        <nav className="space-y-2 text-base">
+          <Link href="/panel/admin/dashboard" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <LayoutDashboard size={18} /> Dashboard
+          </Link>
+
+          <Link href="/panel/admin/licencias" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Ticket size={18} /> Licencias
+          </Link>
+
+          <Link href="/panel/admin/pagos" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <CreditCard size={18} /> Pagos
+          </Link>
+
+          {/* ✅ NUEVO */}
+          <Link href="/panel/admin/facturas/nueva" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Crear factura
+          </Link>
+
+          <Link href="/panel/admin/facturas" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Facturas
+          </Link>
+
+          <Link href="/panel/admin/plugins" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Package size={18} /> Plugins
+          </Link>
+
+          <Link href="/panel/admin/logs" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Scroll size={18} /> Logs
+          </Link>
+
+          <Link href="/panel/admin/usuarios" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Users size={18} /> Usuarios
+          </Link>
+
+          <Link href="/" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
+            <ArrowLeft size={18} /> Volver
+          </Link>
+        </nav>
+      </aside>
+
+      {/* ---------- BOTÓN HAMBURGUESA (MÓVIL) ---------- */}
+      <button
+        className="
+          md:hidden
+          fixed top-4 left-4
+          z-[60]
+          bg-gray-300 dark:bg-gray-700
+          p-2 rounded-lg shadow-lg border border-gray-600
+        "
+        onClick={() => setOpen(true)}
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* ---------- OVERLAY (MÓVIL) ---------- */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* ---------- SIDEBAR MÓVIL ---------- */}
+      <aside
+        className={`
+          fixed top-[72px] left-0 h-full w-64 p-4 z-50 shadow-xl
+          bg-gray-100 dark:bg-gray-900
+          border-r border-gray-300 dark:border-gray-700
+          transform transition-transform duration-300
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:hidden
+        `}
+      >
+        <button className="absolute top-4 right-4" onClick={() => setOpen(false)}>
+          <X size={24} />
+        </button>
+
+        <h2 className="text-xl font-bold mb-6">Panel Admin</h2>
+
+        <nav className="space-y-3 text-lg">
+          <Link href="/panel/admin/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <LayoutDashboard size={18} /> Dashboard
+          </Link>
+
+          <Link href="/panel/admin/licencias" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Ticket size={18} /> Licencias
+          </Link>
+
+          <Link href="/panel/admin/pagos" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <CreditCard size={18} /> Pagos
+          </Link>
+
+          {/* ✅ NUEVO */}
+          <Link href="/panel/admin/facturas/nueva" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Crear factura
+          </Link>
+
+            <Link href="/panel/admin/facturas" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Facturas
+          </Link>
+
+          <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Package size={18} /> Plugins
+          </Link>
+     
+          <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Scroll size={18} /> Logs
+          </Link>
+
+          <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Users size={18} /> Usuarios
+          </Link>
+          
+          
+
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
+            <ArrowLeft size={18} /> Volver
+          </Link>
+        </nav>
+      </aside>
+
+      {/* ---------- CONTENIDO PRINCIPAL ---------- */}
+      <main className="flex-1 overflow-y-auto md:ml-64 p-6 pt-4">
+        {children}
+      </main>
+    </div>
+  );
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
+============================================================
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Ticket,
+  Eye,
+  Calendar,
+  Ban,
+  CheckCircle,
+} from "lucide-react";
+
+export default function AdminLicenciasPage() {
+  const [licencias, setLicencias] = useState([]);
+  const [maquinas, setMaquinas] = useState({});
+
+  useEffect(() => {
+    async function load() {
+      const r = await fetch("/api/admin/licencias", {
+        credentials: "include",
+      });
+      const d = await r.json();
+      const list = d.licencias ?? [];
+      setLicencias(list);
+
+      const maquinasMap = {};
+
+      for (const l of list) {
+        const rM = await fetch(
+          `/api/admin/licencias/maquinas?id=${l.id}`,
+          { credentials: "include" }
+        );
+        const dM = await rM.json();
+        maquinasMap[l.id] = dM.maquinas ?? [];
+      }
+
+      setMaquinas(maquinasMap);
+    }
+
+    load();
+  }, []);
+
+  // ✅ NUEVO: liberar máquina
+  async function liberarMaquina(id) {
+    await fetch("/api/admin/licencias/maquinas", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    location.reload(); // recargar rápido
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold flex items-center gap-2">
+        <Ticket size={28} /> Licencias
+      </h1>
+
+      {/* DESKTOP */}
+      <div className="overflow-x-auto shadow rounded-xl border">
+        <table className="min-w-full">
+          <thead>
+            <tr className="bg-gray-200 dark:bg-gray-700 text-sm">
+              <th className="p-3">ID</th>
+              <th className="p-3">Plugin</th>
+              <th className="p-3">Tipo</th>
+              <th className="p-3">Estado</th>
+              <th className="p-3">Máquinas</th>
+              <th className="p-3">Activaciones</th>
+              <th className="p-3">Expira</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {licencias.map((l) => {
+              const maq = maquinas[l.id] ?? [];
+
+              return (
+                <tr key={l.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3">#{l.id}</td>
+
+                  <td className="p-3">
+                    {l.plugins?.nombre ?? l.plugin_id}
+                  </td>
+
+                  <td className="p-3">{l.tipo}</td>
+
+                  <td className="p-3">
+                    {l.estado === "activa" && (
+                      <span className="text-green-600">Activa</span>
+                    )}
+                    {l.estado === "bloqueada" && (
+                      <span className="text-red-600">Bloqueada</span>
+                    )}
+                  </td>
+
+                  {/* ✅ MÁQUINAS + BOTÓN */}
+                  <td className="p-3 text-xs space-y-2">
+                    {maq.length === 0 && (
+                      <div className="opacity-50">Sin máquinas</div>
+                    )}
+
+                    {maq.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span>{m.maquina_id}</span>
+
+                        {/* 🔥 BOTÓN LIBERAR */}
+                        <button
+                          onClick={() => liberarMaquina(m.id)}
+                          className="text-red-600 hover:text-red-800 text-xs"
+                        >
+                          liberar
+                        </button>
+                      </div>
+                    ))}
+                  </td>
+
+                  <td className="p-3">
+                    {maq.length}/{l.max_activaciones}
+                  </td>
+
+                  <td className="p-3">
+                    {l.fecha_expiracion
+                      ? new Date(l.fecha_expiracion).toLocaleDateString()
+                      : "—"}
+                  </td>
+
+                  <td className="p-3">
+                    <Link
+                      href={`/panel/admin/licencias/${l.id}`}
+                      className="text-blue-600 flex items-center gap-1 font-medium"
+                    >
+                      <Eye size={16} /> Ver
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+============================================================
 📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\[id]\page.jsx
 ============================================================
 
@@ -2152,1173 +3080,6 @@ export default function AdminUsuariosPage() {
         </table>
       </div>
 
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\usuarios\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  User,
-  KeyRound,
-  CreditCard,
-  Clock,
-  Mail,
-} from "lucide-react";
-
-export default function AdminUsuarioDetallePage() {
-  const { id } = useParams();
-
-  const [user, setUser] = useState(null);
-  const [licencias, setLicencias] = useState([]);
-  const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // ===============================================================
-  // CARGAR DATOS DEL USUARIO
-  // ===============================================================
-  useEffect(() => {
-    async function load() {
-      try {
-        const r = await fetch(`/api/admin/usuarios/${id}`, {
-          credentials: "include",
-        });
-
-        const d = await r.json();
-
-        if (!r.ok) {
-          alert(d.error ?? "Error cargando usuario");
-          return;
-        }
-
-        setUser(d.user ?? null);
-        setLicencias(d.licencias ?? []);
-        setPagos(d.pagos ?? []);
-
-      } catch (e) {
-        alert("Error conectando al servidor.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [id]);
-
-  // ===============================================================
-  if (loading) return <p className="p-4">Cargando usuario…</p>;
-  if (!user) return <p className="p-4">Usuario no encontrado</p>;
-  // ===============================================================
-
-  return (
-    <div className="p-4 max-w-5xl mx-auto space-y-12">
-
-      {/* VOLVER */}
-      <Link
-        href="/panel/admin/usuarios"
-        className="text-blue-600 hover:underline flex items-center gap-2"
-      >
-        <ArrowLeft size={20} /> Volver
-      </Link>
-
-      {/* ================= TÍTULO ================= */}
-      <h1 className="text-3xl font-bold flex items-center gap-3">
-        <User size={32} /> Usuario #{user.id}
-      </h1>
-
-      {/* ================= INFORMACIÓN DEL USUARIO ================= */}
-      <section className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 p-6 rounded-xl shadow space-y-4">
-
-        <h2 className="text-xl font-semibold mb-3">Información del usuario</h2>
-
-        <div className="space-y-2 text-sm">
-          <p className="flex items-center gap-2">
-            <Mail size={18} className="opacity-70" />
-            <strong>Email:</strong> {user.email}
-          </p>
-
-          <p className="flex items-center gap-2">
-            <Clock size={18} className="opacity-70" />
-            <strong>Registrado:</strong>{" "}
-            {user.created_at
-              ? new Date(user.created_at).toLocaleString()
-              : "—"}
-          </p>
-        </div>
-      </section>
-
-      {/* ================= LICENCIAS ================= */}
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <KeyRound size={24} /> Licencias
-        </h2>
-
-        {/* MÓVIL → CARDS */}
-        <div className="grid md:hidden gap-4">
-          {licencias.length === 0 && (
-            <p className="opacity-70">No tiene licencias registradas.</p>
-          )}
-
-          {licencias.map((l) => (
-            <div
-              key={l.id}
-              className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
-            >
-              <p className="font-semibold text-lg">Licencia #{l.id}</p>
-
-              <p className="text-sm opacity-80">
-                Plugin: {l.plugins?.nombre ?? l.plugin_id}
-              </p>
-
-              <p className="text-sm">Email Tekla: {l.email_tekla}</p>
-
-              <p className="text-sm">
-                Estado: <strong>{l.estado}</strong>
-              </p>
-
-              <p className="text-sm">
-                Activaciones:{" "}
-                {l.activaciones_usadas}/{l.max_activaciones}
-              </p>
-
-              <p className="text-sm opacity-70">
-                Creada: {new Date(l.fecha_creacion).toLocaleString()}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* DESKTOP → TABLA */}
-        <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">
-              <tr>
-                <th className="p-3">ID</th>
-                <th className="p-3">Plugin</th>
-                <th className="p-3">Email Tekla</th>
-                <th className="p-3">Estado</th>
-                <th className="p-3">Activaciones</th>
-                <th className="p-3">Creada</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {licencias.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="p-4 text-center opacity-70"
-                  >
-                    No tiene licencias registradas
-                  </td>
-                </tr>
-              )}
-
-              {licencias.map((l) => (
-                <tr
-                  key={l.id}
-                  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
-                >
-                  <td className="p-3">#{l.id}</td>
-                  <td className="p-3">{l.plugins?.nombre ?? l.plugin_id}</td>
-                  <td className="p-3">{l.email_tekla}</td>
-                  <td className="p-3">{l.estado}</td>
-                  <td className="p-3">
-                    {l.activaciones_usadas}/{l.max_activaciones}
-                  </td>
-                  <td className="p-3">
-                    {new Date(l.fecha_creacion).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-      </section>
-
-      {/* ================= PAGOS ================= */}
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <CreditCard size={24} /> Pagos
-        </h2>
-
-        {/* MÓVIL */}
-        <div className="grid md:hidden gap-4">
-          {pagos.length === 0 && (
-            <p className="opacity-70">No tiene pagos registrados.</p>
-          )}
-
-          {pagos.map((p) => (
-            <div
-              key={p.id}
-              className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow space-y-2"
-            >
-              <p className="font-semibold text-lg">Pago #{p.id}</p>
-              <p className="text-sm">Plugin: {p.plugin_nombre ?? p.plugin_id}</p>
-              <p className="text-sm">Cantidad: {p.cantidad_licencias}</p>
-              <p className="text-sm font-bold">Total: {p.importe} €</p>
-              <p className="text-sm opacity-70">
-                Fecha: {new Date(p.fecha).toLocaleString()}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* DESKTOP */}
-        <div className="hidden md:block rounded-xl border border-gray-300 dark:border-gray-700 shadow overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">
-              <tr>
-                <th className="p-3">ID</th>
-                <th className="p-3">Plugin</th>
-                <th className="p-3">Cantidad</th>
-                <th className="p-3">Total</th>
-                <th className="p-3">Fecha</th>
-              </tr>
-            </thead>
-
-            <tbody className="text-sm">
-              {pagos.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="text-center opacity-70 p-4">
-                    No tiene pagos registrados.
-                  </td>
-                </tr>
-              )}
-
-              {pagos.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
-                >
-                  <td className="p-3">#{p.id}</td>
-                  <td className="p-3">{p.plugin_nombre ?? p.plugin_id}</td>
-                  <td className="p-3">{p.cantidad_licencias}</td>
-                  <td className="p-3 font-bold">{p.importe} €</td>
-                  <td className="p-3">
-                    {new Date(p.fecha).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-      </section>
-
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\FacturacionClient.jsx
-============================================================
-
-// /app/panel/facturacion/FacturacionClient.jsx
-"use client";
-
-import { useState } from "react";
-
-export default function FacturacionClient({ user_id, datosIniciales }) {
-  const [form, setForm] = useState({
-    nombre: datosIniciales?.nombre ?? "",
-    nif: datosIniciales?.nif ?? "",
-    direccion: datosIniciales?.direccion ?? "",
-    ciudad: datosIniciales?.ciudad ?? "",
-    cp: datosIniciales?.cp ?? "",
-    pais: datosIniciales?.pais ?? "",
-    telefono: datosIniciales?.telefono ?? "",
-  });
-
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
-
-  async function guardar() {
-    setMsg("");
-    setError("");
-
-    const res = await fetch("/api/facturacion/guardar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id, ...form }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.error ?? "Error guardando datos");
-    } else {
-      setMsg("Datos guardados correctamente.");
-    }
-  }
-
-  return (
-    <div className="space-y-4 max-w-lg">
-      {Object.entries({
-        nombre: "Nombre o empresa",
-        nif: "NIF / CIF",
-        direccion: "Dirección",
-        ciudad: "Ciudad",
-        cp: "Código postal",
-        pais: "País",
-        telefono: "Teléfono",
-      }).map(([key, label]) => (
-        <div key={key}>
-          <label className="block mb-1">{label}</label>
-          <input
-            type="text"
-            value={form[key]}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, [key]: e.target.value }))
-            }
-            className="border p-2 rounded w-full"
-          />
-        </div>
-      ))}
-
-      <button
-        onClick={guardar}
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        Guardar datos
-      </button>
-
-      {msg && <p className="text-green-600">{msg}</p>}
-      {error && <p className="text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\page.jsx
-============================================================
-
-// /app/panel/facturacion/page.jsx
-import { supabaseServer } from "@/lib/supabaseServer";
-import FacturacionClient from "./FacturacionClient";
-
-export const dynamic = "force-dynamic";
-
-export default async function Page() {
-  const supabase = await supabaseServer();
-
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) {
-    return <p>No autenticado</p>;
-  }
-
-  const { data: facturacion } = await supabase
-    .from("facturacion")
-    .select("*")
-    .eq("user_id", userData.user.id)
-    .single();
-
-  return (
-    <div>
-      <h2>Datos de facturación</h2>
-      <FacturacionClient user_id={userData.user.id} datosIniciales={facturacion} />
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\facturacion\solicitar\route.js
-============================================================
-
-// /app/api/facturacion/solicitar/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export const runtime = "nodejs";
-
-export async function POST(req) {
-  try {
-    const { pagoId } = await req.json();
-
-    if (!pagoId) {
-      return NextResponse.json(
-        { ok: false, error: "faltan_datos", mensaje: "Falta el ID del pago." },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await supabaseServer();
-
-    // 1. Comprobar que el pago existe
-    const { data: pago } = await supabase
-      .from("pagos")
-      .select("id, factura_solicitada")
-      .eq("id", pagoId)
-      .maybeSingle();
-
-    if (!pago) {
-      return NextResponse.json(
-        { ok: false, error: "pago_no_encontrado" },
-        { status: 404 }
-      );
-    }
-
-    // 2. Si ya está solicitada, responder OK igualmente
-    if (pago.factura_solicitada) {
-      return NextResponse.json({ ok: true, mensaje: "Ya estaba solicitada." });
-    }
-
-    // 3. Marcar como solicitada
-    await supabase
-      .from("pagos")
-      .update({ factura_solicitada: true })
-      .eq("id", pagoId);
-
-    return NextResponse.json({
-      ok: true,
-      mensaje: "Factura solicitada correctamente. El administrador debe asignar un número de factura."
-    });
-
-  } catch (err) {
-    console.error("❌ Error solicitando factura:", err);
-    return NextResponse.json(
-      { ok: false, error: "error_interno", mensaje: err.message },
-      { status: 500 }
-    );
-  }
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-descargas\page.jsx
-============================================================
-
-// /app/panel/mis-descargas/page.jsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function MisDescargas() {
-  const [user, setUser] = useState(null);
-  const [descargas, setDescargas] = useState([]);
-  const router = useRouter();
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.user) router.push("/login");
-        else setUser(data.user);
-      });
-
-    fetch("/api/download/history")
-      .then((res) => res.json())
-      .then((data) => setDescargas(data ?? []));
-  }, [router]);
-
-  if (!user) return <p>Cargando…</p>;
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Mis descargas</h1>
-
-      {!descargas.length && <p>No has descargado nada todavía.</p>}
-
-      {descargas.map((d) => (
-        <div key={d.id}>
-          <p><strong>Plugin:</strong> {d.plugin_nombre}</p>
-          <p><strong>Fecha:</strong> {d.fecha}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-facturas\page.jsx
-============================================================
-
-// /app/panel/mis-facturas/page.jsx
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export const dynamic = "force-dynamic";
-
-export default async function MisFacturasPage() {
-  const supabase = await supabaseServer();
-
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) {
-    return <p>Debes iniciar sesión para ver tus facturas.</p>;
-  }
-
-  const { data: pagos } = await supabase
-    .from("pagos")
-    .select("id, plugin_id, fecha, estado, plugins(nombre)")
-    .eq("user_id", userData.user.id)
-    .eq("estado", "aprobado")
-    .order("fecha", { ascending: false });
-
-  return (
-    <div>
-      <h2>Mis facturas</h2>
-
-      {!pagos?.length && <p>No tienes facturas todavía.</p>}
-
-      {pagos?.map((p) => (
-        <div key={p.id}>
-          <p>Plugin: {p.plugins?.nombre ?? p.plugin_id}</p>
-          <p>Fecha: {new Date(p.fecha).toLocaleString()}</p>
-
-          <a
-            href={`/api/facturacion/pdf?pago_id=${p.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Descargar factura
-          </a>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-licencias\page.jsx
-============================================================
-
-// /app/panel/mis-licencias/page.jsx
-"use client";
-
-import { useEffect, useState } from "react";
-
-export default function MisLicenciasPage() {
-  const [licencias, setLicencias] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function cargar() {
-      try {
-        const res = await fetch("/api/licencias/mias");
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error ?? "Error cargando licencias");
-          return;
-        }
-
-        const data = await res.json();
-        setLicencias(data);
-      } catch {
-        setError("Error de conexión");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    cargar();
-  }, []);
-
-  if (loading) return <p>Cargando licencias…</p>;
-  if (error) return <p>{error}</p>;
-
-  if (!licencias.length) {
-    return (
-      <div>
-        <h1 className="text-xl font-bold mb-4">Mis licencias</h1>
-        <p>No tienes licencias todavía.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Mis licencias</h1>
-
-      <table className="w-full">
-        <thead>
-          <tr>
-            <th>Plugin</th>
-            <th>Email Tekla</th>
-            <th>Estado</th>
-            <th>Activaciones</th>
-            <th>Creada</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {licencias.map((l) => (
-            <tr key={l.id}>
-              <td>{l.plugin_nombre}</td>
-              <td>{l.email_tekla || "—"}</td>
-              <td>{l.estado}</td>
-              <td>{l.activaciones_usadas}/{l.max_activaciones}</td>
-              <td>{new Date(l.fecha_creacion).toLocaleDateString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\page.jsx
-============================================================
-
-// /app/panel/mis-pagos/page.jsx
-import { supabaseServer } from "@/lib/supabaseServer";
-import PagosClient from "./PagosClient";
-
-export const dynamic = "force-dynamic";
-
-export default async function MisPagosPage() {
-  const supabase = await supabaseServer();
-
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) return <p>No autenticado</p>;
-
-  const { data: pagos } = await supabase
-    .from("pagos")
-    .select("*, plugins(nombre)")
-    .eq("user_id", userData.user.id)
-    .order("fecha", { ascending: false });
-
-  return (
-    <div>
-      <h2>Mis pagos</h2>
-      <PagosClient pagos={pagos ?? []} />
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\PagosClient.jsx
-============================================================
-
-// /app/panel/mis-pagos/PagosClient.jsx
-"use client";
-import Link from "next/link";
-
-export default function PagosClient({ pagos }) {
-  if (!pagos.length) return <p>No tienes pagos registrados.</p>;
-
-  return (
-    <div className="space-y-4">
-      {pagos.map((pago) => (
-        <div key={pago.id} className="border p-4 rounded">
-          <p><strong>Plugin:</strong> {pago.plugins?.nombre ?? pago.plugin_id}</p>
-          <p><strong>Licencias:</strong> {pago.cantidad_licencias}</p>
-          <p><strong>Estado:</strong> {pago.estado}</p>
-          <p>{new Date(pago.fecha).toLocaleString()}</p>
-
-          <Link
-            href={`/panel/mis-pagos/${pago.id}`}
-            className="underline text-blue-600"
-          >
-            Ver detalles
-          </Link>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import PagoClient from "./PagoClient";
-
-export default function PagoPage({ params }) {
-  // ✔ Next.js 15/16 → params es una PROMESA en componentes cliente
-  const [id, setId] = useState(null);
-
-  useEffect(() => {
-    async function resolver() {
-      const resolved = await params;
-      setId(resolved.id);
-    }
-    resolver();
-  }, [params]);
-
-  if (!id) return <p>Cargando…</p>;
-
-  return <PagoClient pagoId={id} />;
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-pagos\[id]\PagoClient.jsx
-============================================================
-
-// /app/panel/mis-pagos/[id]/PagoClient.jsx
-"use client";
-import { useEffect, useState } from "react";
-
-export default function PagoClient({ pagoId }) {
-  const [pago, setPago] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function cargar() {
-      try {
-        const res = await fetch(`/api/pagos/detalle?pago_id=${pagoId}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error ?? "Error cargando pago");
-          return;
-        }
-
-        setPago(data);
-      } catch {
-        setError("Error de conexión");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    cargar();
-  }, [pagoId]);
-
-  if (loading) return <p>Cargando pago…</p>;
-  if (error) return <p>{error}</p>;
-  if (!pago) return <p>Pago no encontrado.</p>;
-
-  const { licencias = [], facturacion } = pago;
-
-  return (
-    <div>
-      <h1 className="text-xl font-bold mb-4">Detalle del pago</h1>
-
-      <p><strong>ID:</strong> {pago.id}</p>
-      <p><strong>Estado:</strong> {pago.estado}</p>
-      <p><strong>Cantidad:</strong> {pago.cantidad_licencias}</p>
-      {pago.fecha && (
-        <p><strong>Fecha:</strong> {new Date(pago.fecha).toLocaleString()}</p>
-      )}
-
-      <h3 className="mt-6 font-bold">Licencias</h3>
-      {!licencias.length ? (
-        <p>No hay licencias asociadas.</p>
-      ) : (
-        <ul>
-          {licencias.map((l) => (
-            <li key={l.id}>
-              Email Tekla: {l.email_tekla ?? "—"} — Estado: {l.estado}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h3 className="mt-6 font-bold">Datos de facturación</h3>
-      {!facturacion ? (
-        <p>No hay datos guardados.</p>
-      ) : (
-        <div>
-          <p><strong>Nombre:</strong> {facturacion.nombre}</p>
-          <p><strong>NIF/CIF:</strong> {facturacion.nif ?? "—"}</p>
-          <p><strong>Dirección:</strong> {facturacion.direccion}</p>
-          <p><strong>Ciudad:</strong> {facturacion.ciudad}</p>
-          <p><strong>País:</strong> {facturacion.pais}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\mis-plugins\page.jsx
-============================================================
-
-// /app/panel/mis-plugins/page.jsx
-import { supabaseServer } from "@/lib/supabaseServer";
-
-export const dynamic = "force-dynamic";
-
-export default async function MisPluginsPage() {
-  const supabase = await supabaseServer();
-
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) return <p>Debes iniciar sesión para ver tus plugins.</p>;
-
-  const { data: pagos } = await supabase
-    .from("pagos")
-    .select("id, plugin_id, estado, fecha, cantidad_licencias, plugins(nombre, descripcion)")
-    .eq("user_id", userData.user.id)
-    .neq("estado", "pendiente");
-
-  const pluginIds = [...new Set((pagos ?? []).map((p) => p.plugin_id))];
-
-  const { data: licencias } = await supabase
-    .from("licencias")
-    .select("*")
-    .in("plugin_id", pluginIds.length ? pluginIds : ["00000000"]);
-
-  const licByPlugin = (licencias ?? []).reduce((acc, l) => {
-    acc[l.plugin_id] = acc[l.plugin_id] ?? [];
-    acc[l.plugin_id].push(l);
-    return acc;
-  }, {});
-
-  return (
-    <div>
-      <h2>Mis plugins</h2>
-
-      {!pagos?.length && <p>No has comprado plugins todavía.</p>}
-
-      {(pagos ?? []).map((p) => {
-        const plugin = p.plugins;
-        const lic = licByPlugin[p.plugin_id] ?? [];
-
-        return (
-          <div key={p.id}>
-            <h3>{plugin?.nombre ?? "Plugin"}</h3>
-            <p>{plugin?.descripcion}</p>
-            <p>Compra: {new Date(p.fecha).toLocaleString()}</p>
-            <p>Estado: {p.estado}</p>
-
-            <h4>Licencias asociadas</h4>
-
-            {!lic.length ? (
-              <p>No hay licencias asociadas todavía.</p>
-            ) : (
-              <ul>
-                {lic.map((l) => (
-                  <li key={l.id}>
-                    {l.email_tekla} — {l.estado} — {l.activaciones_usadas}/{l.max_activaciones}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\page.jsx
-============================================================
-
-export const dynamic = "force-dynamic";
-
-export default function PanelHome() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">Bienvenido al panel</h1>
-      <p>Selecciona una sección del menú.</p>
-    </div>
-  );
-}
-
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\panel-auth.jsx
-============================================================
-
-// app/panel/panel-auth.jsx ✔️ corregido
-"use server";
-
-import { supabaseServer } from "@/lib/supabaseServer";
-import { redirect } from "next/navigation";
-
-export default async function PanelAuth({ children }) {
-  const supabase = await supabaseServer();
-
-  const { data } = await supabase.auth.getUser();
-
-  if (!data?.user) {
-    redirect("/login");
-  }
-
-  return <>{children}</>;
-}
-
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\user\comprar\page.jsx
-============================================================
-
-"use client";
-
-import { useState, useEffect, useRef } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { useRouter } from "next/navigation";
-import { ShoppingCart, Mail, Euro } from "lucide-react";
-
-/* -----------------------------------------
-   COMPONENTES PREMIUM REUTILIZABLES
------------------------------------------- */
-
-function UserSection({ title, children }) {
-  return (
-    <section
-      className="
-        bg-white dark:bg-gray-900 
-        border border-gray-300 dark:border-gray-700
-        rounded-xl shadow p-6 space-y-4
-      "
-    >
-      {title && (
-        <h3 className="text-xl font-bold border-b border-gray-300 dark:border-gray-700 pb-2">
-          {title}
-        </h3>
-      )}
-      {children}
-    </section>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div className="space-y-1">
-      <label className="font-semibold">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function InputPremium({ ...props }) {
-  return (
-    <input
-      {...props}
-      className="
-        w-full px-3 py-2 rounded-lg
-        bg-gray-100 dark:bg-gray-800
-        border border-gray-300 dark:border-gray-700
-        focus:ring-2 focus:ring-blue-600
-        transition
-      "
-    />
-  );
-}
-
-function ButtonPremium({ children, className = "", ...props }) {
-  return (
-    <button
-      {...props}
-      className={`
-        w-full py-3 rounded-lg text-white font-semibold 
-        shadow transition ${className}
-      `}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* -----------------------------------------
-   PÁGINA PRINCIPAL
------------------------------------------- */
-
-export default function ComprarPage({ params }) {
-  const router = useRouter();
-  const { plugin_id } = params;
-
-  const [plugin, setPlugin] = useState(null);
-  const [user, setUser] = useState(null);
-  const [emails, setEmails] = useState([""]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const [tipo, setTipo] = useState("completa"); // ⭐ tipo de licencia
-  const paymentUID = useRef(uuidv4());
-
-  /* ==========================================
-        CARGA INICIAL
-  ========================================== */
-  useEffect(() => {
-    async function load() {
-      try {
-        const rUser = await fetch("/api/auth/me");
-        const dUser = await rUser.json();
-        setUser(dUser.user ?? null);
-
-        const rPlugin = await fetch(`/api/plugin/${plugin_id}`);
-        const dPlugin = await rPlugin.json();
-        setPlugin(dPlugin?.error ? null : dPlugin);
-      } catch {
-        setError("Error cargando datos");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [plugin_id]);
-
-  function actualizarEmail(i, valor) {
-    setEmails((prev) => prev.map((e, idx) => (idx === i ? valor : e)));
-  }
-
-  function añadirFila() {
-    setEmails((prev) => [...prev, ""]);
-  }
-
-  /* ==========================================
-        ACCIÓN: COMPRAR
-  ========================================== */
-  async function comprar(e) {
-    e.preventDefault();
-    setError("");
-
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    const emailsLimpios = emails.map((e) => e.trim());
-
-    if (emailsLimpios.some((e) => e === "")) {
-      setError("Debes completar TODOS los emails Tekla.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/pagos/crear", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plugin_id,
-          emails_tekla: emailsLimpios,
-          payment_uid: paymentUID.current,
-          tipo,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data?.error ?? "Error creando el pago");
-        return;
-      }
-
-      router.push(`/pago/licencias/${data.pago_id}`);
-    } catch {
-      setError("Error interno del servidor");
-    }
-  }
-
-  if (loading) return <p className="p-4">Cargando…</p>;
-  if (!plugin) return <p className="p-4">Plugin no encontrado.</p>;
-
-  /* ==========================================
-        CÁLCULO DE PRICING
-  ========================================== */
-
-  const precioCompleta =
-    plugin.precio_completa > 0 ? plugin.precio_completa : plugin.precio;
-
-  const precioAnual = plugin.precio_anual > 0 ? plugin.precio_anual : 0;
-
-  const precioUnitario = tipo === "anual" ? precioAnual : precioCompleta;
-  const total = precioUnitario * emails.length;
-
-  /* ==========================================
-        UI PREMIUM
-  ========================================== */
-
-  return (
-    <div className="p-4 max-w-xl mx-auto space-y-8">
-
-      <h2 className="text-3xl font-bold flex items-center gap-2">
-        <ShoppingCart size={30} /> Comprar licencias
-      </h2>
-
-      <UserSection>
-        <p className="text-lg">
-          Plugin: <strong>{plugin.nombre}</strong>
-        </p>
-      </UserSection>
-
-      {/* Tipo de licencia */}
-      <UserSection title="Tipo de licencia">
-        <Field label="Selecciona tipo:">
-          <select
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            className="
-              w-full px-3 py-2 rounded-lg 
-              bg-gray-100 dark:bg-gray-800
-              border border-gray-300 dark:border-gray-700
-              focus:ring-2 focus:ring-blue-600
-            "
-          >
-            {precioAnual > 0 && (
-              <option value="anual">Anual – {precioAnual} €</option>
-            )}
-            {precioCompleta > 0 && (
-              <option value="completa">Completa – {precioCompleta} €</option>
-            )}
-          </select>
-        </Field>
-      </UserSection>
-
-      {/* Emails Tekla */}
-      <UserSection title="Emails Tekla">
-        {emails.map((email, i) => (
-          <InputPremium
-            key={i}
-            type="email"
-            value={email}
-            placeholder="usuario@empresa.com"
-            onChange={(e) => actualizarEmail(i, e.target.value)}
-            className="mb-2"
-          />
-        ))}
-
-        <button
-          onClick={añadirFila}
-          className="text-blue-600 underline"
-        >
-          Añadir otro email
-        </button>
-      </UserSection>
-
-      {/* Total */}
-      <UserSection title="Resumen del pago">
-        <p className="text-xl font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-200">
-          <Euro size={20} /> Total: {total} €
-        </p>
-
-        {error && <p className="text-red-600">{error}</p>}
-      </UserSection>
-
-      {/* Botón comprar */}
-      <ButtonPremium
-        onClick={comprar}
-        className="bg-blue-600 hover:bg-blue-700"
-      >
-        Comprar
-      </ButtonPremium>
     </div>
   );
 }

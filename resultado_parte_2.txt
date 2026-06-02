@@ -1,5 +1,279 @@
 
 ============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\usuarios\[id]\route.js
+============================================================
+
+// /app/api/admin/usuarios/[id]/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export const runtime = "nodejs";
+
+export async function GET(req, ctx) {
+  // 📌 FIX Next.js 15/16 → params es PROMISE
+  const { id } = await ctx.params;
+
+  // 1. Verificar admin
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "no_autorizado" }, { status: 403 });
+  }
+
+  // 2. Obtener usuario desde AUTH
+  const authRes = await supabaseAdmin.auth.admin.getUserById(id);
+
+  if (!authRes?.data?.user) {
+    return NextResponse.json({ error: "usuario_no_encontrado" }, { status: 404 });
+  }
+
+  const user = authRes.data.user;
+
+  // 3. Obtener licencias del usuario
+  const { data: licencias, error: errLic } = await supabaseAdmin
+    .from("licencias")
+    .select("*, plugins(nombre)")
+    .eq("user_id", id);
+
+  // 4. Obtener pagos del usuario
+  const { data: pagos, error: errPagos } = await supabaseAdmin
+    .from("pagos")
+    .select("*, plugins(nombre)")
+    .eq("user_id", id);
+
+  return NextResponse.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at,
+      last_sign_in_at: user.last_sign_in_at,
+      user_metadata: user.user_metadata ?? {},
+    },
+    licencias: licencias ?? [],
+    pagos: pagos ?? [],
+  });
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\admin\_utils.js
+============================================================
+
+// app/api/admin/_utils.js (corregido)
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export async function requireAdmin() {
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set() {},
+        remove() {},
+      },
+    }
+  );
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return { error: "NO_AUTH", status: 401 };
+  }
+
+  if (user.user_metadata?.role !== "admin") {
+    return { error: "NO_ADMIN", status: 403 };
+  }
+
+  return { supabase, user };
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\login\route.js
+============================================================
+
+// /app/api/auth/login/route.js
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export async function POST(req) {
+  const { email, password } = await req.json();
+
+  const normalizedEmail = email?.trim()?.toLowerCase();
+  const cookieHeader = req.headers.get("cookie") ?? "";
+
+  // Siempre usamos ESTA respuesta para permitir que Supabase modifique cookies
+  const response = NextResponse.json({ ok: true });
+
+  // Supabase client
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        // ✔ FIX: permitir "=" en valores de cookie
+        get(name) {
+          const raw = cookieHeader
+            .split("; ")
+            .find((c) => c.startsWith(name + "="));
+
+          if (!raw) return undefined;
+
+          return raw.slice(name.length + 1);
+        },
+
+        set(name, value, options) {
+          const cookie = `${name}=${value}; Path=/; SameSite=Lax${
+            options?.maxAge ? `; Max-Age=${options.maxAge}` : ""
+          }`;
+
+          response.headers.append("Set-Cookie", cookie);
+        },
+
+        remove(name) {
+          response.headers.append(
+            "Set-Cookie",
+            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
+          );
+        }
+      }
+    }
+  );
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: normalizedEmail,
+    password
+  });
+
+  // ❗ FIX: devolver SIEMPRE usando el mismo response
+  if (error) {
+    response.body = JSON.stringify({ error: error.message });
+    response.status = 400;
+    return response;
+  }
+
+  const role = data.user.user_metadata?.role ?? "user";
+
+  // Cookie adicional para middleware
+  response.headers.append(
+    "Set-Cookie",
+    `sb-user-role=${role}; Path=/; SameSite=Lax`
+  );
+
+  return response;
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\logout\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  // Respuesta JSON inicial
+  const res = NextResponse.json({ ok: true });
+
+  // Opciones unificadas para eliminar cookies de sesión
+  const baseOptions = {
+    maxAge: 0,
+    path: "/",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  };
+
+  // ✔ Borrar cookies oficiales de Supabase
+  res.cookies.set("sb-access-token", "", baseOptions);
+  res.cookies.set("sb-refresh-token", "", baseOptions);
+
+  // ❌ ESTA cookie no existe oficialmente → eliminada
+  // res.cookies.set("supabase-auth-token", "", baseOptions);
+
+  // ✔ Borrar cookie de rol con mismas opciones
+  res.cookies.set("sb-user-role", "", {
+    ...baseOptions,
+    httpOnly: false, // tu cookie de rol NO es httpOnly en login → lo mantengo.
+  });
+
+  return res;
+}
+
+
+============================================================
+📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\me\route.js
+============================================================
+
+import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/auth-helpers-nextjs";
+
+export async function GET(req) {
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  
+  // Creamos un array temporal para acumular cookies
+  const cookieStore = [];
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          const raw = cookieHeader
+            .split("; ")
+            .find((c) => c.startsWith(name + "="));
+          return raw ? raw.slice(name.length + 1) : undefined;
+        },
+
+        // Guardamos cookies, NO las enviamos aún
+        set(name, value, options) {
+          let cookie = `${name}=${value}; Path=/; SameSite=Lax`;
+          if (options?.maxAge) cookie += `; Max-Age=${options.maxAge}`;
+          cookieStore.push(cookie);
+        },
+
+        remove(name) {
+          cookieStore.push(
+            `${name}=; Path=/; Max-Age=0; SameSite=Lax`
+          );
+        }
+      },
+    }
+  );
+
+  const { data, error } = await supabase.auth.getUser();
+
+  // Creamos la respuesta FINAL desde cero
+  let res;
+
+  if (error || !data?.user) {
+    res = NextResponse.json({ user: null });
+  } else {
+    res = NextResponse.json({
+      user: data.user,
+      role: data.user.user_metadata?.role ?? "user",
+    });
+  }
+
+  // Ahora sí: agregamos todas las cookies *acumuladas*
+  cookieStore.forEach((c) => {
+    res.headers.append("Set-Cookie", c);
+  });
+
+  return res;
+}
+
+
+============================================================
 📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\api\auth\register\route.js
 ============================================================
 
@@ -578,15 +852,93 @@ export async function POST(req) {
 ============================================================
 
 // /app/api/facturacion/pdf/route.js
-import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { generarNumeroFactura } from "@/lib/generarNumeroFactura";
+import { guardarFactura } from "@/lib/guardarFactura";
 import { generateInvoicePdf } from "@/lib/pdf2";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
     const body = await req.json();
+
+    // =========================================
+    // ✅ MODO MANUAL (EL TUYO)
+    // =========================================
+    if (body?.manual) {
+      const { cliente, lineas, usarRetencion, pedidos = [] } = body;
+
+      if (!cliente || !lineas || lineas.length === 0) {
+        return NextResponse.json(
+          { ok: false, error: "datos_incompletos" },
+          { status: 400 }
+        );
+      }
+
+      // ✅ NUMERO FACTURA
+      const numeroFactura = await generarNumeroFactura();
+
+      // ✅ GUARDAR EN DB
+      try {
+        await guardarFactura({
+          numeroFactura,
+          cliente,
+          lineas,
+          usarRetencion,
+          pedidos
+        });
+      } catch (e) {
+        console.error("Error guardando factura:", e);
+      }
+
+      // ✅ FECHA
+      const fechaRaw = new Date();
+      const fecha = `${fechaRaw
+        .getDate()
+        .toString()
+        .padStart(2, "0")}/${(fechaRaw.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}/${fechaRaw.getFullYear()}`;
+
+      // ✅ LINEAS -> PDF
+      const licencias = lineas.map((l) => ({
+        nombrePlugin: l.concepto,
+        precioUnitario: Number(l.precio) || 0,
+        cantidad: Number(l.cantidad) || 1,
+      }));
+
+      const datosPdf = {
+        manual: true,
+        numeroFactura,
+        fecha,
+        razonSocial: cliente.nombre,
+        nif: cliente.nif,
+        direccion: cliente.direccion,
+        ciudad: cliente.ciudad,
+        cp: cliente.cp,
+        telefono: cliente.telefono,
+        licencias,
+        usarRetencion,
+        pedidos,
+      };
+
+      const pdfBuffer = await generateInvoicePdf(datosPdf);
+
+      return new Response(pdfBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="factura-${numeroFactura}.pdf"`,
+        },
+      });
+    }
+
+    // =========================================
+    // ✅ MODO ORIGINAL (NO TOCADO)
+    // =========================================
+
     const pagoId = body?.pagoId?.toString().trim();
 
     if (!pagoId) {
@@ -601,7 +953,9 @@ export async function POST(req) {
     // 1. Obtener pago
     const { data: pago, error: pagoErr } = await supabase
       .from("pagos")
-      .select("id, user_id, plugin_id, tipo, importe, cantidad_licencias, numero_factura, fecha")
+      .select(
+        "id, user_id, plugin_id, tipo, importe, cantidad_licencias, numero_factura, fecha"
+      )
       .eq("id", pagoId)
       .single();
 
@@ -613,7 +967,7 @@ export async function POST(req) {
       );
     }
 
-    // 2. Usuario propietario
+    // 2. Usuario
     const { data: userData, error: userErr } =
       await supabase.auth.admin.getUserById(pago.user_id);
 
@@ -624,49 +978,43 @@ export async function POST(req) {
     const user = userData?.user ?? {};
 
     // 3. Facturación
-    const { data: fact, error: factErr } = await supabase
+    const { data: fact } = await supabase
       .from("facturacion")
       .select("*")
       .eq("user_id", pago.user_id)
       .maybeSingle();
 
-    if (factErr) {
-      console.error("Error obteniendo facturación:", factErr);
-    }
-
-    // 4. Licencias asociadas al pago
-    const { data: licData, error: licErr } = await supabase
+    // 4. Licencias
+    const { data: licData } = await supabase
       .from("licencias")
       .select("email_tekla, tipo")
       .eq("pago_id", pagoId);
-
-    if (licErr) {
-      console.error("Error obteniendo licencias:", licErr);
-    }
 
     const licencias = (licData ?? []).map((l) => ({
       email: l.email_tekla?.trim() ?? "",
       tipo: l.tipo,
       precioUnitario:
         pago.cantidad_licencias > 0
-          ? (pago.importe / pago.cantidad_licencias)
+          ? pago.importe / pago.cantidad_licencias
           : 0,
+      cantidad: 1,
     }));
 
-    // 5. Preparar datos para PDF
-    const fecha = new Date(pago.fecha);
-    const fechaFormateada = `${fecha.getDate().toString().padStart(2, "0")}/${(
-      fecha.getMonth() + 1
-    )
+    // 5. Fecha
+    const fechaRaw = new Date(pago.fecha);
+    const fecha = `${fechaRaw
+      .getDate()
       .toString()
-      .padStart(2, "0")}/${fecha.getFullYear()}`;
+      .padStart(2, "0")}/${(fechaRaw.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${fechaRaw.getFullYear()}`;
 
     const datosPdf = {
       pagoId,
       numeroFactura:
         pago.numero_factura ??
         `OMBIM-${new Date().getFullYear()}-${String(pago.id).padStart(6, "0")}`,
-      fecha: fechaFormateada,
+      fecha,
       razonSocial:
         fact?.nombre ??
         user?.user_metadata?.empresa ??
@@ -680,12 +1028,11 @@ export async function POST(req) {
       telefono: fact?.telefono ?? "",
       email: user?.email ?? "",
       licencias,
+      usarRetencion: false,
     };
 
-    // 6. Generar PDF (devuelve Buffer)
     const pdfBuffer = await generateInvoicePdf(datosPdf);
 
-    // 7. Respuesta final
     return new Response(pdfBuffer, {
       status: 200,
       headers: {
@@ -2850,321 +3197,6 @@ function CardRow({ children }) {
   return (
     <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 flex justify-between items-start hover:shadow-md transition">
       {children}
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\layout.jsx
-============================================================
-
-"use client";
-
-import Link from "next/link";
-import { useState } from "react";
-import {
-  LayoutDashboard,
-  Ticket,
-  CreditCard,
-  Scroll,
-  Users,
-  Package,
-  ArrowLeft,
-  Menu,
-  X
-} from "lucide-react";
-
-export const dynamic = "force-dynamic";
-
-export default function AdminLayout({ children }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px] md:pt-[72px]">
-
-      {/* ---------- SIDEBAR ESCRITORIO ---------- */}
-      <aside
-        className="
-          hidden md:flex
-          flex-col
-          w-64
-          bg-gray-100 dark:bg-gray-900
-          p-4 space-y-4
-          border-r border-gray-300 dark:border-gray-700
-          fixed top-[72px] left-0 bottom-0
-          z-20
-        "
-      >
-        <h2 className="text-xl font-bold mb-4">Panel Admin</h2>
-
-        <nav className="space-y-2 text-base">
-          <Link href="/panel/admin/dashboard" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <LayoutDashboard size={18} /> Dashboard
-          </Link>
-
-          <Link href="/panel/admin/licencias" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Ticket size={18} /> Licencias
-          </Link>
-
-          <Link href="/panel/admin/pagos" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <CreditCard size={18} /> Pagos
-          </Link>
-
-          <Link href="/panel/admin/plugins" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Package size={18} /> Plugins
-          </Link>
-
-          <Link href="/panel/admin/logs" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Scroll size={18} /> Logs
-          </Link>
-
-          <Link href="/panel/admin/usuarios" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Users size={18} /> Usuarios
-          </Link>
-
-          <Link href="/" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
-            <ArrowLeft size={18} /> Volver
-          </Link>
-        </nav>
-      </aside>
-
-      {/* ---------- BOTÓN HAMBURGUESA (MÓVIL) ---------- */}
-      <button
-        className="
-          md:hidden
-          fixed top-4 left-4
-          z-[60]
-          bg-gray-300 dark:bg-gray-700
-          p-2 rounded-lg shadow-lg border border-gray-600
-        "
-        onClick={() => setOpen(true)}
-      >
-        <Menu size={24} />
-      </button>
-
-      {/* ---------- OVERLAY (MÓVIL) ---------- */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* ---------- SIDEBAR MÓVIL ---------- */}
-      <aside
-        className={`
-          fixed top-[72px] left-0 h-full w-64 p-4 z-50 shadow-xl
-          bg-gray-100 dark:bg-gray-900
-          border-r border-gray-300 dark:border-gray-700
-          transform transition-transform duration-300
-          ${open ? "translate-x-0" : "-translate-x-full"}
-          md:hidden
-        `}
-      >
-        <button className="absolute top-4 right-4" onClick={() => setOpen(false)}>
-          <X size={24} />
-        </button>
-
-        <h2 className="text-xl font-bold mb-6">Panel Admin</h2>
-
-        <nav className="space-y-3 text-lg">
-          <Link href="/panel/admin/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <LayoutDashboard size={18} /> Dashboard
-          </Link>
-
-          <Link href="/panel/admin/licencias" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Ticket size={18} /> Licencias
-          </Link>
-
-          <Link href="/panel/admin/pagos" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <CreditCard size={18} /> Pagos
-          </Link>
-
-          <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Package size={18} /> Plugins
-          </Link>
-
-          <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Scroll size={18} /> Logs
-          </Link>
-
-          <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
-            <Users size={18} /> Usuarios
-          </Link>
-
-          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
-            <ArrowLeft size={18} /> Volver
-          </Link>
-        </nav>
-      </aside>
-
-      {/* ---------- CONTENIDO PRINCIPAL ---------- */}
-      <main
-        className="
-          flex-1 overflow-y-auto
-          md:ml-64
-          p-6 pt-4
-        "
-      >
-        {children}
-      </main>
-    </div>
-  );
-}
-
-
-============================================================
-📄 ARCHIVO: C:\OMBIM-PROYECTO\ombim-site\app\panel\admin\licencias\page.jsx
-============================================================
-
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  Ticket,
-  Eye,
-  Calendar,
-  Ban,
-  CheckCircle,
-} from "lucide-react";
-
-export default function AdminLicenciasPage() {
-  const [licencias, setLicencias] = useState([]);
-  const [maquinas, setMaquinas] = useState({});
-
-  useEffect(() => {
-    async function load() {
-      const r = await fetch("/api/admin/licencias", {
-        credentials: "include",
-      });
-      const d = await r.json();
-      const list = d.licencias ?? [];
-      setLicencias(list);
-
-      const maquinasMap = {};
-
-      for (const l of list) {
-        const rM = await fetch(
-          `/api/admin/licencias/maquinas?id=${l.id}`,
-          { credentials: "include" }
-        );
-        const dM = await rM.json();
-        maquinasMap[l.id] = dM.maquinas ?? [];
-      }
-
-      setMaquinas(maquinasMap);
-    }
-
-    load();
-  }, []);
-
-  // ✅ NUEVO: liberar máquina
-  async function liberarMaquina(id) {
-    await fetch("/api/admin/licencias/maquinas", {
-      method: "DELETE",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-
-    location.reload(); // recargar rápido
-  }
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold flex items-center gap-2">
-        <Ticket size={28} /> Licencias
-      </h1>
-
-      {/* DESKTOP */}
-      <div className="overflow-x-auto shadow rounded-xl border">
-        <table className="min-w-full">
-          <thead>
-            <tr className="bg-gray-200 dark:bg-gray-700 text-sm">
-              <th className="p-3">ID</th>
-              <th className="p-3">Plugin</th>
-              <th className="p-3">Tipo</th>
-              <th className="p-3">Estado</th>
-              <th className="p-3">Máquinas</th>
-              <th className="p-3">Activaciones</th>
-              <th className="p-3">Expira</th>
-              <th className="p-3"></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {licencias.map((l) => {
-              const maq = maquinas[l.id] ?? [];
-
-              return (
-                <tr key={l.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">#{l.id}</td>
-
-                  <td className="p-3">
-                    {l.plugins?.nombre ?? l.plugin_id}
-                  </td>
-
-                  <td className="p-3">{l.tipo}</td>
-
-                  <td className="p-3">
-                    {l.estado === "activa" && (
-                      <span className="text-green-600">Activa</span>
-                    )}
-                    {l.estado === "bloqueada" && (
-                      <span className="text-red-600">Bloqueada</span>
-                    )}
-                  </td>
-
-                  {/* ✅ MÁQUINAS + BOTÓN */}
-                  <td className="p-3 text-xs space-y-2">
-                    {maq.length === 0 && (
-                      <div className="opacity-50">Sin máquinas</div>
-                    )}
-
-                    {maq.map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <span>{m.maquina_id}</span>
-
-                        {/* 🔥 BOTÓN LIBERAR */}
-                        <button
-                          onClick={() => liberarMaquina(m.id)}
-                          className="text-red-600 hover:text-red-800 text-xs"
-                        >
-                          liberar
-                        </button>
-                      </div>
-                    ))}
-                  </td>
-
-                  <td className="p-3">
-                    {maq.length}/{l.max_activaciones}
-                  </td>
-
-                  <td className="p-3">
-                    {l.fecha_expiracion
-                      ? new Date(l.fecha_expiracion).toLocaleDateString()
-                      : "—"}
-                  </td>
-
-                  <td className="p-3">
-                    <Link
-                      href={`/panel/admin/licencias/${l.id}`}
-                      className="text-blue-600 flex items-center gap-1 font-medium"
-                    >
-                      <Eye size={16} /> Ver
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

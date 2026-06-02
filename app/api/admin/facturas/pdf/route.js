@@ -42,7 +42,7 @@ export async function GET(req) {
   const datosPdf = {
     manual: true,
     numeroFactura: factura.numero,
-    fecha: new Date(factura.fecha).toLocaleDateString(),
+    fecha: new Date(factura.fecha).toLocaleDateString("es-ES"),
     razonSocial: factura.cliente_nombre,
     nif: factura.cliente_nif,
     direccion: factura.cliente_direccion,

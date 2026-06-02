@@ -1,3 +1,7 @@
+import { generateInvoicePdf } from "@/lib/pdf2";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -17,13 +21,6 @@ export async function GET(req) {
     console.error("Factura no encontrada", facturaErr);
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-
-  // ✅ ✅ ✅ AQUÍ SÍ
-  const d = new Date(factura.fecha);
-
-  const fecha = `${d.getDate().toString().padStart(2, "0")}/${
-    (d.getMonth() + 1).toString().padStart(2, "0")
-  }/${d.getFullYear()}`;
 
   // ✅ 2. LINEAS
   const { data: lineas, error: lineasErr } = await supabaseAdmin
@@ -45,7 +42,7 @@ export async function GET(req) {
   const datosPdf = {
     manual: true,
     numeroFactura: factura.numero,
-    fecha: fecha, // ✅ ahora funciona
+    fecha: new Date(factura.fecha).toLocaleDateString("es-ES"),
     razonSocial: factura.cliente_nombre,
     nif: factura.cliente_nif,
     direccion: factura.cliente_direccion,
@@ -59,6 +56,7 @@ export async function GET(req) {
       : [],
   };
 
+  // ✅ 4. GENERAR PDF
   const pdfBuffer = await generateInvoicePdf(datosPdf);
 
   return new Response(pdfBuffer, {

@@ -1226,7 +1226,7 @@ export async function guardarFactura({
   );
 
   const iva = subtotal * 0.21;
-  const retencion = usarRetencion ? subtotal * 0.15 : 0;
+  const retencion = usarRetencion ? subtotal * 0.19 : 0;
   const total = subtotal + iva - retencion;
 
   // ✅ LIMPIAR PEDIDOS
@@ -1365,7 +1365,7 @@ export async function generateInvoicePdf(datos) {
   );
 
   const iva = subtotal * 0.21;
-  const retencion = usarRetencion ? subtotal * 0.15 : 0;
+  const retencion = usarRetencion ? subtotal * 0.19 : 0;
   const total = subtotal + iva - retencion;
 
   // =====================
@@ -1560,7 +1560,7 @@ export async function generateInvoicePdf(datos) {
 
   if (usarRetencion) {
     doc
-      .text("RET 15%:", totalsX, totalsY)
+      .text("RET 19%:", totalsX, totalsY)
       .text(`-${retencion.toFixed(2)} €`, totalsX + 100, totalsY, {
         align: "right",
       });

@@ -68,7 +68,7 @@ export default function NuevaFacturaPage() {
   );
 
   const iva = subtotal * 0.21;
-  const retencion = usarRetencion ? subtotal * 0.15 : 0;
+  const retencion = usarRetencion ? subtotal * 0.19 : 0;
   const total = subtotal + iva - retencion;
 
   // =========================
@@ -284,11 +284,11 @@ export default function NuevaFacturaPage() {
             checked={usarRetencion}
             onChange={(e) => setUsarRetencion(e.target.checked)}
           />
-          Aplicar retención IRPF (15%)
+          Aplicar retención IRPF (19%)
         </label>
 
         {usarRetencion && (
-          <p>RET (15%): -{retencion.toFixed(2)} €</p>
+          <p>RET (19%): -{retencion.toFixed(2)} €</p>
         )}
 
         <p className="text-lg font-bold">

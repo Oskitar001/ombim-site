@@ -1,0 +1,19 @@
+// lib/logAdmin.js
+// Logging interno de acciones administrativas
+
+import { supabaseAdmin } from "./supabaseAdmin";
+
+export async function logAdminAction({ tipo, mensaje, user_id }) {
+  try {
+    await supabaseAdmin.from("admin_logs").insert([
+      {
+        tipo,
+        mensaje,
+        user_id,
+        fecha: new Date().toISOString(),
+      },
+    ]);
+  } catch (err) {
+    console.error("❌ Error guardando log admin:", err);
+  }
+}

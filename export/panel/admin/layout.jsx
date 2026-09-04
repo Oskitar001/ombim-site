@@ -1,0 +1,168 @@
+"use client";
+
+import {
+  ArrowLeft,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  Menu,
+  Package,
+  Scroll,
+  Ticket,
+  Users,
+  X
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
+export const dynamic = "force-dynamic";
+
+export default function AdminLayout({ children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-800 pt-[72px] md:pt-[72px]">
+
+      {/* ---------- SIDEBAR ESCRITORIO ---------- */}
+      <aside
+        className="
+          hidden md:flex
+          flex-col
+          w-64
+          bg-gray-100 dark:bg-gray-900
+          p-4 space-y-4
+          border-r border-gray-300 dark:border-gray-700
+          fixed top-[72px] left-0 bottom-0
+          z-20
+        "
+      >
+        <h2 className="text-xl font-bold mb-4">Panel Admin</h2>
+
+        <nav className="space-y-2 text-base">
+          <Link href="/panel/admin/dashboard" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <LayoutDashboard size={18} /> Dashboard
+          </Link>
+
+          <Link href="/panel/admin/licencias" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Ticket size={18} /> Licencias
+          </Link>
+
+          <Link href="/panel/admin/pagos" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <CreditCard size={18} /> Pagos
+          </Link>
+
+          {/* ✅ NUEVO */}
+          <Link href="/panel/admin/facturas/nueva" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Crear factura
+          </Link>
+
+          <Link href="/panel/admin/facturas" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Facturas
+          </Link>
+
+          <Link href="/panel/admin/plugins" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Package size={18} /> Plugins
+          </Link>
+
+          <Link href="/panel/admin/logs" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Scroll size={18} /> Logs
+          </Link>
+
+          <Link href="/panel/admin/usuarios" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Users size={18} /> Usuarios
+          </Link>
+
+          <Link href="/" className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
+            <ArrowLeft size={18} /> Volver
+          </Link>
+        </nav>
+      </aside>
+
+      {/* ---------- BOTÓN HAMBURGUESA (MÓVIL) ---------- */}
+      <button
+        className="
+          md:hidden
+          fixed top-4 left-4
+          z-[60]
+          bg-gray-300 dark:bg-gray-700
+          p-2 rounded-lg shadow-lg border border-gray-600
+        "
+        onClick={() => setOpen(true)}
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* ---------- OVERLAY (MÓVIL) ---------- */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* ---------- SIDEBAR MÓVIL ---------- */}
+      <aside
+        className={`
+          fixed top-[72px] left-0 h-full w-64 p-4 z-50 shadow-xl
+          bg-gray-100 dark:bg-gray-900
+          border-r border-gray-300 dark:border-gray-700
+          transform transition-transform duration-300
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:hidden
+        `}
+      >
+        <button className="absolute top-4 right-4" onClick={() => setOpen(false)}>
+          <X size={24} />
+        </button>
+
+        <h2 className="text-xl font-bold mb-6">Panel Admin</h2>
+
+        <nav className="space-y-3 text-lg">
+          <Link href="/panel/admin/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <LayoutDashboard size={18} /> Dashboard
+          </Link>
+
+          <Link href="/panel/admin/licencias" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Ticket size={18} /> Licencias
+          </Link>
+
+          <Link href="/panel/admin/pagos" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <CreditCard size={18} /> Pagos
+          </Link>
+
+          {/* ✅ NUEVO */}
+          <Link href="/panel/admin/facturas/nueva" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Crear factura
+          </Link>
+
+            <Link href="/panel/admin/facturas" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <FileText size={18} /> Facturas
+          </Link>
+
+          <Link href="/panel/admin/plugins" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Package size={18} /> Plugins
+          </Link>
+     
+          <Link href="/panel/admin/logs" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Scroll size={18} /> Logs
+          </Link>
+
+          <Link href="/panel/admin/usuarios" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+            <Users size={18} /> Usuarios
+          </Link>
+          
+          
+
+          <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800 mt-4">
+            <ArrowLeft size={18} /> Volver
+          </Link>
+        </nav>
+      </aside>
+
+      {/* ---------- CONTENIDO PRINCIPAL ---------- */}
+      <main className="flex-1 overflow-y-auto md:ml-64 p-6 pt-4">
+        {children}
+      </main>
+    </div>
+  );
+}

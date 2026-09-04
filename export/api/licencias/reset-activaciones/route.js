@@ -1,0 +1,41 @@
+// app/api/licencias/reset-activaciones/route.js
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { requireAdmin } from "@/lib/checkAdmin";
+
+export async function POST(req) {
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
+  const { licencia_id } = await req.json();
+
+  if (!licencia_id) {
+    return NextResponse.json({ error: "Falta licencia_id" }, { status: 400 });
+  }
+
+  // ✔ Añadir control de error real del SELECT
+  const { data: lic, error: licError } = await supabaseAdmin
+    .from("licencias")
+    .select("id")
+    .eq("id", licencia_id)
+    .single();
+
+  if (licError || !lic) {
+    console.error("Error buscando licencia:", licError);
+    return NextResponse.json({ error: "Licencia no encontrada" }, { status: 404 });
+  }
+
+  // ✔ UPDATE con control de error (esto ya existía)
+  const { error } = await supabaseAdmin
+    .from("licencias")
+    .update({ activaciones_usadas: 0 })
+    .eq("id", licencia_id);
+
+  if (error) {
+    return NextResponse.json({ error: "Error actualizando" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

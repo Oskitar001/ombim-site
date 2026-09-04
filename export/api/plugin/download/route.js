@@ -1,7 +1,7 @@
 // /app/api/plugin/download/route.js
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { supabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(req) {
   const supabase = await supabaseServer();
@@ -56,19 +56,14 @@ export async function GET(req) {
   }
 
   // Rutas en bucket
+  const filePath = trial
+    ? `trial/${plugin_id}.tsep`
+    : plugin.archivo_url;
 
-  const filePath = plugin.archivo_url.replace(
-  "https://igcpknnzwlqvubirwmum.supabase.co/storage/v1/object/public/plugins/",
-  ""
-);
-
-console.log("filePath =", filePath);
-
-const { data: signed, error: signedError } =
-  await supabaseAdmin.storage
+  // Firmar URL con control de error
+  const { data: signed, error: signedError } = await supabaseAdmin.storage
     .from("plugins")
     .createSignedUrl(filePath, 60);
-   
 
   if (signedError || !signed?.signedUrl) {
     console.error("Error creando URL firmada:", signedError);
